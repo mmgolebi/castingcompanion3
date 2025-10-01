@@ -1,0 +1,192 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String?
+  role          Role     @default(ACTOR)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  stripeCustomerId String? @unique
+  stripeSubId      String? @unique
+  subStatus        SubStatus @default(INACTIVE)
+  trialEndsAt      DateTime?
+  billingAnchor    DateTime?
+
+  profile       Profile?
+  submissions   Submission[]
+}
+
+enum Role {
+  ACTOR
+  ADMIN
+}
+
+enum SubStatus {
+  INACTIVE
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+model Profile {
+  id            String  @id @default(cuid())
+  userId        String  @unique
+  user          User    @relation(fields: [userId], references: [id])
+
+  phone         String?
+  locationCity  String?
+  locationState String?
+  locationZip   String?
+  age           Int?
+  gender        Gender?
+  ethnicity     Ethnicity?
+  unionStatus   UnionStatus?
+  playableAgeMin Int?
+  playableAgeMax Int?
+  agency        String?
+
+  headshotUrl   String?
+  fullBodyUrl   String?
+  resumeUrl     String?
+  reelLink      String?
+  instagram     String?
+  tiktok        String?
+  youtube       String?
+
+  roleInterests RoleType[]
+  specialSkills String[]
+  comfortLevels String[]
+
+  availability  String?
+  transportation Boolean @default(false)
+  compPrefs     String?
+  travelWillingness Boolean @default(false)
+
+  heightCm      Int?
+  weightKg      Int?
+  hairColor     String?
+  eyeColor      String?
+  visibleTattoos Boolean @default(false)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+  ANY
+}
+
+enum Ethnicity {
+  ANY
+  ASIAN
+  BLACK
+  HISPANIC
+  MIDDLE_EASTERN
+  NATIVE_AMERICAN
+  PACIFIC_ISLANDER
+  WHITE
+  OTHER
+}
+
+enum UnionStatus {
+  ANY
+  SAG_AFTRA
+  NON_UNION
+  EITHER
+}
+
+enum RoleType {
+  LEAD
+  SUPPORTING
+  BACKGROUND
+  EXTRA
+  COMMERCIAL
+}
+
+model CastingCall {
+  id            String   @id @default(cuid())
+  title         String
+  production    String
+  description   String
+  roleType      RoleType
+  genderReq     Gender   @default(ANY)
+  ageMin        Int?
+  ageMax        Int?
+  ethnicityReq  Ethnicity @default(ANY)
+  location      String
+  compensation  String
+  unionReq      UnionStatus @default(ANY)
+  skillsRequired String[]
+  shootDates    String?
+  castingEmail  String
+  submissionDeadline DateTime
+
+  createdAt     DateTime @default(now())
+  createdById   String?
+
+  submissions   Submission[]
+  
+  @@index([roleType])
+  @@index([genderReq])
+  @@index([ethnicityReq])
+  @@index([unionReq])
+  @@index([submissionDeadline])
+}
+
+model Submission {
+  id            String   @id @default(cuid())
+  userId        String
+  callId        String
+  status        SubmissionStatus @default(PENDING)
+  method        SubmissionMethod
+  matchScore    Int
+  createdAt     DateTime @default(now())
+
+  castingEmail  String
+
+  user          User       @relation(fields: [userId], references: [id])
+  castingCall   CastingCall @relation(fields: [callId], references: [id])
+
+  @@unique([userId, callId])
+  @@index([userId])
+  @@index([callId])
+  @@index([status])
+  @@index([method])
+}
+
+enum SubmissionStatus {
+  PENDING
+  SENT
+  RESPONDED
+  REJECTED
+}
+
+enum SubmissionMethod {
+  AUTO
+  MANUAL
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@index([token])
+  @@index([userId])
+}
