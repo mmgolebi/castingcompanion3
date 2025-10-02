@@ -1,29 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-
-function calculateMatchScore(call: any, user: any): number {
-  let score = 50; // Base score
-
-  // Location match (within same state) +20
-  if (user.state && call.location.includes(user.state)) {
-    score += 20;
-  }
-
-  // Union status match +15
-  if (call.unionReq === 'ANY' || user.unionStatus === call.unionReq || call.unionReq === 'EITHER') {
-    score += 15;
-  }
-
-  // Age range match +15
-  if (user.age && call.ageMin && call.ageMax) {
-    if (user.age >= call.ageMin && user.age <= call.ageMax) {
-      score += 15;
-    }
-  }
-
-  return Math.min(score, 100);
-}
+import { calculateMatchScore } from '@/lib/matchScore';
 
 export async function GET(req: Request) {
   try {
@@ -33,28 +11,40 @@ export async function GET(req: Request) {
     }
 
     const userId = (session.user as any).id;
-
-    // Get user profile for match scoring
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        state: true,
-        unionStatus: true,
-        age: true,
-        gender: true,
-      },
-    });
-
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
-    const skip = (page - 1) * limit;
-    
     const search = searchParams.get('search') || '';
     const roleType = searchParams.get('roleType') || 'ALL';
     const location = searchParams.get('location') || '';
     const union = searchParams.get('union') || 'ALL';
 
+    const skip = (page - 1) * limit;
+
+    // Get user profile
+    const userProfile = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        age: true,
+        playableAgeMin: true,
+        playableAgeMax: true,
+        gender: true,
+        state: true,
+        city: true,
+        unionStatus: true,
+        ethnicity: true,
+        roleTypesInterested: true,
+      },
+    });
+
+    // Get user's submissions
+    const userSubmissions = await prisma.submission.findMany({
+      where: { userId },
+      select: { callId: true },
+    });
+    const submittedCallIds = new Set(userSubmissions.map((s) => s.callId));
+
+    // Build where clause
     const where: any = {
       submissionDeadline: {
         gte: new Date(),
@@ -65,7 +55,6 @@ export async function GET(req: Request) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
         { production: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -81,43 +70,47 @@ export async function GET(req: Request) {
       where.unionReq = union;
     }
 
-    const [calls, total, submissions] = await Promise.all([
+    const [calls, totalCount] = await Promise.all([
       prisma.castingCall.findMany({
         where,
-        orderBy: {
-          createdAt: 'desc',
-        },
         skip,
         take: limit,
+        orderBy: { createdAt: 'desc' },
       }),
       prisma.castingCall.count({ where }),
-      prisma.submission.findMany({
-        where: { userId },
-        select: { callId: true },
-      }),
     ]);
 
-    const submittedCallIds = new Set(submissions.map(s => s.callId));
+    // Calculate match scores and check if auto-submitted
+    const callsWithScores = await Promise.all(
+      calls.map(async (call) => {
+        const matchScore = userProfile ? calculateMatchScore(userProfile, call) : 0;
+        
+        // Check if this was auto-submitted
+        const submission = await prisma.submission.findUnique({
+          where: {
+            userId_callId: {
+              userId,
+              callId: call.id,
+            },
+          },
+          select: { method: true },
+        });
 
-    // Add match scores and auto-submit status
-    const callsWithScores = calls.map(call => {
-      const matchScore = calculateMatchScore(call, user);
-      const wasAutoSubmitted = submittedCallIds.has(call.id) && matchScore >= 85;
-      
-      return {
-        ...call,
-        matchScore,
-        wasAutoSubmitted,
-      };
-    });
+        return {
+          ...call,
+          matchScore,
+          wasAutoSubmitted: submission?.method === 'AUTO',
+        };
+      })
+    );
 
     return NextResponse.json({
       calls: callsWithScores,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(totalCount / limit),
       currentPage: page,
     });
   } catch (error) {
-    console.error('Casting calls error:', error);
+    console.error('Get casting calls error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch casting calls' },
       { status: 500 }

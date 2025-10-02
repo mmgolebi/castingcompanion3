@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,11 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
 
-export default function OnboardingStep1() {
+export default function Step1Page() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [selectedState, setSelectedState] = useState('');
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -23,8 +26,6 @@ export default function OnboardingStep1() {
     playableAgeMin: '',
     playableAgeMax: '',
     gender: '',
-    ethnicity: '',
-    unionStatus: '',
   });
 
   useEffect(() => {
@@ -33,16 +34,16 @@ export default function OnboardingStep1() {
     }
   }, [status, router]);
 
-  const formatPhoneNumber = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length <= 3) return numbers;
-    if (numbers.length <= 6) return `(${numbers.slice(0, 3)}) ${numbers.slice(3)}`;
-    return `(${numbers.slice(0, 3)}) ${numbers.slice(3, 6)}-${numbers.slice(6, 10)}`;
-  };
-
-  const handlePhoneChange = (value: string) => {
-    setFormData({ ...formData, phone: formatPhoneNumber(value) });
-  };
+  useEffect(() => {
+    if (selectedState) {
+      const cities = MAJOR_CITIES_BY_STATE[selectedState] || [];
+      setAvailableCities(cities);
+      // Reset city if state changes
+      if (formData.state !== selectedState) {
+        setFormData({ ...formData, state: selectedState, city: '' });
+      }
+    }
+  }, [selectedState]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,16 +53,22 @@ export default function OnboardingStep1() {
       const res = await fetch('/api/onboarding/step1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          age: parseInt(formData.age),
+          playableAgeMin: parseInt(formData.playableAgeMin),
+          playableAgeMax: parseInt(formData.playableAgeMax),
+        }),
       });
 
       if (res.ok) {
         router.push('/onboarding/step2');
       } else {
-        alert('Failed to save. Please try again.');
+        const error = await res.json();
+        alert(error.error || 'Failed to save');
       }
     } catch (error) {
-      console.error('Submit error:', error);
+      console.error('Error:', error);
       alert('An error occurred');
     } finally {
       setLoading(false);
@@ -69,210 +76,181 @@ export default function OnboardingStep1() {
   };
 
   if (status === 'loading') {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="bg-white rounded-full w-10 h-10 flex items-center justify-center">
-                <span className="font-bold text-primary">1</span>
-              </div>
-              <div className="bg-gray-300 h-1 w-24"></div>
-              <div className="bg-gray-300 rounded-full w-10 h-10 flex items-center justify-center">
-                <span className="font-bold text-gray-500">2</span>
-              </div>
-              <div className="bg-gray-300 h-1 w-24"></div>
-              <div className="bg-gray-300 rounded-full w-10 h-10 flex items-center justify-center">
-                <span className="font-bold text-gray-500">3</span>
-              </div>
-              <div className="bg-gray-300 h-1 w-24"></div>
-              <div className="bg-gray-300 rounded-full w-10 h-10 flex items-center justify-center">
-                <span className="font-bold text-gray-500">4</span>
-              </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4">
+      <Card className="w-full max-w-2xl">
+        <CardHeader>
+          <CardTitle>Basic Information</CardTitle>
+          <CardDescription>Step 1 of 4 - Tell us about yourself</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="John Doe"
+                required
+              />
             </div>
-          </div>
-          <div className="grid grid-cols-4 gap-4 text-white text-xs">
-            <div className="font-semibold">Basic Info</div>
-            <div>Media Assets</div>
-            <div>Preferences</div>
-            <div>Logistics</div>
-          </div>
-        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-            <CardDescription>Tell us about yourself</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="phone">Phone Number *</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="(555) 123-4567"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="name">Full Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Jane Doe"
+                <Label htmlFor="state">State *</Label>
+                <Select
+                  value={selectedState}
+                  onValueChange={(value) => setSelectedState(value)}
                   required
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {US_STATES.map((state) => (
+                      <SelectItem key={state.value} value={state.value}>
+                        {state.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <Label htmlFor="phone">Phone Number *</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  placeholder="(555) 123-4567"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="city">City *</Label>
+                <Label htmlFor="city">City *</Label>
+                {availableCities.length > 0 ? (
+                  <Select
+                    value={formData.city}
+                    onValueChange={(value) => setFormData({ ...formData, city: value })}
+                    disabled={!selectedState}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select city" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCities.map((city) => (
+                        <SelectItem key={city} value={city}>
+                          {city}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
                   <Input
                     id="city"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    placeholder="Los Angeles"
+                    placeholder="Enter city"
+                    disabled={!selectedState}
                     required
                   />
-                </div>
-
-                <div>
-                  <Label htmlFor="state">State *</Label>
-                  <Input
-                    id="state"
-                    value={formData.state}
-                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    placeholder="CA"
-                    required
-                  />
-                </div>
+                )}
               </div>
+            </div>
 
-              <div>
-                <Label htmlFor="zipCode">ZIP Code *</Label>
-                <Input
-                  id="zipCode"
-                  value={formData.zipCode}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '').slice(0, 5);
-                    setFormData({ ...formData, zipCode: value });
-                  }}
-                  maxLength={5}
-                  placeholder="90001"
-                  required
-                />
-              </div>
+            <div>
+              <Label htmlFor="zipCode">Zip Code</Label>
+              <Input
+                id="zipCode"
+                value={formData.zipCode}
+                onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                placeholder="12345"
+                maxLength={5}
+              />
+            </div>
 
+            <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="age">Current Age *</Label>
+                <Label htmlFor="age">Age *</Label>
                 <Input
                   id="age"
                   type="number"
                   value={formData.age}
                   onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                  placeholder="25"
-                  min={18}
+                  placeholder="30"
+                  min="1"
+                  max="120"
                   required
                 />
               </div>
 
               <div>
-                <Label>Playable Age Range *</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    type="number"
-                    value={formData.playableAgeMin}
-                    onChange={(e) => setFormData({ ...formData, playableAgeMin: e.target.value })}
-                    placeholder="Min (e.g., 18)"
-                    required
-                  />
-                  <Input
-                    type="number"
-                    value={formData.playableAgeMax}
-                    onChange={(e) => setFormData({ ...formData, playableAgeMax: e.target.value })}
-                    placeholder="Max (e.g., 30)"
-                    required
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">The age range you can convincingly portray</p>
+                <Label htmlFor="playableAgeMin">Playable Age Min *</Label>
+                <Input
+                  id="playableAgeMin"
+                  type="number"
+                  value={formData.playableAgeMin}
+                  onChange={(e) => setFormData({ ...formData, playableAgeMin: e.target.value })}
+                  placeholder="25"
+                  min="1"
+                  max="120"
+                  required
+                />
               </div>
 
               <div>
-                <Label htmlFor="gender">Gender *</Label>
-                <Select
-                  value={formData.gender}
-                  onValueChange={(value) => setFormData({ ...formData, gender: value })}
+                <Label htmlFor="playableAgeMax">Playable Age Max *</Label>
+                <Input
+                  id="playableAgeMax"
+                  type="number"
+                  value={formData.playableAgeMax}
+                  onChange={(e) => setFormData({ ...formData, playableAgeMax: e.target.value })}
+                  placeholder="35"
+                  min="1"
+                  max="120"
                   required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MALE">Male</SelectItem>
-                    <SelectItem value="FEMALE">Female</SelectItem>
-                    <SelectItem value="NON_BINARY">Non-Binary</SelectItem>
-                    <SelectItem value="ANY">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
+            </div>
 
-              <div>
-                <Label htmlFor="ethnicity">Ethnicity *</Label>
-                <Select
-                  value={formData.ethnicity}
-                  onValueChange={(value) => setFormData({ ...formData, ethnicity: value })}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select ethnicity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CAUCASIAN">Caucasian</SelectItem>
-                    <SelectItem value="AFRICAN_AMERICAN">African American</SelectItem>
-                    <SelectItem value="ASIAN">Asian</SelectItem>
-                    <SelectItem value="HISPANIC">Hispanic/Latino</SelectItem>
-                    <SelectItem value="MIDDLE_EASTERN">Middle Eastern</SelectItem>
-                    <SelectItem value="NATIVE_AMERICAN">Native American</SelectItem>
-                    <SelectItem value="PACIFIC_ISLANDER">Pacific Islander</SelectItem>
-                    <SelectItem value="MULTIRACIAL">Multiracial</SelectItem>
-                    <SelectItem value="OTHER">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label htmlFor="gender">Gender *</Label>
+              <Select
+                value={formData.gender}
+                onValueChange={(value) => setFormData({ ...formData, gender: value })}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MALE">Male</SelectItem>
+                  <SelectItem value="FEMALE">Female</SelectItem>
+                  <SelectItem value="NON_BINARY">Non-Binary</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div>
-                <Label htmlFor="unionStatus">Union Status *</Label>
-                <Select
-                  value={formData.unionStatus}
-                  onValueChange={(value) => setFormData({ ...formData, unionStatus: value })}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select union status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SAG_AFTRA">SAG-AFTRA</SelectItem>
-                    <SelectItem value="NON_UNION">Non-Union</SelectItem>
-                    <SelectItem value="EITHER">Either</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button type="submit" disabled={loading} className="w-full">
-                {loading ? 'Saving...' : 'Continue'}
+            <div className="flex justify-end">
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Saving...' : 'Next Step'}
               </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

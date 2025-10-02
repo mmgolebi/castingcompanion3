@@ -1,5 +1,6 @@
 'use client';
 
+import { AutoSubmissionBanner } from '@/components/AutoSubmissionBanner';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -152,6 +153,9 @@ export default function DashboardPage() {
         </h1>
         <p className="text-gray-600">Here's your casting activity overview</p>
       </div>
+
+     
+<AutoSubmissionBanner />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card>
