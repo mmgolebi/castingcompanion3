@@ -12,11 +12,16 @@ export default async function DashboardLayout({
   
   let isAdmin = false;
   if (session?.user) {
-    const user = await prisma.user.findUnique({
-      where: { id: (session.user as any).id },
-      select: { isAdmin: true },
-    });
-    isAdmin = user?.isAdmin || false;
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: (session.user as any).id },
+        select: { isAdmin: true },
+      });
+      isAdmin = user?.isAdmin || false;
+    } catch (error) {
+      console.error('Failed to check admin status:', error);
+      // Continue rendering even if database is unavailable
+    }
   }
 
   return (
