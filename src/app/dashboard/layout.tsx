@@ -2,6 +2,15 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
+import { redirect } from 'next/navigation';
+
+async function signOutAction() {
+  'use server';
+  const { signOut } = await import('@/lib/auth');
+  await signOut();
+  redirect('/');
+}
 
 export default async function DashboardLayout({
   children,
@@ -20,7 +29,6 @@ export default async function DashboardLayout({
       isAdmin = user?.isAdmin || false;
     } catch (error) {
       console.error('Failed to check admin status:', error);
-      // Continue rendering even if database is unavailable
     }
   }
 
@@ -37,15 +45,15 @@ export default async function DashboardLayout({
                 <Button variant="outline">Admin Panel</Button>
               </Link>
             )}
-            <Link href="/dashboard/calls">
-              <Button variant="ghost">Browse Calls</Button>
-            </Link>
-            <Link href="/dashboard/history">
-              <Button variant="ghost">History</Button>
-            </Link>
             <Link href="/dashboard/profile">
               <Button variant="ghost">Profile</Button>
             </Link>
+            <form action={signOutAction}>
+              <Button variant="ghost" type="submit">
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </form>
           </div>
         </div>
       </nav>
