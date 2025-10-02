@@ -3,14 +3,6 @@ import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
-import { redirect } from 'next/navigation';
-
-async function signOutAction() {
-  'use server';
-  const { signOut } = await import('@/lib/auth');
-  await signOut();
-  redirect('/');
-}
 
 export default async function DashboardLayout({
   children,
@@ -48,12 +40,12 @@ export default async function DashboardLayout({
             <Link href="/dashboard/profile">
               <Button variant="ghost">Profile</Button>
             </Link>
-            <form action={signOutAction}>
-              <Button variant="ghost" type="submit">
+            <Link href="/auth/signout">
+              <Button variant="ghost">
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
-            </form>
+            </Link>
           </div>
         </div>
       </nav>
