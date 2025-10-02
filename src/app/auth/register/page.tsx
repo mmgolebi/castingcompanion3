@@ -34,6 +34,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      // Create account
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,7 +60,8 @@ export default function RegisterPage() {
         setError('Account created but login failed. Please try signing in.');
         setLoading(false);
       } else {
-        router.push('/dashboard');
+        // Successfully signed in, redirect to onboarding
+        router.push('/onboarding/step1');
         router.refresh();
       }
     } catch (err) {

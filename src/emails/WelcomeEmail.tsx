@@ -1,118 +1,60 @@
-import {
-  Html,
-  Head,
-  Body,
-  Container,
-  Section,
-  Text,
-  Link,
-  Button,
-  Heading,
-} from '@react-email/components';
+import * as React from 'react';
 
 interface WelcomeEmailProps {
-  name: string;
+  userName: string;
 }
 
-export function WelcomeEmail({ name }: WelcomeEmailProps) {
+export default function WelcomeEmail({ userName }: WelcomeEmailProps) {
   return (
-    <Html>
-      <Head />
-      <Body style={main}>
-        <Container style={container}>
-          <Heading style={h1}>Welcome to Casting Companion! 🎬</Heading>
-          <Text style={text}>Hi {name},</Text>
-          <Text style={text}>
-            Thank you for joining Casting Companion! Your 14-day trial has begun, and we're excited to help you
-            discover and submit to the best casting opportunities.
-          </Text>
-          <Section style={section}>
-            <Text style={boldText}>What's next?</Text>
-            <Text style={listItem}>✓ Complete your profile to get better matches</Text>
-            <Text style={listItem}>✓ Browse available casting calls</Text>
-            <Text style={listItem}>✓ We'll auto-submit you to great matches (≥85% score)</Text>
-            <Text style={listItem}>✓ Track your submissions in your dashboard</Text>
-          </Section>
-          <Button style={button} href={`${process.env.NEXTAUTH_URL}/dashboard`}>
-            Go to Dashboard
-          </Button>
-          <Text style={text}>
-            Questions? Just reply to this email—we're here to help!
-          </Text>
-          <Text style={footer}>
-            Best regards,
-            <br />
-            The Casting Companion Team
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+    <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
+      <h1 style={{ color: '#7c3aed', fontSize: '28px', marginBottom: '20px' }}>
+        Welcome to Casting Companion, {userName}!
+      </h1>
+      
+      <p style={{ fontSize: '16px', lineHeight: '1.6', color: '#374151' }}>
+        We're thrilled to have you join our community of talented actors and performers.
+      </p>
+      
+      <p style={{ fontSize: '16px', lineHeight: '1.6', color: '#374151' }}>
+        Your profile is now complete and you're ready to start discovering casting opportunities 
+        tailored just for you.
+      </p>
+      
+      <div style={{ backgroundColor: '#f3f4f6', padding: '20px', borderRadius: '8px', margin: '20px 0' }}>
+        <h2 style={{ fontSize: '20px', marginBottom: '10px', color: '#1f2937' }}>
+          What's Next?
+        </h2>
+        <ul style={{ listStyle: 'none', padding: 0 }}>
+          <li style={{ marginBottom: '10px', color: '#374151' }}>
+            ✅ Browse casting calls matched to your profile
+          </li>
+          <li style={{ marginBottom: '10px', color: '#374151' }}>
+            ✅ Submit to roles with one click
+          </li>
+          <li style={{ marginBottom: '10px', color: '#374151' }}>
+            ✅ Track your submissions and responses
+          </li>
+          <li style={{ marginBottom: '10px', color: '#374151' }}>
+            ✅ Update your profile anytime
+          </li>
+        </ul>
+      </div>
+      
+      <p style={{ fontSize: '16px', lineHeight: '1.6', color: '#374151' }}>
+        Your 14-day free trial has started. You won't be charged until the trial ends, 
+        and you can cancel anytime.
+      </p>
+      
+      <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#ede9fe', borderRadius: '8px' }}>
+        <p style={{ fontSize: '14px', color: '#5b21b6', margin: 0 }}>
+          Questions? Reply to this email or visit our help center. We're here to help you succeed!
+        </p>
+      </div>
+      
+      <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '30px' }}>
+        Break a leg!<br/>
+        The Casting Companion Team
+      </p>
+    </div>
   );
 }
-
-const main = {
-  backgroundColor: '#f6f9fc',
-  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
-
-const container = {
-  backgroundColor: '#ffffff',
-  margin: '0 auto',
-  padding: '20px 0 48px',
-  marginBottom: '64px',
-};
-
-const h1 = {
-  color: '#333',
-  fontSize: '24px',
-  fontWeight: 'bold',
-  margin: '40px 0',
-  padding: '0',
-  textAlign: 'center' as const,
-};
-
-const text = {
-  color: '#333',
-  fontSize: '16px',
-  lineHeight: '26px',
-  margin: '16px 20px',
-};
-
-const boldText = {
-  ...text,
-  fontWeight: 'bold',
-  marginTop: '24px',
-};
-
-const listItem = {
-  color: '#333',
-  fontSize: '16px',
-  lineHeight: '26px',
-  margin: '8px 20px 8px 40px',
-};
-
-const section = {
-  margin: '24px 0',
-};
-
-const button = {
-  backgroundColor: '#6366F1',
-  borderRadius: '8px',
-  color: '#fff',
-  display: 'block',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  padding: '12px 20px',
-  margin: '32px 20px',
-};
-
-const footer = {
-  color: '#8898aa',
-  fontSize: '14px',
-  lineHeight: '24px',
-  margin: '32px 20px',
-};
-
-export default WelcomeEmail;

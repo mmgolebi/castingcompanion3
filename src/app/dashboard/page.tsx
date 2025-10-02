@@ -1,255 +1,402 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Send, CheckCircle, Calendar, AlertCircle, ArrowRight } from 'lucide-react';
-import { getMatchTier } from '@/lib/matching';
-import { formatDate } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Briefcase, Send, Clock, TrendingUp, MapPin, DollarSign, Calendar, Check, Search, Sparkles } from 'lucide-react';
 
 export default function DashboardPage() {
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState('Actor');
   const [stats, setStats] = useState({
-    totalMatches: 0,
     totalSubmissions: 0,
-    responseRate: 0,
-    thisWeek: 0,
+    pendingSubmissions: 0,
+    activeCalls: 0,
+    matchScore: 0,
   });
-  const [recentCalls, setRecentCalls] = useState<any[]>([]);
-  const [autoSubmitCount, setAutoSubmitCount] = useState(0);
-  const [profileComplete, setProfileComplete] = useState(true);
+  const [castingCalls, setCastingCalls] = useState<any[]>([]);
+  const [recentSubmissions, setRecentSubmissions] = useState<any[]>([]);
+  const [submittedCallIds, setSubmittedCallIds] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState<string | null>(null);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleTypeFilter, setRoleTypeFilter] = useState('ALL');
+  const [locationFilter, setLocationFilter] = useState('');
+  const [unionFilter, setUnionFilter] = useState('ALL');
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (status === 'unauthenticated') {
+      router.push('/auth/login');
+    }
+  }, [status, router]);
 
-  const fetchDashboardData = async () => {
-    try {
-      // Fetch profile to check completeness
-      const profileRes = await fetch('/api/profile');
-      if (profileRes.ok) {
-        const { profile } = await profileRes.json();
-        setProfileComplete(!!profile?.headshotUrl && !!profile?.age && !!profile?.gender);
-      }
-
-      // Fetch submissions for stats
-      const submissionsRes = await fetch('/api/submissions?pageSize=100');
-      if (submissionsRes.ok) {
-        const { submissions } = await submissionsRes.json();
-        
-        const now = new Date();
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        
-        const thisWeekSubs = submissions.filter(
-          (s: any) => new Date(s.createdAt) >= weekAgo
-        );
-        const recentAutoSubs = submissions.filter(
-          (s: any) => s.method === 'AUTO' && new Date(s.createdAt) >= dayAgo
-        );
-        const responded = submissions.filter((s: any) => s.status === 'RESPONDED');
-        const sent = submissions.filter((s: any) => ['SENT', 'RESPONDED', 'REJECTED'].includes(s.status));
-
-        setStats({
-          totalMatches: 0, // Will calculate from calls
-          totalSubmissions: submissions.length,
-          responseRate: sent.length > 0 ? Math.round((responded.length / sent.length) * 100) : 0,
-          thisWeek: thisWeekSubs.length,
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          limit: '10',
+          search: searchQuery,
+          roleType: roleTypeFilter,
+          location: locationFilter,
+          union: unionFilter,
         });
-        setAutoSubmitCount(recentAutoSubs.length);
-      }
 
-      // Fetch recent casting calls
-      const callsRes = await fetch('/api/casting-calls?pageSize=5&sort=deadline');
-      if (callsRes.ok) {
-        const { calls } = await callsRes.json();
-        setRecentCalls(calls);
+        const [profileRes, statsRes, callsRes, submissionsRes] = await Promise.all([
+          fetch('/api/profile'),
+          fetch('/api/dashboard/stats'),
+          fetch(`/api/dashboard/casting-calls?${params}`),
+          fetch('/api/dashboard/recent-submissions'),
+        ]);
+
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          setUserName(profileData.name || 'Actor');
+        }
+
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData);
+        }
+
+        if (callsRes.ok) {
+          const callsData = await callsRes.json();
+          setCastingCalls(callsData.calls);
+          setTotalPages(callsData.totalPages);
+        }
+
+        if (submissionsRes.ok) {
+          const submissionsData = await submissionsRes.json();
+          setRecentSubmissions(submissionsData.recent || []);
+          setSubmittedCallIds(new Set(submissionsData.allCallIds || []));
+        }
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (status === 'authenticated') {
+      fetchData();
+    }
+  }, [status, currentPage, searchQuery, roleTypeFilter, locationFilter, unionFilter]);
+
+  const handleSubmit = async (callId: string) => {
+    setSubmitting(callId);
+    try {
+      const res = await fetch('/api/dashboard/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ callId }),
+      });
+
+      if (res.ok) {
+        setSubmittedCallIds(prev => new Set([...prev, callId]));
         
-        // Count matches (score > 0)
-        const matches = calls.filter((c: any) => c.matchScore > 0);
-        setStats(prev => ({ ...prev, totalMatches: matches.length }));
+        const [statsRes, submissionsRes] = await Promise.all([
+          fetch('/api/dashboard/stats'),
+          fetch('/api/dashboard/recent-submissions'),
+        ]);
+        
+        if (statsRes.ok) setStats(await statsRes.json());
+        if (submissionsRes.ok) {
+          const data = await submissionsRes.json();
+          setRecentSubmissions(data.recent || []);
+        }
+      } else {
+        const error = await res.json();
+        alert(error.error || 'Failed to submit');
       }
     } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
+      console.error('Submit error:', error);
+      alert('An error occurred');
     } finally {
-      setLoading(false);
+      setSubmitting(null);
     }
   };
 
-  if (loading) {
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = () => {
+    setCurrentPage(1);
+  };
+
+  if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your dashboard...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
+  const firstName = userName.split(' ')[0];
+
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Top Navigation */}
       <nav className="bg-white border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-primary">Casting Companion</h1>
+          <Link href="/dashboard" className="text-2xl font-bold text-primary">
+            Casting Companion
+          </Link>
           <div className="flex items-center gap-4">
+            <Link href="/dashboard/calls">
+              <Button variant="ghost">Browse Calls</Button>
+            </Link>
+            <Link href="/dashboard/history">
+              <Button variant="ghost">History</Button>
+            </Link>
             <Link href="/dashboard/profile">
               <Button variant="ghost">Profile</Button>
-            </Link>
-            <Link href="/api/auth/signout">
-              <Button variant="outline">Log out</Button>
             </Link>
           </div>
         </div>
       </nav>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Auto-Submit Banner */}
-        {autoSubmitCount > 0 && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-green-900">
-                ✅ We auto-submitted you to {autoSubmitCount} high-quality{' '}
-                {autoSubmitCount === 1 ? 'opportunity' : 'opportunities'} (≥85% match)
-              </h3>
-              <p className="text-sm text-green-700 mt-1">
-                Check your email for confirmation and track all submissions in your history.
-              </p>
-            </div>
-            <Link href="/dashboard/history">
-              <Button variant="outline" size="sm">
-                View History
-              </Button>
-            </Link>
-          </div>
-        )}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            Welcome back, {firstName}!
+          </h1>
+          <p className="text-gray-600">Here's your casting activity overview</p>
+        </div>
 
-        {/* Profile Incomplete Banner */}
-        {!profileComplete && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-amber-900">Complete your profile to get better matches</h3>
-              <p className="text-sm text-amber-700 mt-1">
-                Add your headshot, age, and gender to receive personalized casting opportunities.
-              </p>
-            </div>
-            <Link href="/dashboard/profile">
-              <Button variant="outline" size="sm">
-                Complete Profile
-              </Button>
-            </Link>
-          </div>
-        )}
-
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Matches</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalMatches}</div>
-              <p className="text-xs text-muted-foreground">Active casting calls</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Submissions</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Submissions</CardTitle>
               <Send className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalSubmissions}</div>
-              <p className="text-xs text-muted-foreground">All time</p>
+              <p className="text-xs text-muted-foreground">All time submissions</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Response Rate</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Pending</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.responseRate}%</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.totalSubmissions === 0 ? 'No submissions yet' : 'From sent submissions'}
-              </p>
+              <div className="text-2xl font-bold">{stats.pendingSubmissions}</div>
+              <p className="text-xs text-muted-foreground">Awaiting response</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">This Week</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Active Calls</CardTitle>
+              <Briefcase className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.thisWeek}</div>
-              <p className="text-xs text-muted-foreground">New submissions</p>
+              <div className="text-2xl font-bold">{stats.activeCalls}</div>
+              <p className="text-xs text-muted-foreground">Open opportunities</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Match Score</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.matchScore}%</div>
+              <p className="text-xs text-muted-foreground">Profile compatibility</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Recent Casting Calls */}
-        <Card>
+        <Card className="mb-8">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Recent Casting Calls</CardTitle>
-                <CardDescription>Top opportunities matching your profile</CardDescription>
-              </div>
-              <Link href="/dashboard/calls">
-                <Button variant="outline" size="sm">
-                  View All <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
+            <CardTitle>Available Casting Calls</CardTitle>
+            <CardDescription>Browse and submit to open opportunities</CardDescription>
           </CardHeader>
           <CardContent>
-            {recentCalls.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">No casting calls available at the moment</p>
-                <Button onClick={() => router.push('/dashboard/calls')}>Browse Opportunities</Button>
+            <div className="mb-6 space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search by title or production..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-            ) : (
-              <div className="space-y-4">
-                {recentCalls.map((call) => {
-                  const { label, variant } = getMatchTier(call.matchScore);
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Select value={roleTypeFilter} onValueChange={(value) => { setRoleTypeFilter(value); handleFilterChange(); }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Role Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Role Types</SelectItem>
+                    <SelectItem value="LEAD">Lead</SelectItem>
+                    <SelectItem value="SUPPORTING">Supporting</SelectItem>
+                    <SelectItem value="BACKGROUND">Background</SelectItem>
+                    <SelectItem value="EXTRA">Extra</SelectItem>
+                    <SelectItem value="COMMERCIAL">Commercial</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Input
+                  placeholder="Filter by location..."
+                  value={locationFilter}
+                  onChange={(e) => { setLocationFilter(e.target.value); handleFilterChange(); }}
+                />
+
+                <Select value={unionFilter} onValueChange={(value) => { setUnionFilter(value); handleFilterChange(); }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Union Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Union Status</SelectItem>
+                    <SelectItem value="SAG_AFTRA">SAG-AFTRA Only</SelectItem>
+                    <SelectItem value="NON_UNION">Non-Union Only</SelectItem>
+                    <SelectItem value="EITHER">Either</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {castingCalls.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">No casting calls found</p>
+              ) : (
+                castingCalls.map((call) => {
+                  const isSubmitted = submittedCallIds.has(call.id);
+                  const matchScore = call.matchScore || 0;
+                  const wasAutoSubmitted = call.wasAutoSubmitted || false;
+                  
                   return (
-                    <div key={call.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-slate-50 transition-colors">
-                      <div className="flex-1">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg mb-1">{call.title}</h3>
-                            <p className="text-sm text-muted-foreground mb-2">{call.production}</p>
-                            <div className="flex flex-wrap gap-2 text-sm">
-                              <span className="text-muted-foreground">📍 {call.location}</span>
-                              <span className="text-muted-foreground">•</span>
-                              <span className="text-muted-foreground">💰 {call.compensation}</span>
-                              <span className="text-muted-foreground">•</span>
-                              <span className="text-muted-foreground">📅 Deadline: {formatDate(call.submissionDeadline)}</span>
-                            </div>
-                          </div>
-                          <Badge variant={variant as any}>
-                            {call.matchScore}% {label}
+                    <div key={call.id} className="border rounded-lg p-4 hover:bg-slate-50 transition">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">{call.title}</h3>
+                          <p className="text-sm text-gray-600">{call.production}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge variant={call.roleType === 'LEAD' ? 'default' : 'secondary'}>
+                            {call.roleType}
                           </Badge>
+                          {wasAutoSubmitted && (
+                            <Badge variant="default" className="bg-green-600">
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              Auto-Submitted
+                            </Badge>
+                          )}
                         </div>
                       </div>
-                      <div className="ml-4">
-                        <Link href={`/dashboard/calls?id=${call.id}`}>
-                          <Button size="sm">View Details</Button>
-                        </Link>
+                      
+                      <p className="text-sm text-gray-700 mb-3 line-clamp-2">{call.description}</p>
+                      
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" />
+                          {call.location}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-4 w-4" />
+                          {call.compensation}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          Deadline: {new Date(call.submissionDeadline).toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center gap-1 font-semibold">
+                          <TrendingUp className="h-4 w-4" />
+                          Match: {matchScore}%
+                        </div>
                       </div>
+
+                      {isSubmitted ? (
+                        <Button size="sm" disabled variant="secondary" className="cursor-not-allowed">
+                          <Check className="h-4 w-4 mr-2" />
+                          Submitted
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => handleSubmit(call.id)}
+                          disabled={submitting === call.id}
+                          size="sm"
+                        >
+                          {submitting === call.id ? 'Submitting...' : 'Submit to This Call'}
+                        </Button>
+                      )}
                     </div>
                   );
-                })}
+                })
+              )}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex justify-center gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <span className="py-2 px-4 text-sm">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Submissions</CardTitle>
+            <CardDescription>Your latest casting call submissions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentSubmissions.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">No submissions yet</p>
+            ) : (
+              <div className="space-y-3">
+                {recentSubmissions.map((submission) => (
+                  <div key={submission.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium">{submission.call.title}</h4>
+                        <p className="text-sm text-gray-600">{submission.call.production}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Submitted {new Date(submission.submittedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant={submission.method === 'AUTO' ? 'default' : 'secondary'}>
+                          {submission.method === 'AUTO' ? 'Auto-Submitted' : 'Manual'}
+                        </Badge>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Match: {submission.matchScore}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>

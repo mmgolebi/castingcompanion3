@@ -1,12 +1,31 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { prisma } from '@/lib/db';
-import { sendWelcomeEmail } from '@/lib/email';
 import Stripe from 'stripe';
+import { prisma } from '@/lib/db';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2024-11-20.acacia',
 });
+
+function calculateMatchScore(call: any, user: any): number {
+  let score = 50;
+
+  if (user.state && call.location.includes(user.state)) {
+    score += 20;
+  }
+
+  if (call.unionReq === 'ANY' || user.unionStatus === call.unionReq || call.unionReq === 'EITHER') {
+    score += 15;
+  }
+
+  if (user.age && call.ageMin && call.ageMax) {
+    if (user.age >= call.ageMin && user.age <= call.ageMax) {
+      score += 15;
+    }
+  }
+
+  return Math.min(score, 100);
+}
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -22,11 +41,8 @@ export async function POST(req: Request) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
-    return NextResponse.json(
-      { error: 'Invalid signature' },
-      { status: 400 }
-    );
+    console.error(`Webhook signature verification failed:`, err.message);
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
   try {
@@ -35,31 +51,61 @@ export async function POST(req: Request) {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.userId;
 
-        if (!userId) {
-          console.error('No userId in checkout session metadata');
-          break;
-        }
+        if (!userId) break;
 
-        const subscription = await stripe.subscriptions.retrieve(
-          session.subscription as string
-        );
+        const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
 
-        const user = await prisma.user.update({
+        await prisma.user.update({
           where: { id: userId },
           data: {
             stripeCustomerId: session.customer as string,
-            stripeSubId: subscription.id,
+            stripeSubId: session.subscription as string,
             subStatus: 'TRIAL',
-            trialEndsAt: subscription.trial_end
-              ? new Date(subscription.trial_end * 1000)
-              : null,
-            billingAnchor: new Date(subscription.current_period_end * 1000),
+            trialEndsAt: new Date(subscription.trial_end! * 1000),
+            onboardingComplete: true,
           },
         });
 
-        await sendWelcomeEmail(user.email, user.name || undefined);
-        
-        console.log('✅ Checkout completed for user:', userId);
+        // Get user profile for auto-submission
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            state: true,
+            unionStatus: true,
+            age: true,
+            gender: true,
+          },
+        });
+
+        // Find high-match casting calls (85%+)
+        const allCalls = await prisma.castingCall.findMany({
+          where: {
+            submissionDeadline: {
+              gte: new Date(),
+            },
+          },
+        });
+
+        for (const call of allCalls) {
+          const matchScore = calculateMatchScore(call, user);
+          
+          if (matchScore >= 85) {
+            // Auto-submit to high-match calls
+            await prisma.submission.create({
+              data: {
+                userId,
+                callId: call.id,
+                status: 'SENT',
+                method: 'AUTO',
+                matchScore,
+                castingEmail: call.castingEmail,
+              },
+            });
+            
+            console.log(`Auto-submitted user ${userId} to ${call.title} (${matchScore}% match)`);
+          }
+        }
+
         break;
       }
 
@@ -67,46 +113,31 @@ export async function POST(req: Request) {
         const subscription = event.data.object as Stripe.Subscription;
         const userId = subscription.metadata?.userId;
 
-        if (!userId) {
-          const user = await prisma.user.findFirst({
-            where: { stripeSubId: subscription.id },
-          });
+        if (!userId) break;
 
-          if (!user) {
-            console.error('User not found for subscription:', subscription.id);
-            break;
-          }
+        let subStatus: 'ACTIVE' | 'TRIAL' | 'PAST_DUE' | 'CANCELED' = 'ACTIVE';
+        if (subscription.status === 'trialing') subStatus = 'TRIAL';
+        if (subscription.status === 'past_due') subStatus = 'PAST_DUE';
+        if (subscription.status === 'canceled') subStatus = 'CANCELED';
 
-          await updateSubscriptionStatus(user.id, subscription);
-        } else {
-          await updateSubscriptionStatus(userId, subscription);
-        }
-        
-        console.log('✅ Subscription updated for user:', userId);
+        await prisma.user.update({
+          where: { stripeSubId: subscription.id },
+          data: { subStatus },
+        });
+
         break;
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        
-        const user = await prisma.user.findFirst({
+
+        await prisma.user.update({
           where: { stripeSubId: subscription.id },
+          data: { subStatus: 'CANCELED' },
         });
 
-        if (user) {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              subStatus: 'CANCELED',
-            },
-          });
-          console.log('✅ Subscription canceled for user:', user.id);
-        }
         break;
       }
-
-      default:
-        console.log('Unhandled event type:', event.type);
     }
 
     return NextResponse.json({ received: true });
@@ -117,36 +148,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
-
-async function updateSubscriptionStatus(
-  userId: string,
-  subscription: Stripe.Subscription
-) {
-  let subStatus: 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'INACTIVE' =
-    'INACTIVE';
-
-  switch (subscription.status) {
-    case 'trialing':
-      subStatus = 'TRIAL';
-      break;
-    case 'active':
-      subStatus = 'ACTIVE';
-      break;
-    case 'past_due':
-      subStatus = 'PAST_DUE';
-      break;
-    case 'canceled':
-    case 'unpaid':
-      subStatus = 'CANCELED';
-      break;
-  }
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      subStatus,
-      billingAnchor: new Date(subscription.current_period_end * 1000),
-    },
-  });
 }
