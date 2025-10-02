@@ -58,44 +58,57 @@ model User {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   submissions Submission[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model CastingCall {
-  id          String   @id @default(cuid())
-  title       String
-  production  String
-  description String
-  roleType    String
-  genderReq   String
-  ageMin      Int
-  ageMax      Int
-  ethnicityReq String
-  location    String
-  compensation String
-  unionReq    String
-  skillsRequired String[]
-  shootDates  String
-  castingEmail String
-  submissionDeadline DateTime
-  createdAt   DateTime @default(now())
+  id                  String   @id @default(cuid())
+  title               String
+  production          String
+  description         String
+  roleType            String
+  genderReq           String
+  ageMin              Int
+  ageMax              Int
+  ethnicityReq        String   @default("ANY")
+  location            String
+  compensation        String
+  unionReq            String
+  skillsRequired      String[]
+  shootDates          String
+  castingEmail        String
+  submissionDeadline  DateTime
   
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   submissions Submission[]
 }
 
 model Submission {
-  id           String   @id @default(cuid())
-  userId       String
-  callId       String
-  status       String   @default("SENT")
-  method       String   @default("MANUAL")
-  matchScore   Int?
+  id        String   @id @default(cuid())
+  userId    String
+  callId    String
+  status    String   @default("SENT")
+  method    String
+  matchScore Int?
   castingEmail String
-  submittedAt  DateTime @default(now())
   
-  user User @relation(fields: [userId], references: [id])
-  call CastingCall @relation(fields: [callId], references: [id])
+  createdAt DateTime @default(now())
+  
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  call CastingCall @relation(fields: [callId], references: [id], onDelete: Cascade)
   
   @@unique([userId, callId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
