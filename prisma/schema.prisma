@@ -48,6 +48,11 @@ model User {
   subStatus        String   @default("TRIAL")
   trialEndsAt      DateTime?
   
+  resetToken   String?
+  resetExpires DateTime?
+  
+  isAdmin      Boolean  @default(false)
+  
   onboardingStep     Int      @default(1)
   onboardingComplete Boolean  @default(false)
   
