@@ -9,15 +9,15 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen">
       {/* Navigation */}
-      <nav className="border-b bg-white">
+      <nav className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="text-2xl font-bold text-primary">Casting Companion</div>
+          <div className="text-2xl font-bold text-white">Casting Companion</div>
           <div className="flex gap-4">
             <Link href="/auth/login">
-              <Button variant="ghost">Login</Button>
+              <Button variant="ghost" className="text-white hover:bg-white/10">Login</Button>
             </Link>
             <Link href="/auth/register">
-              <Button>Get Started</Button>
+              <Button className="bg-white text-purple-600 hover:bg-gray-100">Get Started</Button>
             </Link>
           </div>
         </div>
@@ -29,7 +29,11 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-5xl font-bold mb-6">
-                Never Miss a Perfect Casting Call Again
+                Never Miss a{' '}
+                <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                  Perfect Casting Call
+                </span>{' '}
+                Again
               </h1>
               <p className="text-xl mb-8 text-gray-300">
                 We automatically submit your profile to casting calls that match your criteria. 
@@ -37,7 +41,7 @@ export default function LandingPage() {
               </p>
               <div className="flex gap-4">
                 <Link href="/auth/register">
-                  <Button size="lg" className="text-lg">
+                  <Button size="lg" className="text-lg bg-white text-purple-600 hover:bg-gray-100">
                     Start Free Trial
                   </Button>
                 </Link>
