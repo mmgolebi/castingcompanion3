@@ -77,7 +77,6 @@ export default function ProfilePage() {
         if (res.ok) {
           const data = await res.json();
           
-          // Convert total height in inches to feet and inches
           if (data.height) {
             const totalInches = data.height;
             const feet = Math.floor(totalInches / 12);
@@ -143,7 +142,6 @@ export default function ProfilePage() {
     }
   }, [selectedState]);
 
-  // Update total height when feet or inches change
   useEffect(() => {
     if (heightFeet || heightInches) {
       const feet = parseInt(heightFeet) || 0;
@@ -469,6 +467,29 @@ export default function ProfilePage() {
                   />
                 </div>
 
+                <div>
+                  <Label htmlFor="ethnicity">Ethnicity</Label>
+                  <Select
+                    value={profile.ethnicity}
+                    onValueChange={(value) => setProfile({ ...profile, ethnicity: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select ethnicity" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="WHITE">White/Caucasian</SelectItem>
+                      <SelectItem value="BLACK">Black/African American</SelectItem>
+                      <SelectItem value="HISPANIC">Hispanic/Latino</SelectItem>
+                      <SelectItem value="ASIAN">Asian</SelectItem>
+                      <SelectItem value="NATIVE_AMERICAN">Native American</SelectItem>
+                      <SelectItem value="MIDDLE_EASTERN">Middle Eastern</SelectItem>
+                      <SelectItem value="PACIFIC_ISLANDER">Pacific Islander</SelectItem>
+                      <SelectItem value="MIXED">Mixed/Multiracial</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="hairColor">Hair Color</Label>
@@ -480,13 +501,13 @@ export default function ProfilePage() {
                         <SelectValue placeholder="Select hair color" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Black">Black</SelectItem>
-                        <SelectItem value="Brown">Brown</SelectItem>
-                        <SelectItem value="Blonde">Blonde</SelectItem>
-                        <SelectItem value="Red">Red</SelectItem>
-                        <SelectItem value="Gray">Gray</SelectItem>
-                        <SelectItem value="White">White</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="BLACK">Black</SelectItem>
+                        <SelectItem value="BROWN">Brown</SelectItem>
+                        <SelectItem value="BLONDE">Blonde</SelectItem>
+                        <SelectItem value="RED">Red</SelectItem>
+                        <SelectItem value="GRAY">Gray</SelectItem>
+                        <SelectItem value="WHITE">White</SelectItem>
+                        <SelectItem value="OTHER">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -500,11 +521,11 @@ export default function ProfilePage() {
                         <SelectValue placeholder="Select eye color" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Brown">Brown</SelectItem>
-                        <SelectItem value="Blue">Blue</SelectItem>
-                        <SelectItem value="Green">Green</SelectItem>
-                        <SelectItem value="Hazel">Hazel</SelectItem>
-                        <SelectItem value="Gray">Gray</SelectItem>
+                        <SelectItem value="BROWN">Brown</SelectItem>
+                        <SelectItem value="BLUE">Blue</SelectItem>
+                        <SelectItem value="GREEN">Green</SelectItem>
+                        <SelectItem value="HAZEL">Hazel</SelectItem>
+                        <SelectItem value="GRAY">Gray</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
