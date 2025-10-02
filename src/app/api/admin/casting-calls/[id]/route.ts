@@ -2,42 +2,51 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-async function checkAdmin() {
-  const session = await auth();
-  if (!session?.user) {
-    return { authorized: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  }
-
-  const userId = (session.user as any).id;
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { isAdmin: true },
-  });
-
-  if (!user?.isAdmin) {
-    return { authorized: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
-  }
-
-  return { authorized: true };
-}
-
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const adminCheck = await checkAdmin();
-    if (!adminCheck.authorized) return adminCheck.response;
-
-    const call = await prisma.castingCall.findUnique({
-      where: { id: params.id },
-    });
-
-    if (!call) {
-      return NextResponse.json({ error: 'Casting call not found' }, { status: 404 });
+    const { id } = await params;
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    return NextResponse.json(call);
+    const userId = (session.user as any).id;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    });
+
+    if (!user?.isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const castingCall = await prisma.castingCall.findUnique({
+      where: { id },
+      include: {
+        submissions: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+                phone: true,
+                headshot: true,
+                resume: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!castingCall) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(castingCall);
   } catch (error: any) {
     console.error('Get casting call error:', error);
     return NextResponse.json(
@@ -49,16 +58,29 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const adminCheck = await checkAdmin();
-    if (!adminCheck.authorized) return adminCheck.response;
+    const { id } = await params;
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = (session.user as any).id;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    });
+
+    if (!user?.isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const data = await req.json();
 
     const castingCall = await prisma.castingCall.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         title: data.title,
         production: data.production,
@@ -89,14 +111,27 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const adminCheck = await checkAdmin();
-    if (!adminCheck.authorized) return adminCheck.response;
+    const { id } = await params;
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = (session.user as any).id;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    });
+
+    if (!user?.isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     await prisma.castingCall.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });
