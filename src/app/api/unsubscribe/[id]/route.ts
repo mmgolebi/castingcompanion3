@@ -3,19 +3,21 @@ import { prisma } from '@/lib/db';
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const submissionId = params.id;
-
-    // Mark submission as unsubscribed or delete it
-    await prisma.submission.update({
-      where: { id: submissionId },
-      data: { status: 'UNSUBSCRIBED' },
+    const { id } = await params;
+    
+    await prisma.user.update({
+      where: { id },
+      data: { emailNotifications: false },
     });
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
+    return NextResponse.json({ 
+      success: true,
+      message: 'You have been unsubscribed from email notifications' 
+    });
+  } catch (error: any) {
     console.error('Unsubscribe error:', error);
     return NextResponse.json(
       { error: 'Failed to unsubscribe' },
