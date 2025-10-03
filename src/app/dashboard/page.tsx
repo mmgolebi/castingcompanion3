@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { toast } = useToast();
+  const [userName, setUserName] = useState('');
   const [stats, setStats] = useState({
     totalSubmissions: 0,
     pendingSubmissions: 0,
@@ -47,11 +48,17 @@ export default function DashboardPage() {
       if (filters.location) params.append('location', filters.location);
       if (filters.unionStatus !== 'all') params.append('unionStatus', filters.unionStatus);
 
-      const [statsRes, callsRes, submissionsRes] = await Promise.all([
+      const [profileRes, statsRes, callsRes, submissionsRes] = await Promise.all([
+        fetch('/api/profile'),
         fetch('/api/dashboard/stats'),
         fetch(`/api/casting-calls?${params}`),
         fetch('/api/dashboard/recent-submissions'),
       ]);
+
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        setUserName(profileData.name || '');
+      }
 
       if (statsRes.ok) {
         const statsData = await statsRes.json();
@@ -132,9 +139,11 @@ export default function DashboardPage() {
     );
   }
 
+  const displayName = userName || session?.user?.name?.split(' ')[0] || 'Actor';
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-2">Welcome back, {session?.user?.name?.split(' ')[0] || 'Actor'}!</h1>
+      <h1 className="text-3xl font-bold mb-2">Welcome back, {displayName}!</h1>
       <p className="text-gray-600 mb-8">Here's your casting activity overview</p>
 
       <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
