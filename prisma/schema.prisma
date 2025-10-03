@@ -36,79 +36,61 @@ model User {
   skills      String[]
   roleTypesInterested String[]
   comfortLevels String[]
-  compensationMin String?
-  compensationPreference String?
   
   availability String?
   reliableTransportation Boolean @default(false)
   travelWilling Boolean @default(false)
+  compensationPreference String?
+  compensationMin String?
   
   stripeCustomerId String?
   stripeSubId      String?
-  subStatus        String   @default("TRIAL")
+  subStatus        String?
   trialEndsAt      DateTime?
   
-  resetToken   String?
-  resetExpires DateTime?
-  
-  isAdmin      Boolean  @default(false)
-  
-  onboardingStep     Int      @default(1)
-  onboardingComplete Boolean  @default(false)
-  
+  isAdmin   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  
   submissions Submission[]
-  passwordResetTokens PasswordResetToken[]
 }
 
 model CastingCall {
   id                  String   @id @default(cuid())
   title               String
   production          String
-  description         String
+  description         String   @db.Text
   roleType            String
-  genderReq           String
-  ageMin              Int
-  ageMax              Int
-  ethnicityReq        String   @default("ANY")
   location            String
   compensation        String
-  unionReq            String
-  skillsRequired      String[]
-  shootDates          String
-  castingEmail        String
   submissionDeadline  DateTime
+  shootingDates       String?
+  ageRangeMin         Int?
+  ageRangeMax         Int?
+  gender              String?
+  ethnicity           String?
+  unionStatus         String?
+  castingEmail        String
+  featuredImage       String?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  
   submissions Submission[]
 }
 
 model Submission {
-  id        String   @id @default(cuid())
-  userId    String
-  callId    String
-  status    String   @default("SENT")
-  method    String
-  matchScore Int?
-  castingEmail String
+  id            String   @id @default(cuid())
+  userId        String
+  callId        String
+  status        String   @default("SENT")
+  method        String
+  matchScore    Int?
+  castingEmail  String
+  createdAt     DateTime @default(now())
   
-  createdAt DateTime @default(now())
-  
-  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   call CastingCall @relation(fields: [callId], references: [id], onDelete: Cascade)
   
   @@unique([userId, callId])
-}
-
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
 }
