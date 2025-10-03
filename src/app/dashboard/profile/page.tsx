@@ -14,7 +14,7 @@ import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -208,6 +208,12 @@ export default function ProfilePage() {
           title: "Success!",
           description: "Your profile has been updated",
         });
+        
+        // Update the session with the new name
+        await update({ name: profile.name });
+        
+        // Refresh the page to update the dashboard
+        router.refresh();
       } else {
         const error = await res.json();
         toast({
