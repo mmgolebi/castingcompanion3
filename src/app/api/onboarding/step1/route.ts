@@ -15,6 +15,8 @@ export async function POST(req: Request) {
     await prisma.user.update({
       where: { id: userId },
       data: {
+        name: data.name,
+        phone: data.phone,
         age: data.age,
         playableAgeMin: data.playableAgeMin,
         playableAgeMax: data.playableAgeMax,

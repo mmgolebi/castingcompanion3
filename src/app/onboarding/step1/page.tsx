@@ -8,25 +8,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
 
 export default function Step1Page() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [selectedState, setSelectedState] = useState('');
-  const [availableCities, setAvailableCities] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
-    phone: '',
-    city: '',
-    state: '',
-    zipCode: '',
     age: '',
     playableAgeMin: '',
     playableAgeMax: '',
     gender: '',
+    ethnicity: '',
+    unionStatus: '',
+    phone: '',
   });
+  const [phoneError, setPhoneError] = useState('');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -35,47 +32,100 @@ export default function Step1Page() {
   }, [status, router]);
 
   useEffect(() => {
-    if (selectedState) {
-      const cities = MAJOR_CITIES_BY_STATE[selectedState] || [];
-      setAvailableCities(cities);
-      // Reset city if state changes
-      if (formData.state !== selectedState) {
-        setFormData({ ...formData, state: selectedState, city: '' });
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch('/api/profile');
+        if (res.ok) {
+          const data = await res.json();
+          setFormData({
+            name: data.name || '',
+            age: data.age?.toString() || '',
+            playableAgeMin: data.playableAgeMin?.toString() || '',
+            playableAgeMax: data.playableAgeMax?.toString() || '',
+            gender: data.gender || '',
+            ethnicity: data.ethnicity || '',
+            unionStatus: data.unionStatus || '',
+            phone: data.phone || '',
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
       }
+    };
+
+    if (status === 'authenticated') {
+      fetchProfile();
     }
-  }, [selectedState]);
+  }, [status]);
+
+  const validatePhone = (phone: string): boolean => {
+    // US/Canada phone format: (XXX) XXX-XXXX or XXX-XXX-XXXX or XXXXXXXXXX
+    const phoneRegex = /^(\+?1[-.]?)?\(?([0-9]{3})\)?[-.]?([0-9]{3})[-.]?([0-9]{4})$/;
+    return phoneRegex.test(phone.replace(/\s/g, ''));
+  };
+
+  const formatPhone = (phone: string): string => {
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 10) {
+      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    } else if (cleaned.length === 11 && cleaned[0] === '1') {
+      return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+    }
+    return phone;
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setFormData({ ...formData, phone: value });
+    setPhoneError('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+
+    // Validate phone
+    if (!validatePhone(formData.phone)) {
+      setPhoneError('Please enter a valid US or Canadian phone number');
+      return;
+    }
+
+    // Validate age range
+    if (formData.playableAgeMin && formData.playableAgeMax) {
+      if (parseInt(formData.playableAgeMin) > parseInt(formData.playableAgeMax)) {
+        alert('Minimum playable age cannot be greater than maximum');
+        return;
+      }
+    }
 
     try {
       const res = await fetch('/api/onboarding/step1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
+          name: formData.name,
           age: parseInt(formData.age),
           playableAgeMin: parseInt(formData.playableAgeMin),
           playableAgeMax: parseInt(formData.playableAgeMax),
+          gender: formData.gender,
+          ethnicity: formData.ethnicity,
+          unionStatus: formData.unionStatus,
+          phone: formatPhone(formData.phone),
         }),
       });
 
       if (res.ok) {
         router.push('/onboarding/step2');
       } else {
-        const error = await res.json();
-        alert(error.error || 'Failed to save');
+        alert('Failed to save step 1');
       }
     } catch (error) {
       console.error('Error:', error);
       alert('An error occurred');
-    } finally {
-      setLoading(false);
     }
   };
 
-  if (status === 'loading') {
+  if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -84,173 +134,157 @@ export default function Step1Page() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4">
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle>Basic Information</CardTitle>
-          <CardDescription>Step 1 of 4 - Tell us about yourself</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="name">Full Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="John Doe"
-                required
-              />
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 py-12 px-4">
+      <div className="container mx-auto max-w-2xl">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-3xl font-bold">Complete Your Profile</h1>
+            <span className="text-sm font-medium text-gray-600">Step 1 of 4</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-purple-600 h-2 rounded-full" style={{ width: '25%' }}></div>
+          </div>
+        </div>
 
-            <div>
-              <Label htmlFor="phone">Phone Number *</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="(555) 123-4567"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Basic Information</CardTitle>
+            <CardDescription>Tell us about yourself</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <Label htmlFor="state">State *</Label>
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="phone">Phone Number *</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  placeholder="(555) 123-4567"
+                  required
+                />
+                {phoneError && <p className="text-sm text-red-600 mt-1">{phoneError}</p>}
+                <p className="text-xs text-gray-500 mt-1">US and Canadian numbers only</p>
+              </div>
+
+              <div>
+                <Label htmlFor="age">Current Age *</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={formData.age}
+                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label>Playable Age Range *</Label>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="120"
+                      value={formData.playableAgeMin}
+                      onChange={(e) => setFormData({ ...formData, playableAgeMin: e.target.value })}
+                      placeholder="Min age"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="120"
+                      value={formData.playableAgeMax}
+                      onChange={(e) => setFormData({ ...formData, playableAgeMax: e.target.value })}
+                      placeholder="Max age"
+                      required
+                    />
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mt-1">The age range you can convincingly portray</p>
+              </div>
+
+              <div>
+                <Label htmlFor="gender">Gender *</Label>
                 <Select
-                  value={selectedState}
-                  onValueChange={(value) => setSelectedState(value)}
+                  value={formData.gender}
+                  onValueChange={(value) => setFormData({ ...formData, gender: value })}
                   required
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select state" />
+                    <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
-                    {US_STATES.map((state) => (
-                      <SelectItem key={state.value} value={state.value}>
-                        {state.label}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="MALE">Male</SelectItem>
+                    <SelectItem value="FEMALE">Female</SelectItem>
+                    <SelectItem value="NON_BINARY">Non-Binary</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="city">City *</Label>
-                {availableCities.length > 0 ? (
-                  <Select
-                    value={formData.city}
-                    onValueChange={(value) => setFormData({ ...formData, city: value })}
-                    disabled={!selectedState}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableCities.map((city) => (
-                        <SelectItem key={city} value={city}>
-                          {city}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    placeholder="Enter city"
-                    disabled={!selectedState}
-                    required
-                  />
-                )}
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="zipCode">Zip Code</Label>
-              <Input
-                id="zipCode"
-                value={formData.zipCode}
-                onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                placeholder="12345"
-                maxLength={5}
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="age">Age *</Label>
-                <Input
-                  id="age"
-                  type="number"
-                  value={formData.age}
-                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                  placeholder="30"
-                  min="1"
-                  max="120"
+                <Label htmlFor="ethnicity">Ethnicity *</Label>
+                <Select
+                  value={formData.ethnicity}
+                  onValueChange={(value) => setFormData({ ...formData, ethnicity: value })}
                   required
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select ethnicity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="WHITE">White/Caucasian</SelectItem>
+                    <SelectItem value="BLACK">Black/African American</SelectItem>
+                    <SelectItem value="HISPANIC">Hispanic/Latino</SelectItem>
+                    <SelectItem value="ASIAN">Asian</SelectItem>
+                    <SelectItem value="NATIVE_AMERICAN">Native American</SelectItem>
+                    <SelectItem value="MIDDLE_EASTERN">Middle Eastern</SelectItem>
+                    <SelectItem value="PACIFIC_ISLANDER">Pacific Islander</SelectItem>
+                    <SelectItem value="MIXED">Mixed/Multiracial</SelectItem>
+                    <SelectItem value="OTHER">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <Label htmlFor="playableAgeMin">Playable Age Min *</Label>
-                <Input
-                  id="playableAgeMin"
-                  type="number"
-                  value={formData.playableAgeMin}
-                  onChange={(e) => setFormData({ ...formData, playableAgeMin: e.target.value })}
-                  placeholder="25"
-                  min="1"
-                  max="120"
+                <Label htmlFor="unionStatus">Union Status *</Label>
+                <Select
+                  value={formData.unionStatus}
+                  onValueChange={(value) => setFormData({ ...formData, unionStatus: value })}
                   required
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select union status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SAG_AFTRA">SAG-AFTRA</SelectItem>
+                    <SelectItem value="NON_UNION">Non-Union</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div>
-                <Label htmlFor="playableAgeMax">Playable Age Max *</Label>
-                <Input
-                  id="playableAgeMax"
-                  type="number"
-                  value={formData.playableAgeMax}
-                  onChange={(e) => setFormData({ ...formData, playableAgeMax: e.target.value })}
-                  placeholder="35"
-                  min="1"
-                  max="120"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="gender">Gender *</Label>
-              <Select
-                value={formData.gender}
-                onValueChange={(value) => setFormData({ ...formData, gender: value })}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MALE">Male</SelectItem>
-                  <SelectItem value="FEMALE">Female</SelectItem>
-                  <SelectItem value="NON_BINARY">Non-Binary</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex justify-end">
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : 'Next Step'}
+              <Button type="submit" className="w-full">
+                Continue to Step 2
               </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
