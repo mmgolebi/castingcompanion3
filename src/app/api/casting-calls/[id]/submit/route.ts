@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { sendSubmissionEmail } from '@/lib/email';
+import { sendSubmissionEmail, sendSubmissionConfirmationEmail } from '@/lib/email';
 
 export async function POST(
   req: Request,
@@ -91,7 +91,18 @@ export async function POST(
       console.log(`Manual submission email sent to ${castingCall.castingEmail}`);
     } catch (emailError) {
       console.error('Failed to send submission email:', emailError);
-      // Don't fail the submission if email fails
+    }
+
+    // Send confirmation email to user (only for manual submissions)
+    try {
+      await sendSubmissionConfirmationEmail(
+        userProfile.email,
+        userProfile.name || 'Actor',
+        castingCall
+      );
+      console.log(`Confirmation email sent to ${userProfile.email}`);
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
     }
 
     return NextResponse.json({ 
