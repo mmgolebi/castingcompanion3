@@ -1,38 +1,57 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import Stripe from 'stripe';
+import { auth } from '@/lib/auth';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia',
+  apiVersion: '2024-06-20',
 });
 
 export async function POST(req: Request) {
   try {
     const session = await auth();
+    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = (session.user as any).id;
-    const userEmail = session.user.email!;
-
-    // Use setup mode to collect payment method, then we'll charge it manually
     const checkoutSession = await stripe.checkout.sessions.create({
-      customer_email: userEmail,
+      customer_email: session.user.email!,
       payment_method_types: ['card'],
-      mode: 'setup',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/setup-subscription?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/payment`,
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Casting Companion Pro',
+              description: '$1 trial for 30 days, then $39.97/month',
+            },
+            unit_amount: 100, // $1 in cents
+            recurring: {
+              interval: 'month',
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: `${process.env.NEXT_PUBLIC_URL}/onboarding/step1?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_URL}/onboarding/payment`,
+      subscription_data: {
+        trial_period_days: 30,
+        metadata: {
+          userId: (session.user as any).id,
+        },
+      },
       metadata: {
-        userId,
+        userId: (session.user as any).id,
       },
     });
 
-    return NextResponse.json({ url: checkoutSession.url });
-  } catch (error) {
+    return NextResponse.json({ sessionId: checkoutSession.id });
+  } catch (error: any) {
     console.error('Stripe checkout error:', error);
     return NextResponse.json(
-      { error: 'Failed to create checkout session' },
+      { error: error.message || 'Failed to create checkout session' },
       { status: 500 }
     );
   }
