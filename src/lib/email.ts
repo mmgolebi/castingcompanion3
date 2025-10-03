@@ -263,3 +263,26 @@ export async function sendWeeklyDigest({
     html,
   });
 }
+
+export async function sendPasswordResetEmail({
+  email,
+  resetToken,
+}: {
+  email: string;
+  resetToken: string;
+}) {
+  const resetUrl = `${process.env.NEXT_PUBLIC_URL}/auth/reset-password?token=${resetToken}`;
+
+  await resend.emails.send({
+    from: 'Casting Companion <noreply@castingcompanion.com>',
+    to: email,
+    subject: 'Reset Your Password',
+    html: `
+      <h2>Reset Your Password</h2>
+      <p>Click the link below to reset your password:</p>
+      <a href="${resetUrl}">${resetUrl}</a>
+      <p>This link will expire in 1 hour.</p>
+      <p>If you didn't request this, please ignore this email.</p>
+    `,
+  });
+}
