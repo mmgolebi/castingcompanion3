@@ -11,10 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedState, setSelectedState] = useState('');
@@ -122,6 +124,11 @@ export default function ProfilePage() {
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load your profile",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -130,7 +137,7 @@ export default function ProfilePage() {
     if (status === 'authenticated') {
       fetchProfile();
     }
-  }, [status]);
+  }, [status, toast]);
 
   useEffect(() => {
     if (selectedState) {
@@ -197,13 +204,25 @@ export default function ProfilePage() {
       });
 
       if (res.ok) {
-        alert('Profile updated successfully!');
+        toast({
+          title: "Success!",
+          description: "Your profile has been updated",
+        });
       } else {
-        alert('Failed to update profile');
+        const error = await res.json();
+        toast({
+          title: "Error",
+          description: error.error || 'Failed to update profile',
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('An error occurred');
+      toast({
+        title: "Error",
+        description: 'An error occurred while updating your profile',
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
