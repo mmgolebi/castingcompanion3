@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bell, Send, Target, TrendingUp, MapPin, DollarSign, Calendar, TrendingUpIcon, Check, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Bell, Send, Target, TrendingUp, MapPin, DollarSign, Calendar, TrendingUpIcon, Check, ChevronLeft, ChevronRight, Search, ArrowRight } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const ITEMS_PER_PAGE = 10;
@@ -346,16 +346,26 @@ export default function DashboardPage() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Recent Submissions</CardTitle>
-          <CardDescription>Your latest casting call applications</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Recent Submissions</CardTitle>
+            <CardDescription>Your latest casting call applications</CardDescription>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => router.push('/dashboard/submissions')}
+          >
+            View All
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
         </CardHeader>
         <CardContent>
           {recentSubmissions.length === 0 ? (
             <p className="text-center text-gray-500 py-8">No submissions yet. We'll auto-submit you to matching calls!</p>
           ) : (
             <div className="space-y-4">
-              {recentSubmissions.map((submission) => (
+              {recentSubmissions.slice(0, 5).map((submission) => (
                 <div key={submission.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
                     <h4 className="font-semibold">{submission.call.title}</h4>
