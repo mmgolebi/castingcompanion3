@@ -122,36 +122,38 @@ export default function Step4Page() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 py-12 px-4">
       <div className="container mx-auto max-w-4xl">
-        <h1 className="text-4xl font-bold text-white mb-8">Complete Your Profile</h1>
+        <h1 className="text-4xl font-bold text-white mb-8 text-center">Complete Your Profile</h1>
         
         {/* Step Indicator */}
-        <div className="flex items-center justify-between mb-12 max-w-2xl mx-auto">
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
-              <CheckCircle2 className="h-6 w-6" />
+        <div className="flex items-center justify-center mb-12">
+          <div className="flex items-center max-w-3xl w-full">
+            <div className="flex flex-col items-center flex-1">
+              <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <span className="text-white text-sm font-medium text-center">Basic Info</span>
             </div>
-            <span className="text-white text-sm font-medium">Basic Info</span>
-          </div>
-          <div className="flex-1 h-1 bg-green-500 mx-4"></div>
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
-              <CheckCircle2 className="h-6 w-6" />
+            <div className="flex-1 h-1 bg-green-500 mx-2"></div>
+            <div className="flex flex-col items-center flex-1">
+              <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <span className="text-white text-sm font-medium text-center">Media Assets</span>
             </div>
-            <span className="text-white text-sm font-medium">Media Assets</span>
-          </div>
-          <div className="flex-1 h-1 bg-green-500 mx-4"></div>
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
-              <CheckCircle2 className="h-6 w-6" />
+            <div className="flex-1 h-1 bg-green-500 mx-2"></div>
+            <div className="flex flex-col items-center flex-1">
+              <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <span className="text-white text-sm font-medium text-center">Preferences</span>
             </div>
-            <span className="text-white text-sm font-medium">Preferences</span>
-          </div>
-          <div className="flex-1 h-1 bg-green-500 mx-4"></div>
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-purple-900 mb-2 font-bold">
-              4
+            <div className="flex-1 h-1 bg-green-500 mx-2"></div>
+            <div className="flex flex-col items-center flex-1">
+              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-purple-900 mb-2 font-bold">
+                4
+              </div>
+              <span className="text-white text-sm font-medium text-center">Logistics</span>
             </div>
-            <span className="text-white text-sm font-medium">Logistics</span>
           </div>
         </div>
 
