@@ -264,53 +264,64 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 {paginatedCalls.map((call) => (
                   <div key={call.id} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="text-xl font-bold">{call.title}</h3>
-                        <p className="text-sm text-gray-600">{call.production}</p>
-                      </div>
-                      <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium">
-                        {call.roleType}
-                      </span>
-                    </div>
-                    
-                    <p className="text-gray-700 mb-3">{call.description}</p>
-                    
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {call.location}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <DollarSign className="h-4 w-4" />
-                        {call.compensation}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        Deadline: {new Date(call.submissionDeadline).toLocaleDateString()}
-                      </span>
-                      {call.matchScore && (
-                        <span className="flex items-center gap-1">
-                          <TrendingUpIcon className="h-4 w-4" />
-                          Match: {call.matchScore}%
-                        </span>
+                    <div className="flex gap-4">
+                      {call.featuredImage && (
+                        <img 
+                          src={call.featuredImage} 
+                          alt={call.title}
+                          className="w-32 h-24 object-cover rounded flex-shrink-0"
+                        />
                       )}
-                    </div>
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h3 className="text-xl font-bold">{call.title}</h3>
+                            <p className="text-sm text-gray-600">{call.production}</p>
+                          </div>
+                          <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium">
+                            {call.roleType}
+                          </span>
+                        </div>
+                        
+                        <p className="text-gray-700 mb-3">{call.description}</p>
+                        
+                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-4 w-4" />
+                            {call.location}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <DollarSign className="h-4 w-4" />
+                            {call.compensation}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            Deadline: {new Date(call.submissionDeadline).toLocaleDateString()}
+                          </span>
+                          {call.matchScore && (
+                            <span className="flex items-center gap-1">
+                              <TrendingUpIcon className="h-4 w-4" />
+                              Match: {call.matchScore}%
+                            </span>
+                          )}
+                        </div>
 
-                    {call.hasSubmitted ? (
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Check className="h-5 w-5" />
-                        <span>Submitted</span>
+                        {call.hasSubmitted ? (
+                          <div className="flex items-center gap-2 text-gray-500">
+                            <Check className="h-5 w-5" />
+                            <span>Submitted</span>
+                          </div>
+                        ) : (
+                          <Button 
+                            onClick={() => handleSubmit(call.id)}
+                            disabled={submitting === call.id}
+                            size="sm"
+                          >
+                            {submitting === call.id ? 'Submitting...' : 'Submit to This Call'}
+                          </Button>
+                        )}
                       </div>
-                    ) : (
-                      <Button 
-                        onClick={() => handleSubmit(call.id)}
-                        disabled={submitting === call.id}
-                        size="sm"
-                      >
-                        {submitting === call.id ? 'Submitting...' : 'Submit to This Call'}
-                      </Button>
-                    )}
+                    </div>
                   </div>
                 ))}
               </div>
