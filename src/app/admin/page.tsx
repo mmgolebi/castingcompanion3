@@ -31,8 +31,8 @@ export default function AdminPage() {
     shootingDates: '',
     ageRangeMin: '',
     ageRangeMax: '',
-    gender: '',
-    ethnicity: '',
+    gender: 'ANY',
+    ethnicity: 'ANY',
     unionStatus: 'EITHER',
     castingEmail: '',
     featuredImage: '',
@@ -86,14 +86,18 @@ export default function AdminPage() {
       const url = editingId ? `/api/admin/casting-calls/${editingId}` : '/api/admin/casting-calls';
       const method = editingId ? 'PUT' : 'POST';
 
+      const submitData = {
+        ...formData,
+        ageRangeMin: formData.ageRangeMin ? parseInt(formData.ageRangeMin) : null,
+        ageRangeMax: formData.ageRangeMax ? parseInt(formData.ageRangeMax) : null,
+        gender: formData.gender === 'ANY' ? null : formData.gender,
+        ethnicity: formData.ethnicity === 'ANY' ? null : formData.ethnicity,
+      };
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          ageRangeMin: formData.ageRangeMin ? parseInt(formData.ageRangeMin) : null,
-          ageRangeMax: formData.ageRangeMax ? parseInt(formData.ageRangeMax) : null,
-        }),
+        body: JSON.stringify(submitData),
       });
 
       if (res.ok) {
@@ -122,8 +126,8 @@ export default function AdminPage() {
       shootingDates: call.shootingDates || '',
       ageRangeMin: call.ageRangeMin?.toString() || '',
       ageRangeMax: call.ageRangeMax?.toString() || '',
-      gender: call.gender || '',
-      ethnicity: call.ethnicity || '',
+      gender: call.gender || 'ANY',
+      ethnicity: call.ethnicity || 'ANY',
       unionStatus: call.unionStatus,
       castingEmail: call.castingEmail,
       featuredImage: call.featuredImage || '',
@@ -163,8 +167,8 @@ export default function AdminPage() {
       shootingDates: '',
       ageRangeMin: '',
       ageRangeMax: '',
-      gender: '',
-      ethnicity: '',
+      gender: 'ANY',
+      ethnicity: 'ANY',
       unionStatus: 'EITHER',
       castingEmail: '',
       featuredImage: '',
@@ -331,10 +335,10 @@ export default function AdminPage() {
                       onValueChange={(value) => setFormData({ ...formData, gender: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Any" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Any</SelectItem>
+                        <SelectItem value="ANY">Any</SelectItem>
                         <SelectItem value="MALE">Male</SelectItem>
                         <SelectItem value="FEMALE">Female</SelectItem>
                         <SelectItem value="NON_BINARY">Non-Binary</SelectItem>
@@ -349,10 +353,10 @@ export default function AdminPage() {
                       onValueChange={(value) => setFormData({ ...formData, ethnicity: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Any" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Any</SelectItem>
+                        <SelectItem value="ANY">Any</SelectItem>
                         <SelectItem value="WHITE">White/Caucasian</SelectItem>
                         <SelectItem value="BLACK">Black/African American</SelectItem>
                         <SelectItem value="HISPANIC">Hispanic/Latino</SelectItem>
