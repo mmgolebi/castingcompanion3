@@ -61,9 +61,9 @@ export default function Step1Page() {
   }, [status]);
 
   const validatePhone = (phone: string): boolean => {
-    // US/Canada phone format: (XXX) XXX-XXXX or XXX-XXX-XXXX or XXXXXXXXXX
-    const phoneRegex = /^(\+?1[-.]?)?\(?([0-9]{3})\)?[-.]?([0-9]{3})[-.]?([0-9]{4})$/;
-    return phoneRegex.test(phone.replace(/\s/g, ''));
+    const cleaned = phone.replace(/\D/g, '');
+    // Must be exactly 10 digits (US/Canada without country code) or 11 digits starting with 1
+    return cleaned.length === 10 || (cleaned.length === 11 && cleaned[0] === '1');
   };
 
   const formatPhone = (phone: string): string => {
@@ -77,8 +77,25 @@ export default function Step1Page() {
   };
 
   const handlePhoneChange = (value: string) => {
-    setFormData({ ...formData, phone: value });
-    setPhoneError('');
+    // Only allow digits, spaces, hyphens, parentheses, and plus sign
+    const filtered = value.replace(/[^\d\s\-\(\)\+]/g, '');
+    
+    // Limit to reasonable length (max 15 characters for formatted number)
+    if (filtered.length <= 20) {
+      setFormData({ ...formData, phone: filtered });
+      
+      // Validate as user types
+      const cleaned = filtered.replace(/\D/g, '');
+      if (cleaned.length > 0 && cleaned.length < 10) {
+        setPhoneError('Phone number must be at least 10 digits');
+      } else if (cleaned.length > 11) {
+        setPhoneError('Phone number is too long');
+      } else if (cleaned.length === 11 && cleaned[0] !== '1') {
+        setPhoneError('11-digit numbers must start with 1');
+      } else {
+        setPhoneError('');
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,7 +103,7 @@ export default function Step1Page() {
 
     // Validate phone
     if (!validatePhone(formData.phone)) {
-      setPhoneError('Please enter a valid US or Canadian phone number');
+      setPhoneError('Please enter a valid 10-digit US or Canadian phone number');
       return;
     }
 
@@ -172,9 +189,10 @@ export default function Step1Page() {
                   onChange={(e) => handlePhoneChange(e.target.value)}
                   placeholder="(555) 123-4567"
                   required
+                  className={phoneError ? 'border-red-500' : ''}
                 />
                 {phoneError && <p className="text-sm text-red-600 mt-1">{phoneError}</p>}
-                <p className="text-xs text-gray-500 mt-1">US and Canadian numbers only</p>
+                <p className="text-xs text-gray-500 mt-1">US and Canadian numbers only (10 digits)</p>
               </div>
 
               <div>
@@ -278,7 +296,11 @@ export default function Step1Page() {
                 </Select>
               </div>
 
-              <Button type="submit" className="w-full">
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={!!phoneError}
+              >
                 Continue to Step 2
               </Button>
             </form>
