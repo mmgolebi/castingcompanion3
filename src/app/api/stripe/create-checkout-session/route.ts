@@ -39,6 +39,8 @@ export async function POST(req: Request) {
       });
     }
 
+    // Create a checkout session that charges $1 upfront
+    // The webhook will create the subscription with trial after payment
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
@@ -47,28 +49,20 @@ export async function POST(req: Request) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: 'Casting Companion - $1 Trial',
-              description: '14-day trial for $1, then $29/month',
+              name: 'Casting Companion - $1 Trial Payment',
+              description: 'Get started with 14 days of access for just $1',
             },
-            unit_amount: 100, // $1.00 in cents
-            recurring: {
-              interval: 'month',
-            },
+            unit_amount: 100, // $1.00
           },
           quantity: 1,
         },
       ],
-      mode: 'subscription',
-      subscription_data: {
-        trial_period_days: 14,
-        metadata: {
-          userId: user.id,
-        },
-      },
+      mode: 'payment',
       success_url: `${process.env.NEXTAUTH_URL}/dashboard?success=true`,
       cancel_url: `${process.env.NEXTAUTH_URL}/onboarding/step4?canceled=true`,
       metadata: {
         userId: user.id,
+        isTrial: 'true',
       },
     });
 
