@@ -4,6 +4,14 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 
+async function signOutAction() {
+  'use server';
+  const { signOut } = await import('@/lib/auth');
+  await signOut();
+  const { redirect } = await import('next/navigation');
+  redirect('/');
+}
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -37,15 +45,18 @@ export default async function DashboardLayout({
                 <Button variant="outline">Admin Panel</Button>
               </Link>
             )}
+            <Link href="/dashboard/calls">
+              <Button variant="ghost">Browse Calls</Button>
+            </Link>
             <Link href="/dashboard/profile">
               <Button variant="ghost">Profile</Button>
             </Link>
-            <Link href="/auth/signout">
-              <Button variant="ghost">
+            <form action={signOutAction}>
+              <Button variant="ghost" type="submit">
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
-            </Link>
+            </form>
           </div>
         </div>
       </nav>

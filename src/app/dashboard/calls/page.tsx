@@ -49,7 +49,7 @@ export default function BrowseCallsPage() {
     if (status === 'authenticated') {
       fetchCalls();
     }
-  }, [status, filters]);
+  }, [status, filters.roleType, filters.location, filters.unionStatus]);
 
   const filteredCalls = calls.filter(call =>
     call.title.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -84,6 +84,7 @@ export default function BrowseCallsPage() {
             <SelectItem value="SUPPORTING">Supporting</SelectItem>
             <SelectItem value="BACKGROUND">Background</SelectItem>
             <SelectItem value="EXTRA">Extra</SelectItem>
+            <SelectItem value="COMMERCIAL">Commercial</SelectItem>
           </SelectContent>
         </Select>
         <Input
@@ -113,15 +114,25 @@ export default function BrowseCallsPage() {
           {filteredCalls.map((call) => (
             <Card key={call.id}>
               <CardHeader>
-                <CardTitle>{call.title}</CardTitle>
-                <CardDescription>{call.production}</CardDescription>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle>{call.title}</CardTitle>
+                    <CardDescription>{call.production}</CardDescription>
+                  </div>
+                  {call.matchScore && (
+                    <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                      call.matchScore >= 85 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {call.matchScore}%
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm">
                   <p><strong>Role:</strong> {call.roleType}</p>
                   <p><strong>Location:</strong> {call.location}</p>
                   <p><strong>Compensation:</strong> {call.compensation}</p>
-                  <p><strong>Match Score:</strong> <span className="text-primary font-bold">{call.matchScore}%</span></p>
                   {call.hasSubmitted && (
                     <p className="text-green-600 font-semibold">✓ Already Submitted</p>
                   )}
@@ -129,6 +140,7 @@ export default function BrowseCallsPage() {
                 <Button 
                   className="mt-4 w-full" 
                   onClick={() => router.push(`/dashboard/calls/${call.id}`)}
+                  variant={call.hasSubmitted ? 'outline' : 'default'}
                 >
                   View Details
                 </Button>
