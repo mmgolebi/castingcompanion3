@@ -2,67 +2,15 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-    const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const userId = (session.user as any).id;
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { isAdmin: true },
-    });
-
-    if (!user?.isAdmin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const castingCall = await prisma.castingCall.findUnique({
-      where: { id },
-      include: {
-        submissions: {
-          include: {
-            user: {
-              select: {
-                name: true,
-                email: true,
-                phone: true,
-                headshot: true,
-                resume: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!castingCall) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
-
-    return NextResponse.json(castingCall);
-  } catch (error: any) {
-    console.error('Get casting call error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch casting call' },
-      { status: 500 }
-    );
-  }
-}
-
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     const session = await auth();
+    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -86,24 +34,25 @@ export async function PUT(
         production: data.production,
         description: data.description,
         roleType: data.roleType,
-        genderReq: data.genderReq,
-        ageMin: Number(data.ageMin),
-        ageMax: Number(data.ageMax),
-        ethnicityReq: data.ethnicityReq || 'ANY',
         location: data.location,
         compensation: data.compensation,
-        unionReq: data.unionReq,
-        shootDates: data.shootDates,
-        castingEmail: data.castingEmail,
         submissionDeadline: new Date(data.submissionDeadline),
+        shootingDates: data.shootingDates,
+        ageRangeMin: data.ageRangeMin,
+        ageRangeMax: data.ageRangeMax,
+        gender: data.gender,
+        ethnicity: data.ethnicity,
+        unionStatus: data.unionStatus,
+        castingEmail: data.castingEmail,
+        featuredImage: data.featuredImage || null,
       },
     });
 
     return NextResponse.json(castingCall);
-  } catch (error: any) {
-    console.error('Update casting call error:', error);
+  } catch (error) {
+    console.error('Error updating casting call:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to update casting call' },
+      { error: 'Failed to update casting call' },
       { status: 500 }
     );
   }
@@ -114,8 +63,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     const session = await auth();
+    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -135,10 +86,10 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error('Delete casting call error:', error);
+  } catch (error) {
+    console.error('Error deleting casting call:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to delete casting call' },
+      { error: 'Failed to delete casting call' },
       { status: 500 }
     );
   }

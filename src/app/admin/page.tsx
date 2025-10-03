@@ -1,102 +1,497 @@
-import { requireAdmin } from '@/lib/admin';
-import { prisma } from '@/lib/db';
-import Link from 'next/link';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Trash2, Edit } from 'lucide-react';
+import { UploadButton } from '@/lib/uploadthing';
 
-export default async function AdminDashboard() {
-  await requireAdmin();
+export default function AdminPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [castingCalls, setCastingCalls] = useState<any[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    production: '',
+    description: '',
+    roleType: 'LEAD',
+    location: '',
+    compensation: '',
+    submissionDeadline: '',
+    shootingDates: '',
+    ageRangeMin: '',
+    ageRangeMax: '',
+    gender: '',
+    ethnicity: '',
+    unionStatus: 'EITHER',
+    castingEmail: '',
+    featuredImage: '',
+  });
 
-  const [totalUsers, totalCalls, totalSubmissions, allCalls] = await Promise.all([
-    prisma.user.count(),
-    prisma.castingCall.count(),
-    prisma.submission.count(),
-    prisma.castingCall.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        _count: {
-          select: { submissions: true },
-        },
-      },
-    }),
-  ]);
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login');
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    const checkAdminAndFetch = async () => {
+      try {
+        const res = await fetch('/api/admin/check');
+        if (res.ok) {
+          setIsAdmin(true);
+          await fetchCastingCalls();
+        } else {
+          router.push('/dashboard');
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        router.push('/dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (status === 'authenticated') {
+      checkAdminAndFetch();
+    }
+  }, [status, router]);
+
+  const fetchCastingCalls = async () => {
+    try {
+      const res = await fetch('/api/admin/casting-calls');
+      if (res.ok) {
+        const data = await res.json();
+        setCastingCalls(data);
+      }
+    } catch (error) {
+      console.error('Error fetching casting calls:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const url = editingId ? `/api/admin/casting-calls/${editingId}` : '/api/admin/casting-calls';
+      const method = editingId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          ageRangeMin: formData.ageRangeMin ? parseInt(formData.ageRangeMin) : null,
+          ageRangeMax: formData.ageRangeMax ? parseInt(formData.ageRangeMax) : null,
+        }),
+      });
+
+      if (res.ok) {
+        alert(editingId ? 'Casting call updated!' : 'Casting call created!');
+        resetForm();
+        await fetchCastingCalls();
+      } else {
+        alert('Failed to save casting call');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred');
+    }
+  };
+
+  const handleEdit = (call: any) => {
+    setEditingId(call.id);
+    setFormData({
+      title: call.title,
+      production: call.production,
+      description: call.description,
+      roleType: call.roleType,
+      location: call.location,
+      compensation: call.compensation,
+      submissionDeadline: call.submissionDeadline.split('T')[0],
+      shootingDates: call.shootingDates || '',
+      ageRangeMin: call.ageRangeMin?.toString() || '',
+      ageRangeMax: call.ageRangeMax?.toString() || '',
+      gender: call.gender || '',
+      ethnicity: call.ethnicity || '',
+      unionStatus: call.unionStatus,
+      castingEmail: call.castingEmail,
+      featuredImage: call.featuredImage || '',
+    });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this casting call?')) return;
+
+    try {
+      const res = await fetch(`/api/admin/casting-calls/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        alert('Casting call deleted!');
+        await fetchCastingCalls();
+      } else {
+        alert('Failed to delete casting call');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred');
+    }
+  };
+
+  const resetForm = () => {
+    setEditingId(null);
+    setFormData({
+      title: '',
+      production: '',
+      description: '',
+      roleType: 'LEAD',
+      location: '',
+      compensation: '',
+      submissionDeadline: '',
+      shootingDates: '',
+      ageRangeMin: '',
+      ageRangeMax: '',
+      gender: '',
+      ethnicity: '',
+      unionStatus: 'EITHER',
+      castingEmail: '',
+      featuredImage: '',
+    });
+  };
+
+  if (status === 'loading' || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-primary">Admin Panel</h1>
-          <div className="flex gap-4">
-            <Link href="/dashboard">
-              <Button variant="ghost">Back to Dashboard</Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Admin Panel</h1>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <Tabs defaultValue="create" className="w-full">
+        <TabsList>
+          <TabsTrigger value="create">Create/Edit Casting Call</TabsTrigger>
+          <TabsTrigger value="manage">Manage Casting Calls</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="create">
           <Card>
             <CardHeader>
-              <CardTitle>Total Users</CardTitle>
+              <CardTitle>{editingId ? 'Edit' : 'Create'} Casting Call</CardTitle>
+              <CardDescription>
+                {editingId ? 'Update the casting call details' : 'Add a new casting opportunity'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-4xl font-bold">{totalUsers}</p>
-            </CardContent>
-          </Card>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="title">Role Title *</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    required
+                  />
+                </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Casting Calls</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold">{totalCalls}</p>
-            </CardContent>
-          </Card>
+                <div>
+                  <Label htmlFor="production">Production Name *</Label>
+                  <Input
+                    id="production"
+                    value={formData.production}
+                    onChange={(e) => setFormData({ ...formData, production: e.target.value })}
+                    required
+                  />
+                </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Total Submissions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold">{totalSubmissions}</p>
-            </CardContent>
-          </Card>
-        </div>
+                <div>
+                  <Label htmlFor="description">Description *</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={4}
+                    required
+                  />
+                </div>
 
-        <Card className="mb-8">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle>All Casting Calls ({allCalls.length})</CardTitle>
-            <Link href="/admin/casting-calls/new">
-              <Button>Add New Call</Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {allCalls.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">No casting calls yet. Create your first one!</p>
-              ) : (
-                allCalls.map((call) => (
-                  <div key={call.id} className="border rounded-lg p-4 flex justify-between items-center">
-                    <div>
-                      <h3 className="font-semibold">{call.title}</h3>
-                      <p className="text-sm text-gray-600">{call.production} • {call.location}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {call._count.submissions} submissions • Deadline: {new Date(call.submissionDeadline).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Link href={`/admin/casting-calls/${call.id}/edit`}>
-                        <Button variant="outline" size="sm">Edit</Button>
-                      </Link>
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="roleType">Role Type *</Label>
+                    <Select
+                      value={formData.roleType}
+                      onValueChange={(value) => setFormData({ ...formData, roleType: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="LEAD">Lead</SelectItem>
+                        <SelectItem value="SUPPORTING">Supporting</SelectItem>
+                        <SelectItem value="BACKGROUND">Background</SelectItem>
+                        <SelectItem value="EXTRA">Extra</SelectItem>
+                        <SelectItem value="COMMERCIAL">Commercial</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                ))
+
+                  <div>
+                    <Label htmlFor="location">Location *</Label>
+                    <Input
+                      id="location"
+                      value={formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="compensation">Compensation *</Label>
+                  <Input
+                    id="compensation"
+                    value={formData.compensation}
+                    onChange={(e) => setFormData({ ...formData, compensation: e.target.value })}
+                    placeholder="e.g., $200/day or Unpaid (college film)"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="submissionDeadline">Submission Deadline *</Label>
+                    <Input
+                      id="submissionDeadline"
+                      type="date"
+                      value={formData.submissionDeadline}
+                      onChange={(e) => setFormData({ ...formData, submissionDeadline: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="shootingDates">Shooting Dates</Label>
+                    <Input
+                      id="shootingDates"
+                      value={formData.shootingDates}
+                      onChange={(e) => setFormData({ ...formData, shootingDates: e.target.value })}
+                      placeholder="e.g., January 15-20, 2024"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="ageRangeMin">Age Range Min</Label>
+                    <Input
+                      id="ageRangeMin"
+                      type="number"
+                      value={formData.ageRangeMin}
+                      onChange={(e) => setFormData({ ...formData, ageRangeMin: e.target.value })}
+                      placeholder="18"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="ageRangeMax">Age Range Max</Label>
+                    <Input
+                      id="ageRangeMax"
+                      type="number"
+                      value={formData.ageRangeMax}
+                      onChange={(e) => setFormData({ ...formData, ageRangeMax: e.target.value })}
+                      placeholder="35"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="gender">Gender</Label>
+                    <Select
+                      value={formData.gender}
+                      onValueChange={(value) => setFormData({ ...formData, gender: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Any" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Any</SelectItem>
+                        <SelectItem value="MALE">Male</SelectItem>
+                        <SelectItem value="FEMALE">Female</SelectItem>
+                        <SelectItem value="NON_BINARY">Non-Binary</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="ethnicity">Ethnicity</Label>
+                    <Select
+                      value={formData.ethnicity}
+                      onValueChange={(value) => setFormData({ ...formData, ethnicity: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Any" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Any</SelectItem>
+                        <SelectItem value="WHITE">White/Caucasian</SelectItem>
+                        <SelectItem value="BLACK">Black/African American</SelectItem>
+                        <SelectItem value="HISPANIC">Hispanic/Latino</SelectItem>
+                        <SelectItem value="ASIAN">Asian</SelectItem>
+                        <SelectItem value="NATIVE_AMERICAN">Native American</SelectItem>
+                        <SelectItem value="MIDDLE_EASTERN">Middle Eastern</SelectItem>
+                        <SelectItem value="PACIFIC_ISLANDER">Pacific Islander</SelectItem>
+                        <SelectItem value="MIXED">Mixed/Multiracial</SelectItem>
+                        <SelectItem value="OTHER">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="unionStatus">Union Status *</Label>
+                  <Select
+                    value={formData.unionStatus}
+                    onValueChange={(value) => setFormData({ ...formData, unionStatus: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="UNION">Union Only</SelectItem>
+                      <SelectItem value="NON_UNION">Non-Union Only</SelectItem>
+                      <SelectItem value="EITHER">Either</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="castingEmail">Casting Director Email *</Label>
+                  <Input
+                    id="castingEmail"
+                    type="email"
+                    value={formData.castingEmail}
+                    onChange={(e) => setFormData({ ...formData, castingEmail: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label>Featured Image (Optional)</Label>
+                  {formData.featuredImage && (
+                    <div className="mb-2">
+                      <img 
+                        src={formData.featuredImage} 
+                        alt="Featured" 
+                        className="w-48 h-32 object-cover rounded"
+                      />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setFormData({ ...formData, featuredImage: '' })}
+                        className="mt-2"
+                      >
+                        Remove Image
+                      </Button>
+                    </div>
+                  )}
+                  <UploadButton
+                    endpoint="imageUploader"
+                    onClientUploadComplete={(res) => {
+                      if (res?.[0]) {
+                        setFormData({ ...formData, featuredImage: res[0].url });
+                        alert('Image uploaded!');
+                      }
+                    }}
+                    onUploadError={(error: Error) => {
+                      alert(`Upload failed: ${error.message}`);
+                    }}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="submit">
+                    {editingId ? 'Update' : 'Create'} Casting Call
+                  </Button>
+                  {editingId && (
+                    <Button type="button" variant="outline" onClick={resetForm}>
+                      Cancel Edit
+                    </Button>
+                  )}
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="manage">
+          <Card>
+            <CardHeader>
+              <CardTitle>Existing Casting Calls</CardTitle>
+              <CardDescription>Manage your casting opportunities</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {castingCalls.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">No casting calls yet</p>
+              ) : (
+                <div className="space-y-4">
+                  {castingCalls.map((call) => (
+                    <div key={call.id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          {call.featuredImage && (
+                            <img 
+                              src={call.featuredImage} 
+                              alt={call.title}
+                              className="w-32 h-20 object-cover rounded mb-2"
+                            />
+                          )}
+                          <h3 className="text-xl font-bold">{call.title}</h3>
+                          <p className="text-sm text-gray-600">{call.production}</p>
+                          <p className="text-sm mt-2">{call.description}</p>
+                          <div className="mt-2 text-sm text-gray-600">
+                            <p>Location: {call.location}</p>
+                            <p>Deadline: {new Date(call.submissionDeadline).toLocaleDateString()}</p>
+                            <p>Compensation: {call.compensation}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleEdit(call)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDelete(call.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
