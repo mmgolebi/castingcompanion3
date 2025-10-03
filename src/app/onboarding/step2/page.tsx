@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { UploadButton } from '@/lib/uploadthing';
-import { FileText, Image as ImageIcon, User } from 'lucide-react';
+import { FileText, Image as ImageIcon, User, CheckCircle2 } from 'lucide-react';
 
 export default function Step2Page() {
   const { data: session, status } = useSession();
@@ -77,28 +77,49 @@ export default function Step2Page() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 to-indigo-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 py-12 px-4">
-      <div className="container mx-auto max-w-2xl">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold">Complete Your Profile</h1>
-            <div className="text-right">
-              <div className="text-sm font-medium text-gray-600 mb-1">Step 2 of 4</div>
-              <div className="text-xs text-gray-500">Photos & Resume</div>
-            </div>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div className="bg-purple-600 h-2.5 rounded-full transition-all duration-300" style={{ width: '50%' }}></div>
-          </div>
+  const StepIndicator = () => (
+    <div className="flex items-center justify-between mb-12 max-w-2xl mx-auto">
+      <div className="flex flex-col items-center">
+        <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
+          <CheckCircle2 className="h-6 w-6" />
         </div>
+        <span className="text-white text-sm font-medium">Basic Info</span>
+      </div>
+      <div className="flex-1 h-1 bg-green-500 mx-4"></div>
+      <div className="flex flex-col items-center">
+        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-purple-900 mb-2 font-bold">
+          2
+        </div>
+        <span className="text-white text-sm font-medium">Media Assets</span>
+      </div>
+      <div className="flex-1 h-1 bg-gray-600 mx-4"></div>
+      <div className="flex flex-col items-center">
+        <div className="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center text-white mb-2">
+          3
+        </div>
+        <span className="text-gray-400 text-sm">Preferences</span>
+      </div>
+      <div className="flex-1 h-1 bg-gray-600 mx-4"></div>
+      <div className="flex flex-col items-center">
+        <div className="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center text-white mb-2">
+          4
+        </div>
+        <span className="text-gray-400 text-sm">Logistics</span>
+      </div>
+    </div>
+  );
 
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 py-12 px-4">
+      <div className="container mx-auto max-w-4xl">
+        <h1 className="text-4xl font-bold text-white mb-8">Complete Your Profile</h1>
+        <StepIndicator />
         <Card>
           <CardHeader>
             <CardTitle>Upload Your Materials</CardTitle>
@@ -114,12 +135,7 @@ export default function Step2Page() {
                 {uploads.headshot ? (
                   <div className="space-y-2">
                     <img src={uploads.headshot} alt="Headshot" className="w-48 h-48 object-cover rounded" />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setUploads({ ...uploads, headshot: '' })}
-                    >
+                    <Button type="button" variant="outline" size="sm" onClick={() => setUploads({ ...uploads, headshot: '' })}>
                       Remove
                     </Button>
                   </div>
@@ -131,13 +147,10 @@ export default function Step2Page() {
                         setUploads({ ...uploads, headshot: res[0].url });
                       }
                     }}
-                    onUploadError={(error) => {
-                      alert(`Upload failed: ${error.message}`);
-                    }}
+                    onUploadError={(error) => alert(`Upload failed: ${error.message}`)}
                   />
                 )}
               </div>
-
               <div>
                 <Label className="flex items-center gap-2 mb-2">
                   <User className="h-4 w-4" />
@@ -146,12 +159,7 @@ export default function Step2Page() {
                 {uploads.fullBody ? (
                   <div className="space-y-2">
                     <img src={uploads.fullBody} alt="Full Body" className="w-48 h-64 object-cover rounded" />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setUploads({ ...uploads, fullBody: '' })}
-                    >
+                    <Button type="button" variant="outline" size="sm" onClick={() => setUploads({ ...uploads, fullBody: '' })}>
                       Remove
                     </Button>
                   </div>
@@ -163,13 +171,10 @@ export default function Step2Page() {
                         setUploads({ ...uploads, fullBody: res[0].url });
                       }
                     }}
-                    onUploadError={(error) => {
-                      alert(`Upload failed: ${error.message}`);
-                    }}
+                    onUploadError={(error) => alert(`Upload failed: ${error.message}`)}
                   />
                 )}
               </div>
-
               <div>
                 <Label className="flex items-center gap-2 mb-2">
                   <FileText className="h-4 w-4" />
@@ -177,21 +182,11 @@ export default function Step2Page() {
                 </Label>
                 {uploads.resume ? (
                   <div className="space-y-2">
-                    
-                      href={uploads.resume}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline text-sm"
-                    >
+                    <a href={uploads.resume} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm">
                       View Resume
                     </a>
                     <br />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setUploads({ ...uploads, resume: '' })}
-                    >
+                    <Button type="button" variant="outline" size="sm" onClick={() => setUploads({ ...uploads, resume: '' })}>
                       Remove
                     </Button>
                   </div>
@@ -203,20 +198,12 @@ export default function Step2Page() {
                         setUploads({ ...uploads, resume: res[0].url });
                       }
                     }}
-                    onUploadError={(error) => {
-                      alert(`Upload failed: ${error.message}`);
-                    }}
+                    onUploadError={(error) => alert(`Upload failed: ${error.message}`)}
                   />
                 )}
               </div>
-
               <div className="flex gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.push('/onboarding/step1')}
-                  className="flex-1"
-                >
+                <Button type="button" variant="outline" onClick={() => router.push('/onboarding/step1')} className="flex-1">
                   Back
                 </Button>
                 <Button type="submit" className="flex-1">
