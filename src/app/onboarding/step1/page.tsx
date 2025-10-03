@@ -60,41 +60,38 @@ export default function Step1Page() {
     }
   }, [status]);
 
-  const validatePhone = (phone: string): boolean => {
-    const cleaned = phone.replace(/\D/g, '');
-    // Must be exactly 10 digits (US/Canada without country code) or 11 digits starting with 1
-    return cleaned.length === 10 || (cleaned.length === 11 && cleaned[0] === '1');
+  const formatPhoneAsYouType = (value: string): string => {
+    // Remove all non-digits
+    const cleaned = value.replace(/\D/g, '');
+    
+    // Limit to 10 digits
+    const limited = cleaned.slice(0, 10);
+    
+    // Format as user types
+    if (limited.length <= 3) {
+      return limited;
+    } else if (limited.length <= 6) {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3)}`;
+    } else {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6)}`;
+    }
   };
 
-  const formatPhone = (phone: string): string => {
+  const validatePhone = (phone: string): boolean => {
     const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length === 10) {
-      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-    } else if (cleaned.length === 11 && cleaned[0] === '1') {
-      return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
-    }
-    return phone;
+    return cleaned.length === 10;
   };
 
   const handlePhoneChange = (value: string) => {
-    // Only allow digits, spaces, hyphens, parentheses, and plus sign
-    const filtered = value.replace(/[^\d\s\-\(\)\+]/g, '');
+    const formatted = formatPhoneAsYouType(value);
+    setFormData({ ...formData, phone: formatted });
     
-    // Limit to reasonable length (max 15 characters for formatted number)
-    if (filtered.length <= 20) {
-      setFormData({ ...formData, phone: filtered });
-      
-      // Validate as user types
-      const cleaned = filtered.replace(/\D/g, '');
-      if (cleaned.length > 0 && cleaned.length < 10) {
-        setPhoneError('Phone number must be at least 10 digits');
-      } else if (cleaned.length > 11) {
-        setPhoneError('Phone number is too long');
-      } else if (cleaned.length === 11 && cleaned[0] !== '1') {
-        setPhoneError('11-digit numbers must start with 1');
-      } else {
-        setPhoneError('');
-      }
+    // Validate
+    const cleaned = formatted.replace(/\D/g, '');
+    if (cleaned.length > 0 && cleaned.length < 10) {
+      setPhoneError('Phone number must be 10 digits');
+    } else {
+      setPhoneError('');
     }
   };
 
@@ -127,7 +124,7 @@ export default function Step1Page() {
           gender: formData.gender,
           ethnicity: formData.ethnicity,
           unionStatus: formData.unionStatus,
-          phone: formatPhone(formData.phone),
+          phone: formData.phone,
         }),
       });
 
