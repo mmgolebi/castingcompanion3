@@ -14,10 +14,8 @@ const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 5000
 
 type ToasterToast = Toast & {
-  id: string
-  title?: string
-  description?: string
-  action?: ToastActionElement
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 const actionTypes = {
