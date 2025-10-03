@@ -14,7 +14,7 @@ import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function ProfilePage() {
-  const { data: session, status, update } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -209,10 +209,21 @@ export default function ProfilePage() {
           description: "Your profile has been updated",
         });
         
-        // Update the session with the new name
-        await update({ name: profile.name });
+        // Check for new auto-submission matches
+        const matchRes = await fetch('/api/profile/check-matches', {
+          method: 'POST',
+        });
+
+        if (matchRes.ok) {
+          const matchData = await matchRes.json();
+          if (matchData.newSubmissions > 0) {
+            toast({
+              title: "Auto-Submitted!",
+              description: matchData.message,
+            });
+          }
+        }
         
-        // Refresh the page to update the dashboard
         router.refresh();
       } else {
         const error = await res.json();
