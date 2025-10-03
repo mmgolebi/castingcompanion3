@@ -23,7 +23,6 @@ export async function POST(req: Request) {
 
     let customerId = user.stripeCustomerId;
 
-    // Create customer if doesn't exist
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: user.email,
@@ -40,20 +39,24 @@ export async function POST(req: Request) {
       });
     }
 
-    // Create checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [
         {
-          price: process.env.STRIPE_PRICE_ID_MONTHLY!,
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Casting Companion - $1 Trial',
+              description: '14-day trial for $1, then $29/month',
+            },
+            unit_amount: 100, // $1.00 in cents
+            recurring: {
+              interval: 'month',
+            },
+          },
           quantity: 1,
         },
-        // Add $1 setup fee (you'll need to create this price in Stripe)
-        // {
-        //   price: 'price_1_dollar_setup', // Create this in Stripe
-        //   quantity: 1,
-        // },
       ],
       mode: 'subscription',
       subscription_data: {
@@ -63,7 +66,7 @@ export async function POST(req: Request) {
         },
       },
       success_url: `${process.env.NEXTAUTH_URL}/dashboard?success=true`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/dashboard?canceled=true`,
+      cancel_url: `${process.env.NEXTAUTH_URL}/onboarding/step4?canceled=true`,
       metadata: {
         userId: user.id,
       },
