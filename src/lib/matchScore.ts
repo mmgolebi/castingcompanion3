@@ -1,126 +1,52 @@
-interface UserProfile {
-  age?: number | null;
-  playableAgeMin?: number | null;
-  playableAgeMax?: number | null;
-  gender?: string | null;
-  state?: string | null;
-  city?: string | null;
-  unionStatus?: string | null;
-  ethnicity?: string | null;
-  roleTypesInterested?: string[];
-}
-
-interface CastingCall {
-  ageMin: number;
-  ageMax: number;
-  genderReq: string;
-  location: string;
-  unionReq: string;
-  ethnicityReq: string;
-  roleType: string;
-}
-
-export function calculateMatchScore(
-  profile: UserProfile,
-  call: CastingCall
-): number {
+export function calculateMatchScore(userProfile: any, castingCall: any): number {
   let score = 0;
-  let totalCriteria = 0;
+  let maxScore = 0;
 
-  // Age matching (30 points)
-  totalCriteria += 30;
-  const userAge = profile.age || profile.playableAgeMin || 0;
-  if (userAge >= call.ageMin && userAge <= call.ageMax) {
-    score += 30;
-  } else if (profile.playableAgeMin && profile.playableAgeMax) {
-    // Check if playable age range overlaps with required range
-    if (
-      (profile.playableAgeMin <= call.ageMax && profile.playableAgeMax >= call.ageMin)
-    ) {
-      score += 20; // Partial match
+  // Age range match (30% weight)
+  maxScore += 30;
+  if (castingCall.ageRangeMin && castingCall.ageRangeMax && userProfile.playableAgeMin && userProfile.playableAgeMax) {
+    const userMin = userProfile.playableAgeMin;
+    const userMax = userProfile.playableAgeMax;
+    const callMin = castingCall.ageRangeMin;
+    const callMax = castingCall.ageRangeMax;
+
+    // Check if there's any overlap between user's playable age and call's required age
+    if (userMin <= callMax && userMax >= callMin) {
+      score += 30;
     }
   }
 
-  // Gender matching (20 points)
-  totalCriteria += 20;
-  if (call.genderReq === 'ANY' || call.genderReq === profile.gender) {
+  // Gender match (20% weight)
+  maxScore += 20;
+  if (!castingCall.gender || castingCall.gender === userProfile.gender) {
     score += 20;
   }
 
-  // Location matching (25 points)
-  totalCriteria += 25;
-  if (profile.state && profile.city) {
-    const callLocation = call.location.toLowerCase();
-    const userState = profile.state.toLowerCase();
-    const userCity = profile.city.toLowerCase();
-    
-    if (callLocation.includes(userCity) && callLocation.includes(userState)) {
-      score += 25; // Exact city match
-    } else if (callLocation.includes(userState)) {
-      score += 15; // Same state
+  // Location match (25% weight)
+  maxScore += 25;
+  if (userProfile.state && castingCall.location) {
+    if (castingCall.location.toLowerCase().includes(userProfile.state.toLowerCase()) ||
+        castingCall.location.toLowerCase().includes(userProfile.city?.toLowerCase() || '')) {
+      score += 25;
     }
   }
 
-  // Union status matching (15 points)
-  totalCriteria += 15;
-  if (call.unionReq === 'EITHER' || call.unionReq === profile.unionStatus) {
+  // Union status match (15% weight)
+  maxScore += 15;
+  if (castingCall.unionStatus === 'EITHER') {
+    score += 15;
+  } else if (castingCall.unionStatus === 'UNION' && userProfile.unionStatus === 'SAG_AFTRA') {
+    score += 15;
+  } else if (castingCall.unionStatus === 'NON_UNION' && userProfile.unionStatus === 'NON_UNION') {
     score += 15;
   }
 
-  // Ethnicity matching (10 points)
-  totalCriteria += 10;
-  if (call.ethnicityReq === 'ANY' || call.ethnicityReq === profile.ethnicity) {
+  // Ethnicity match (10% weight)
+  maxScore += 10;
+  if (!castingCall.ethnicity || castingCall.ethnicity === userProfile.ethnicity) {
     score += 10;
   }
 
-  // Role type interest (bonus, not required)
-  // This doesn't count against total but adds if matched
-  if (profile.roleTypesInterested?.includes(call.roleType)) {
-    score += 5;
-  }
-
-  // Calculate percentage
-  return Math.round((score / totalCriteria) * 100);
-}
-
-export function getMatchExplanation(
-  profile: UserProfile,
-  call: CastingCall
-): string {
-  const explanations: string[] = [];
-  
-  const userAge = profile.age || profile.playableAgeMin || 0;
-  if (userAge >= call.ageMin && userAge <= call.ageMax) {
-    explanations.push('Your age fits the requirement');
-  } else if (profile.playableAgeMin && profile.playableAgeMax) {
-    if (profile.playableAgeMin <= call.ageMax && profile.playableAgeMax >= call.ageMin) {
-      explanations.push('Your playable age range overlaps with the requirement');
-    }
-  }
-
-  if (call.genderReq === 'ANY' || call.genderReq === profile.gender) {
-    explanations.push('Gender matches');
-  }
-
-  if (profile.state && profile.city) {
-    const callLocation = call.location.toLowerCase();
-    const userState = profile.state.toLowerCase();
-    const userCity = profile.city.toLowerCase();
-    
-    if (callLocation.includes(userCity) && callLocation.includes(userState)) {
-      explanations.push('Located in the same city');
-    } else if (callLocation.includes(userState)) {
-      explanations.push('Located in the same state');
-    }
-  }
-
-  if (call.unionReq === 'EITHER' || call.unionReq === profile.unionStatus) {
-    explanations.push('Union status matches');
-  }
-
-  if (call.ethnicityReq === 'ANY' || call.ethnicityReq === profile.ethnicity) {
-    explanations.push('Ethnicity requirement met');
-  }
-
-  return explanations.join(', ');
+  // Return percentage
+  return Math.round((score / maxScore) * 100);
 }
