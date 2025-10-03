@@ -140,14 +140,6 @@ function dispatch(action: Action) {
   })
 }
 
-interface Toast {
-  id: string
-  title?: string
-  description?: string
-  action?: ToastActionElement
-  variant?: "default" | "destructive"
-}
-
 function toast({ ...props }: Omit<ToasterToast, "id">) {
   const id = genId()
 
