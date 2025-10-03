@@ -33,7 +33,7 @@ export async function POST(req: Request) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_URL}/onboarding/step1?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.NEXT_PUBLIC_URL}/dashboard?trial=success`,
       cancel_url: `${process.env.NEXT_PUBLIC_URL}/onboarding/payment`,
       metadata: {
         userId: (session.user as any).id,
