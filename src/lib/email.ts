@@ -73,6 +73,66 @@ export async function sendSubmissionEmail({
   }
 }
 
+export async function sendSubmissionConfirmationEmail(
+  userEmail: string,
+  userName: string,
+  castingCall: any
+) {
+  try {
+    console.log('Sending submission confirmation to:', userEmail);
+    
+    if (!process.env.RESEND_API_KEY) {
+      console.error('RESEND_API_KEY is not set');
+      throw new Error('Email service not configured');
+    }
+
+    const emailHtml = `
+      <h2>Submission Confirmed!</h2>
+      
+      <p>Hi ${userName},</p>
+      
+      <p>Your submission has been successfully sent to the casting director for:</p>
+      
+      <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h3 style="margin-top: 0;">${castingCall.title}</h3>
+        <p><strong>Production:</strong> ${castingCall.production}</p>
+        <p><strong>Location:</strong> ${castingCall.location}</p>
+        <p><strong>Deadline:</strong> ${new Date(castingCall.submissionDeadline).toLocaleDateString()}</p>
+      </div>
+
+      <p><strong>What happens next?</strong></p>
+      <ul>
+        <li>The casting director will review your materials</li>
+        <li>If interested, they'll contact you directly via email or phone</li>
+        <li>You can track this submission in your dashboard</li>
+      </ul>
+
+      <p style="margin-top: 30px;">
+        <a href="${process.env.NEXT_PUBLIC_URL}/dashboard" style="background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+          View Dashboard
+        </a>
+      </p>
+
+      <p style="color: #666; font-size: 14px; margin-top: 40px;">
+        Good luck! Break a leg! 🎭
+      </p>
+    `;
+
+    const result = await resend.emails.send({
+      from: 'Casting Companion <onboarding@resend.dev>',
+      to: userEmail,
+      subject: `Submission Confirmed: ${castingCall.title}`,
+      html: emailHtml,
+    });
+
+    console.log('Confirmation email sent successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Failed to send confirmation email:', error);
+    throw error;
+  }
+}
+
 export async function sendWelcomeEmail(userEmail: string, userName: string) {
   try {
     console.log('Sending welcome email to:', userEmail);
