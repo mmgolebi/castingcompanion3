@@ -129,53 +129,55 @@ export default function Step3Page() {
   const customSkills = skills.filter(skill => !predefinedSkills.includes(skill));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 py-6 md:py-12 px-4">
       <div className="container mx-auto max-w-4xl">
-        <h1 className="text-4xl font-bold text-white mb-8 text-center">Complete Your Profile</h1>
+        <h1 className="text-2xl md:text-4xl font-bold text-white mb-6 md:mb-8 text-center">Complete Your Profile</h1>
         
         {/* Step Indicator */}
-        <div className="flex items-center justify-center mb-12">
+        <div className="flex items-center justify-center mb-8 md:mb-12">
           <div className="flex items-center max-w-3xl w-full">
             <div className="flex flex-col items-center flex-1">
-              <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
-                <CheckCircle2 className="h-6 w-6" />
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-1 md:mb-2">
+                <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6" />
               </div>
-              <span className="text-white text-sm font-medium text-center">Basic Info</span>
+              <span className="text-white text-xs md:text-sm font-medium text-center">Basic Info</span>
             </div>
-            <div className="flex-1 h-1 bg-green-500 mx-2"></div>
+            <div className="flex-1 h-1 bg-green-500 mx-1 md:mx-2"></div>
             <div className="flex flex-col items-center flex-1">
-              <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
-                <CheckCircle2 className="h-6 w-6" />
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-1 md:mb-2">
+                <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6" />
               </div>
-              <span className="text-white text-sm font-medium text-center">Media Assets</span>
+              <span className="text-white text-xs md:text-sm font-medium text-center hidden sm:inline">Media Assets</span>
+              <span className="text-white text-xs font-medium text-center sm:hidden">Media</span>
             </div>
-            <div className="flex-1 h-1 bg-green-500 mx-2"></div>
+            <div className="flex-1 h-1 bg-green-500 mx-1 md:mx-2"></div>
             <div className="flex flex-col items-center flex-1">
-              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-purple-900 mb-2 font-bold">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white flex items-center justify-center text-purple-900 mb-1 md:mb-2 font-bold text-sm md:text-base">
                 3
               </div>
-              <span className="text-white text-sm font-medium text-center">Preferences</span>
+              <span className="text-white text-xs md:text-sm font-medium text-center hidden sm:inline">Preferences</span>
+              <span className="text-white text-xs font-medium text-center sm:hidden">Prefs</span>
             </div>
-            <div className="flex-1 h-1 bg-purple-700 mx-2"></div>
+            <div className="flex-1 h-1 bg-purple-700 mx-1 md:mx-2"></div>
             <div className="flex flex-col items-center flex-1">
-              <div className="w-12 h-12 rounded-full bg-purple-700 flex items-center justify-center text-white mb-2">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-purple-700 flex items-center justify-center text-white mb-1 md:mb-2 text-sm md:text-base">
                 4
               </div>
-              <span className="text-purple-300 text-sm text-center">Logistics</span>
+              <span className="text-purple-300 text-xs md:text-sm text-center">Logistics</span>
             </div>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Skills & Preferences</CardTitle>
+            <CardTitle className="text-lg md:text-xl">Skills & Preferences</CardTitle>
             <CardDescription>Tell us about your abilities and interests</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
               <div>
                 <Label className="text-base font-semibold mb-3 block">Role Types Interested In *</Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {roleTypes.map((roleType) => (
                     <div key={roleType.value} className="flex items-center space-x-2">
                       <Checkbox
@@ -193,7 +195,7 @@ export default function Step3Page() {
 
               <div>
                 <Label className="text-base font-semibold mb-3 block">Special Skills</Label>
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                   {predefinedSkills.map((skill) => (
                     <div key={skill} className="flex items-center space-x-2">
                       <Checkbox
@@ -253,7 +255,7 @@ export default function Step3Page() {
                 )}
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Button
                   type="button"
                   variant="outline"
