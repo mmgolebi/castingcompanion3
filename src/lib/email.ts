@@ -18,8 +18,6 @@ export async function sendSubmissionEmail({
   try {
     console.log('=== SENDING SUBMISSION EMAIL ===');
     console.log('To:', castingEmail);
-    console.log('API Key exists:', !!process.env.RESEND_API_KEY);
-    console.log('API Key prefix:', process.env.RESEND_API_KEY?.substring(0, 10));
     
     if (!process.env.RESEND_API_KEY) {
       throw new Error('RESEND_API_KEY is not set');
@@ -60,21 +58,18 @@ export async function sendSubmissionEmail({
       </p>
     `;
 
-    console.log('Calling resend.emails.send...');
     const result = await resend.emails.send({
-      from: 'Casting Companion <onboarding@resend.dev>',
+      from: 'Casting Companion <noreply@updates.castingcompanion.com>',
       to: castingEmail,
       subject: `New Submission: ${castingCall.title} - ${userProfile.name}`,
       html: emailHtml,
     });
 
-    console.log('Resend API response:', JSON.stringify(result));
+    console.log('Email sent successfully:', JSON.stringify(result));
     return result;
   } catch (error: any) {
     console.error('=== EMAIL SEND FAILED ===');
-    console.error('Error details:', error);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
+    console.error('Error:', error);
     throw error;
   }
 }
@@ -87,7 +82,6 @@ export async function sendSubmissionConfirmationEmail(
   try {
     console.log('=== SENDING CONFIRMATION EMAIL ===');
     console.log('To:', userEmail);
-    console.log('API Key exists:', !!process.env.RESEND_API_KEY);
     
     if (!process.env.RESEND_API_KEY) {
       throw new Error('RESEND_API_KEY is not set');
@@ -121,24 +115,22 @@ export async function sendSubmissionConfirmationEmail(
       </p>
 
       <p style="color: #666; font-size: 14px; margin-top: 40px;">
-        Good luck! Break a leg! 🎭
+        Good luck! Break a leg!
       </p>
     `;
 
-    console.log('Calling resend.emails.send...');
     const result = await resend.emails.send({
-      from: 'Casting Companion <onboarding@resend.dev>',
+      from: 'Casting Companion <noreply@updates.castingcompanion.com>',
       to: userEmail,
       subject: `Submission Confirmed: ${castingCall.title}`,
       html: emailHtml,
     });
 
-    console.log('Resend API response:', JSON.stringify(result));
+    console.log('Confirmation email sent:', JSON.stringify(result));
     return result;
   } catch (error: any) {
     console.error('=== CONFIRMATION EMAIL FAILED ===');
-    console.error('Error details:', error);
-    console.error('Error message:', error.message);
+    console.error('Error:', error);
     throw error;
   }
 }
@@ -178,7 +170,7 @@ export async function sendWelcomeEmail(userEmail: string, userName: string) {
     `;
 
     const result = await resend.emails.send({
-      from: 'Casting Companion <onboarding@resend.dev>',
+      from: 'Casting Companion <noreply@updates.castingcompanion.com>',
       to: userEmail,
       subject: 'Welcome to Casting Companion!',
       html: emailHtml,
@@ -188,7 +180,7 @@ export async function sendWelcomeEmail(userEmail: string, userName: string) {
     return result;
   } catch (error: any) {
     console.error('=== WELCOME EMAIL FAILED ===');
-    console.error('Error details:', error);
+    console.error('Error:', error);
     throw error;
   }
 }
