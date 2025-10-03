@@ -52,11 +52,6 @@ export default function Step2Page() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!uploads.headshot || !uploads.fullBody || !uploads.resume) {
-      alert('Please upload all required files');
-      return;
-    }
-
     try {
       const res = await fetch('/api/onboarding/step2', {
         method: 'POST',
@@ -73,6 +68,10 @@ export default function Step2Page() {
       console.error('Error:', error);
       alert('An error occurred');
     }
+  };
+
+  const handleSkip = () => {
+    router.push('/onboarding/step3');
   };
 
   if (status === 'loading' || loading) {
@@ -122,15 +121,15 @@ export default function Step2Page() {
         <StepIndicator />
         <Card>
           <CardHeader>
-            <CardTitle>Upload Your Materials</CardTitle>
-            <CardDescription>Professional headshot, full body photo, and resume required</CardDescription>
+            <CardTitle>Upload Your Materials (Optional)</CardTitle>
+            <CardDescription>Professional headshot, full body photo, and resume - you can add these later</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <Label className="flex items-center gap-2 mb-2">
                   <ImageIcon className="h-4 w-4" />
-                  Headshot *
+                  Headshot
                 </Label>
                 {uploads.headshot ? (
                   <div className="space-y-2">
@@ -154,7 +153,7 @@ export default function Step2Page() {
               <div>
                 <Label className="flex items-center gap-2 mb-2">
                   <User className="h-4 w-4" />
-                  Full Body Photo *
+                  Full Body Photo
                 </Label>
                 {uploads.fullBody ? (
                   <div className="space-y-2">
@@ -178,7 +177,7 @@ export default function Step2Page() {
               <div>
                 <Label className="flex items-center gap-2 mb-2">
                   <FileText className="h-4 w-4" />
-                  Acting Resume (PDF) *
+                  Acting Resume (PDF)
                 </Label>
                 {uploads.resume ? (
                   <div className="space-y-2">
@@ -205,6 +204,9 @@ export default function Step2Page() {
               <div className="flex gap-4">
                 <Button type="button" variant="outline" onClick={() => router.push('/onboarding/step1')} className="flex-1">
                   Back
+                </Button>
+                <Button type="button" variant="secondary" onClick={handleSkip} className="flex-1">
+                  Skip for Now
                 </Button>
                 <Button type="submit" className="flex-1">
                   Continue to Step 3
