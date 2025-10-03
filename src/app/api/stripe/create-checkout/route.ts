@@ -14,36 +14,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Create a one-time $1 trial price
+    const trialPrice = await stripe.prices.create({
+      currency: 'usd',
+      unit_amount: 100, // $1 in cents
+      product_data: {
+        name: 'Casting Companion Pro - 14 Day Trial',
+      },
+    });
+
     const checkoutSession = await stripe.checkout.sessions.create({
       customer_email: session.user.email!,
       payment_method_types: ['card'],
       line_items: [
         {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Casting Companion Pro',
-              description: '$1 trial for 30 days, then $39.97/month',
-            },
-            unit_amount: 100, // $1 in cents
-            recurring: {
-              interval: 'month',
-            },
-          },
+          price: trialPrice.id,
           quantity: 1,
         },
       ],
-      mode: 'subscription',
+      mode: 'payment',
       success_url: `${process.env.NEXT_PUBLIC_URL}/onboarding/step1?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_URL}/onboarding/payment`,
-      subscription_data: {
-        trial_period_days: 30,
-        metadata: {
-          userId: (session.user as any).id,
-        },
-      },
       metadata: {
         userId: (session.user as any).id,
+        isTrial: 'true',
       },
     });
 

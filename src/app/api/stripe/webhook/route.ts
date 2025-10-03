@@ -30,6 +30,7 @@ export async function POST(req: Request) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.userId;
+        const isTrial = session.metadata?.isTrial === 'true';
 
         if (!userId) {
           console.error('No userId in session metadata');
@@ -38,16 +39,44 @@ export async function POST(req: Request) {
 
         console.log('Checkout completed for user:', userId);
 
-        // Update user with subscription info
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            stripeCustomerId: session.customer as string,
-            stripeSubId: session.subscription as string,
-            subStatus: 'TRIAL',
-            trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          },
-        });
+        if (isTrial) {
+          // This is the $1 trial payment
+          const trialEndDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days from now
+
+          // Create the main $39.97 recurring subscription that starts after trial
+          const mainPrice = await stripe.prices.create({
+            currency: 'usd',
+            unit_amount: 3997, // $39.97
+            recurring: {
+              interval: 'month',
+            },
+            product_data: {
+              name: 'Casting Companion Pro',
+            },
+          });
+
+          const subscription = await stripe.subscriptions.create({
+            customer: session.customer as string,
+            items: [{ price: mainPrice.id }],
+            trial_end: Math.floor(trialEndDate.getTime() / 1000),
+            metadata: {
+              userId: userId,
+            },
+          });
+
+          // Update user with trial info
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              stripeCustomerId: session.customer as string,
+              stripeSubId: subscription.id,
+              subStatus: 'TRIAL',
+              trialEndsAt: trialEndDate,
+            },
+          });
+
+          console.log(`Trial subscription created for user ${userId}, starts billing on ${trialEndDate}`);
+        }
 
         // Get user profile for auto-submission
         const userProfile = await prisma.user.findUnique({
@@ -98,7 +127,6 @@ export async function POST(req: Request) {
           if (matchScore >= 85) {
             console.log(`Auto-submitting to: ${call.title}`);
 
-            // Create submission
             await prisma.submission.create({
               data: {
                 userId: userProfile.id,
@@ -110,7 +138,6 @@ export async function POST(req: Request) {
               },
             });
 
-            // Send email to casting director
             try {
               await sendSubmissionEmail({
                 castingEmail: call.castingEmail,
