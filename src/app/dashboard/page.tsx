@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bell, Send, Target, TrendingUp } from 'lucide-react';
+import { Bell, Send, Target, TrendingUp, MapPin, DollarSign, Calendar, TrendingUpIcon } from 'lucide-react';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -202,35 +202,55 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-4">
               {filteredCalls.map((call) => (
-                <div key={call.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h4 className="font-semibold text-lg">{call.title}</h4>
-                        <p className="text-sm text-gray-600">{call.production}</p>
-                      </div>
-                      {call.matchScore && (
-                        <div className={`px-3 py-1 rounded-full text-sm font-semibold ml-4 ${
-                          call.matchScore >= 85 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {call.matchScore}%
-                        </div>
-                      )}
+                <div key={call.id} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="text-xl font-bold">{call.title}</h3>
+                      <p className="text-sm text-gray-600">{call.production}</p>
                     </div>
-                    <div className="grid grid-cols-4 gap-4 text-sm text-gray-600">
-                      <div>📍 {call.location}</div>
-                      <div>💰 {call.compensation}</div>
-                      <div>📅 {new Date(call.submissionDeadline).toLocaleDateString()}</div>
-                      <div>🎬 {call.roleType}</div>
-                    </div>
+                    <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium">
+                      {call.roleType}
+                    </span>
                   </div>
-                  <Button 
-                    onClick={() => router.push(`/dashboard/calls/${call.id}`)}
-                    variant={call.hasSubmitted ? 'outline' : 'default'}
-                    disabled={call.hasSubmitted}
-                  >
-                    {call.hasSubmitted ? '✓ Submitted' : 'Submit to This Call'}
-                  </Button>
+                  
+                  <p className="text-gray-700 mb-3">{call.description}</p>
+                  
+                  <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                    <span className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4" />
+                      {call.location}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <DollarSign className="h-4 w-4" />
+                      {call.compensation}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      Deadline: {new Date(call.submissionDeadline).toLocaleDateString()}
+                    </span>
+                    {call.matchScore && (
+                      <span className="flex items-center gap-1">
+                        <TrendingUpIcon className="h-4 w-4" />
+                        Match: {call.matchScore}%
+                      </span>
+                    )}
+                  </div>
+
+                  {call.hasSubmitted ? (
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Submitted</span>
+                    </div>
+                  ) : (
+                    <Button 
+                      onClick={() => router.push(`/dashboard/calls/${call.id}`)}
+                      size="sm"
+                    >
+                      Submit to This Call
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
