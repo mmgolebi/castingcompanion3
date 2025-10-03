@@ -38,8 +38,39 @@ export async function POST(req: Request) {
         }
 
         console.log('Checkout completed for user:', userId);
+        console.log('Customer ID:', session.customer);
 
-        if (isTrial) {
+        // Get user profile first
+        const userProfile = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            age: true,
+            playableAgeMin: true,
+            playableAgeMax: true,
+            gender: true,
+            state: true,
+            city: true,
+            unionStatus: true,
+            ethnicity: true,
+            roleTypesInterested: true,
+            phone: true,
+            headshot: true,
+            fullBody: true,
+            resume: true,
+            demoReel: true,
+            skills: true,
+          },
+        });
+
+        if (!userProfile) {
+          console.error('User profile not found:', userId);
+          break;
+        }
+
+        if (isTrial && session.customer) {
           const trialEndDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 
           const mainPrice = await stripe.prices.create({
@@ -73,36 +104,15 @@ export async function POST(req: Request) {
           });
 
           console.log(`Trial subscription created for user ${userId}`);
-        }
-
-        // Get user profile for welcome email and auto-submission
-        const userProfile = await prisma.user.findUnique({
-          where: { id: userId },
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            age: true,
-            playableAgeMin: true,
-            playableAgeMax: true,
-            gender: true,
-            state: true,
-            city: true,
-            unionStatus: true,
-            ethnicity: true,
-            roleTypesInterested: true,
-            phone: true,
-            headshot: true,
-            fullBody: true,
-            resume: true,
-            demoReel: true,
-            skills: true,
-          },
-        });
-
-        if (!userProfile) {
-          console.error('User profile not found:', userId);
-          break;
+        } else if (session.customer) {
+          // Not a trial, just update customer ID
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              stripeCustomerId: session.customer as string,
+              subStatus: 'ACTIVE',
+            },
+          });
         }
 
         // Send welcome email
@@ -131,6 +141,21 @@ export async function POST(req: Request) {
 
           if (matchScore >= 85) {
             console.log(`Auto-submitting to: ${call.title}`);
+
+            // Check if already submitted
+            const existingSubmission = await prisma.submission.findUnique({
+              where: {
+                userId_callId: {
+                  userId: userProfile.id,
+                  callId: call.id,
+                },
+              },
+            });
+
+            if (existingSubmission) {
+              console.log(`Already submitted to ${call.title}, skipping`);
+              continue;
+            }
 
             await prisma.submission.create({
               data: {
