@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
 import { CheckCircle2 } from 'lucide-react';
 
@@ -22,6 +23,11 @@ export default function Step4Page() {
     city: '',
     state: '',
     zipCode: '',
+    availability: '',
+    reliableTransportation: false,
+    travelWilling: false,
+    compensationPreference: '',
+    compensationMin: '',
   });
 
   useEffect(() => {
@@ -40,6 +46,11 @@ export default function Step4Page() {
             city: data.city || '',
             state: data.state || '',
             zipCode: data.zipCode || '',
+            availability: data.availability || '',
+            reliableTransportation: data.reliableTransportation || false,
+            travelWilling: data.travelWilling || false,
+            compensationPreference: data.compensationPreference || '',
+            compensationMin: data.compensationMin || '',
           });
           if (data.state) {
             setSelectedState(data.state);
@@ -146,8 +157,8 @@ export default function Step4Page() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Location Details</CardTitle>
-            <CardDescription>Where are you based?</CardDescription>
+            <CardTitle>Location & Logistics</CardTitle>
+            <CardDescription>Where are you based and what's your availability?</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -212,6 +223,71 @@ export default function Step4Page() {
                   onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
                   maxLength={5}
                   required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="availability">Availability *</Label>
+                <Select
+                  value={formData.availability}
+                  onValueChange={(value) => setFormData({ ...formData, availability: value })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select availability" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FULL_TIME">Full-time (available immediately)</SelectItem>
+                    <SelectItem value="PART_TIME">Part-time (flexible schedule)</SelectItem>
+                    <SelectItem value="WEEKENDS">Weekends only</SelectItem>
+                    <SelectItem value="EVENINGS">Evenings only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="reliableTransportation"
+                  checked={formData.reliableTransportation}
+                  onCheckedChange={(checked) => setFormData({ ...formData, reliableTransportation: checked as boolean })}
+                />
+                <Label htmlFor="reliableTransportation">I have reliable transportation</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="travelWilling"
+                  checked={formData.travelWilling}
+                  onCheckedChange={(checked) => setFormData({ ...formData, travelWilling: checked as boolean })}
+                />
+                <Label htmlFor="travelWilling">Willing to travel for roles</Label>
+              </div>
+
+              <div>
+                <Label htmlFor="compensationPreference">Compensation Preferences *</Label>
+                <Select
+                  value={formData.compensationPreference}
+                  onValueChange={(value) => setFormData({ ...formData, compensationPreference: value })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select preference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PAID_ONLY">Paid roles only</SelectItem>
+                    <SelectItem value="OPEN_TO_UNPAID">Open to unpaid/student films</SelectItem>
+                    <SelectItem value="NEGOTIABLE">Negotiable</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="compensationMin">Minimum Day Rate (optional)</Label>
+                <Input
+                  id="compensationMin"
+                  value={formData.compensationMin}
+                  onChange={(e) => setFormData({ ...formData, compensationMin: e.target.value })}
+                  placeholder="e.g., $200/day"
                 />
               </div>
 

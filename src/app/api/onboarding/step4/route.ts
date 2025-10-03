@@ -15,10 +15,14 @@ export async function POST(req: Request) {
     await prisma.user.update({
       where: { id: userId },
       data: {
-        phone: data.phone,
         city: data.city,
         state: data.state,
         zipCode: data.zipCode,
+        availability: data.availability,
+        reliableTransportation: data.reliableTransportation,
+        travelWilling: data.travelWilling,
+        compensationPreference: data.compensationPreference,
+        compensationMin: data.compensationMin,
       },
     });
 
