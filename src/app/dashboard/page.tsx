@@ -7,11 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bell, Send, Target, TrendingUp, MapPin, DollarSign, Calendar, TrendingUpIcon } from 'lucide-react';
+import { Bell, Send, Target, TrendingUp, MapPin, DollarSign, Calendar, TrendingUpIcon, Check } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { toast } = useToast();
   const [stats, setStats] = useState({
     totalSubmissions: 0,
     pendingSubmissions: 0,
@@ -21,6 +23,7 @@ export default function DashboardPage() {
   const [calls, setCalls] = useState<any[]>([]);
   const [recentSubmissions, setRecentSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     search: '',
     roleType: 'all',
@@ -34,45 +37,79 @@ export default function DashboardPage() {
     }
   }, [status, router]);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const params = new URLSearchParams();
-        if (filters.roleType !== 'all') params.append('roleType', filters.roleType);
-        if (filters.location) params.append('location', filters.location);
-        if (filters.unionStatus !== 'all') params.append('unionStatus', filters.unionStatus);
+  const fetchDashboardData = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (filters.roleType !== 'all') params.append('roleType', filters.roleType);
+      if (filters.location) params.append('location', filters.location);
+      if (filters.unionStatus !== 'all') params.append('unionStatus', filters.unionStatus);
 
-        const [statsRes, callsRes, submissionsRes] = await Promise.all([
-          fetch('/api/dashboard/stats'),
-          fetch(`/api/casting-calls?${params}`),
-          fetch('/api/dashboard/recent-submissions'),
-        ]);
+      const [statsRes, callsRes, submissionsRes] = await Promise.all([
+        fetch('/api/dashboard/stats'),
+        fetch(`/api/casting-calls?${params}`),
+        fetch('/api/dashboard/recent-submissions'),
+      ]);
 
-        if (statsRes.ok) {
-          const statsData = await statsRes.json();
-          setStats(statsData);
-        }
-
-        if (callsRes.ok) {
-          const callsData = await callsRes.json();
-          setCalls(callsData);
-        }
-
-        if (submissionsRes.ok) {
-          const submissionsData = await submissionsRes.json();
-          setRecentSubmissions(submissionsData);
-        }
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData);
       }
-    };
 
+      if (callsRes.ok) {
+        const callsData = await callsRes.json();
+        setCalls(callsData);
+      }
+
+      if (submissionsRes.ok) {
+        const submissionsData = await submissionsRes.json();
+        setRecentSubmissions(submissionsData);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (status === 'authenticated') {
       fetchDashboardData();
     }
   }, [status, filters.roleType, filters.location, filters.unionStatus]);
+
+  const handleSubmit = async (callId: string) => {
+    setSubmitting(callId);
+    try {
+      const res = await fetch(`/api/casting-calls/${callId}/submit`, {
+        method: 'POST',
+      });
+
+      if (res.ok) {
+        toast({
+          title: "Success!",
+          description: "Your submission has been sent to the casting director.",
+        });
+        // Refresh the data to update the UI
+        await fetchDashboardData();
+      } else {
+        const error = await res.json();
+        toast({
+          title: "Error",
+          description: error.error || 'Failed to submit',
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Submit error:', error);
+      toast({
+        title: "Error",
+        description: 'An error occurred while submitting',
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(null);
+    }
+  };
 
   const filteredCalls = calls.filter(call =>
     call.title.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -238,17 +275,16 @@ export default function DashboardPage() {
 
                   {call.hasSubmitted ? (
                     <div className="flex items-center gap-2 text-gray-500">
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                      <Check className="h-5 w-5" />
                       <span>Submitted</span>
                     </div>
                   ) : (
                     <Button 
-                      onClick={() => router.push(`/dashboard/calls/${call.id}`)}
+                      onClick={() => handleSubmit(call.id)}
+                      disabled={submitting === call.id}
                       size="sm"
                     >
-                      Submit to This Call
+                      {submitting === call.id ? 'Submitting...' : 'Submit to This Call'}
                     </Button>
                   )}
                 </div>

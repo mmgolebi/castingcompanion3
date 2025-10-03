@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
+import { Toaster } from '@/components/ui/toaster';
 
 async function signOutAction() {
   'use server';
@@ -61,6 +62,7 @@ export default async function DashboardLayout({
         </div>
       </nav>
       {children}
+      <Toaster />
     </div>
   );
 }
