@@ -6,49 +6,20 @@ import { calculateMatchScore } from '@/lib/matchScore';
 export async function GET(req: Request) {
   try {
     const session = await auth();
-    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const userId = (session.user as any).id;
     const { searchParams } = new URL(req.url);
+    
     const roleType = searchParams.get('roleType');
     const location = searchParams.get('location');
     const unionStatus = searchParams.get('unionStatus');
 
-    const where: any = {
-      submissionDeadline: {
-        gte: new Date(),
-      },
-    };
-
-    if (roleType && roleType !== 'all') {
-      where.roleType = roleType;
-    }
-
-    if (location) {
-      where.location = {
-        contains: location,
-        mode: 'insensitive',
-      };
-    }
-
-    if (unionStatus && unionStatus !== 'all') {
-      where.unionReq = unionStatus;
-    }
-
-    const castingCalls = await prisma.castingCall.findMany({
-      where,
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    // Get user profile for match calculation
     const user = await prisma.user.findUnique({
-      where: { id: (session.user as any).id },
+      where: { id: userId },
       select: {
-        id: true,
         age: true,
         playableAgeMin: true,
         playableAgeMax: true,
@@ -57,7 +28,6 @@ export async function GET(req: Request) {
         city: true,
         unionStatus: true,
         ethnicity: true,
-        roleTypesInterested: true,
       },
     });
 
@@ -65,30 +35,56 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Get user's submissions
-    const submissions = await prisma.submission.findMany({
-      where: { userId: (session.user as any).id },
-      select: { callId: true },
+    const where: any = {
+      submissionDeadline: {
+        gte: new Date(),
+      },
+    };
+
+    if (roleType) where.roleType = roleType;
+    if (location) {
+      where.location = {
+        contains: location,
+        mode: 'insensitive',
+      };
+    }
+    if (unionStatus) where.unionStatus = unionStatus;
+
+    const castingCalls = await prisma.castingCall.findMany({
+      where,
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
-    const submittedCallIds = new Set(submissions.map(s => s.callId));
+    const submissions = await prisma.submission.findMany({
+      where: { userId },
+      select: { 
+        callId: true,
+        method: true,
+      },
+    });
 
-    // Add match scores and submission status
+    const submissionMap = new Map(submissions.map(s => [s.callId, s.method]));
+
     const callsWithScores = castingCalls.map(call => {
       const matchScore = calculateMatchScore(user, call);
+      const hasSubmitted = submissionMap.has(call.id);
+      const submissionMethod = submissionMap.get(call.id);
+      
       return {
         ...call,
         matchScore,
-        hasSubmitted: submittedCallIds.has(call.id),
+        hasSubmitted,
+        submissionMethod,
       };
     });
 
-    // Sort by match score
     callsWithScores.sort((a, b) => b.matchScore - a.matchScore);
 
     return NextResponse.json(callsWithScores);
   } catch (error: any) {
-    console.error('Get casting calls error:', error);
+    console.error('Error fetching casting calls:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch casting calls' },
       { status: 500 }

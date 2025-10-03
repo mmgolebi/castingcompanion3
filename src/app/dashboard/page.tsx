@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bell, Send, Target, TrendingUp, MapPin, DollarSign, Calendar, TrendingUpIcon, Check, ChevronLeft, ChevronRight, Search, ArrowRight } from 'lucide-react';
+import { Bell, Send, Target, TrendingUp, MapPin, DollarSign, Calendar, TrendingUpIcon, Check, ChevronLeft, ChevronRight, Search, ArrowRight, Zap } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const ITEMS_PER_PAGE = 10;
@@ -307,10 +307,17 @@ export default function DashboardPage() {
                         </div>
 
                         {call.hasSubmitted ? (
-                          <div className="flex items-center gap-2 text-gray-500">
-                            <Check className="h-5 w-5" />
-                            <span>Submitted</span>
-                          </div>
+                          call.submissionMethod === 'AUTO' ? (
+                            <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1.5 rounded-md w-fit">
+                              <Zap className="h-5 w-5" />
+                              <span className="font-medium">Auto-Submitted</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-gray-500">
+                              <Check className="h-5 w-5" />
+                              <span>Submitted</span>
+                            </div>
+                          )
                         ) : (
                           <Button 
                             onClick={() => handleSubmit(call.id)}
@@ -386,10 +393,19 @@ export default function DashboardPage() {
                       Match: {submission.matchScore}%
                     </p>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-sm ${
-                    submission.method === 'AUTO' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    submission.method === 'AUTO' 
+                      ? 'bg-amber-100 text-amber-700 flex items-center gap-1' 
+                      : 'bg-blue-100 text-blue-700'
                   }`}>
-                    {submission.method === 'AUTO' ? 'Auto' : 'Manual'}
+                    {submission.method === 'AUTO' ? (
+                      <>
+                        <Zap className="h-4 w-4" />
+                        Auto
+                      </>
+                    ) : (
+                      'Manual'
+                    )}
                   </div>
                 </div>
               ))}
