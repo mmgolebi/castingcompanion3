@@ -46,9 +46,6 @@ export default async function DashboardLayout({
                 <Button variant="outline">Admin Panel</Button>
               </Link>
             )}
-            <Link href="/dashboard/calls">
-              <Button variant="ghost">Browse Calls</Button>
-            </Link>
             <Link href="/dashboard/profile">
               <Button variant="ghost">Profile</Button>
             </Link>

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bell, Send, Target, TrendingUp, MapPin, DollarSign, Calendar, TrendingUpIcon, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bell, Send, Target, TrendingUp, MapPin, DollarSign, Calendar, TrendingUpIcon, Check, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const ITEMS_PER_PAGE = 10;
@@ -77,7 +77,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (status === 'authenticated') {
       fetchDashboardData();
-      setCurrentPage(1); // Reset to first page when filters change
+      setCurrentPage(1);
     }
   }, [status, filters.roleType, filters.location, filters.unionStatus]);
 
@@ -119,7 +119,6 @@ export default function DashboardPage() {
     call.production.toLowerCase().includes(filters.search.toLowerCase())
   );
 
-  // Pagination
   const totalPages = Math.ceil(filteredCalls.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
@@ -192,7 +191,7 @@ export default function DashboardPage() {
             <TrendingUp className="h-4 w-4 text-gray-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.avgMatchScore}%</div>
+            <div className="text-2xl font-bold">{stats.avgMatchScore > 0 ? `${stats.avgMatchScore}%` : '0%'}</div>
             <p className="text-xs text-gray-500 mt-1">Profile compatibility</p>
           </CardContent>
         </Card>
@@ -205,12 +204,15 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4 mb-6">
-            <Input
-              placeholder="Search by title or production..."
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="w-full"
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search by title or production..."
+                value={filters.search}
+                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                className="pl-10 w-full"
+              />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Select value={filters.roleType} onValueChange={(value) => setFilters({ ...filters, roleType: value })}>
                 <SelectTrigger>

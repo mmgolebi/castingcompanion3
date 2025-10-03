@@ -2,22 +2,22 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await auth();
+    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userId = (session.user as any).id;
 
-    // Get submission stats
     const [totalSubmissions, pendingSubmissions, activeCalls, submissions] = await Promise.all([
       prisma.submission.count({
         where: { userId },
       }),
       prisma.submission.count({
-        where: { 
+        where: {
           userId,
           status: 'SENT',
         },
@@ -35,21 +35,20 @@ export async function GET() {
       }),
     ]);
 
-    // Calculate average match score
-    const matchScore = submissions.length > 0
-      ? Math.round(submissions.reduce((sum, s) => sum + (s.matchScore || 0), 0) / submissions.length)
+    const avgMatchScore = submissions.length > 0
+      ? Math.round(submissions.reduce((acc, s) => acc + (s.matchScore || 0), 0) / submissions.length)
       : 0;
 
     return NextResponse.json({
       totalSubmissions,
       pendingSubmissions,
       activeCalls,
-      matchScore,
+      avgMatchScore,
     });
-  } catch (error) {
-    console.error('Dashboard stats error:', error);
+  } catch (error: any) {
+    console.error('Get stats error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch stats' },
+      { error: error.message || 'Failed to fetch stats' },
       { status: 500 }
     );
   }
