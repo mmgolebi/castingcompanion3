@@ -84,7 +84,6 @@ export default function Step3Page() {
   };
 
   const handleRemoveCustomSkill = (skill: string) => {
-    // Only allow removing custom skills (not predefined ones via this method)
     if (!predefinedSkills.includes(skill)) {
       setSkills(prev => prev.filter(s => s !== skill));
     }
@@ -127,7 +126,6 @@ export default function Step3Page() {
     );
   }
 
-  // Get custom skills (those not in predefined list)
   const customSkills = skills.filter(skill => !predefinedSkills.includes(skill));
 
   return (
@@ -136,10 +134,13 @@ export default function Step3Page() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-3xl font-bold">Complete Your Profile</h1>
-            <span className="text-sm font-medium text-gray-600">Step 3 of 4</span>
+            <div className="text-right">
+              <div className="text-sm font-medium text-gray-600 mb-1">Step 3 of 4</div>
+              <div className="text-xs text-gray-500">Skills & Preferences</div>
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-purple-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div className="bg-purple-600 h-2.5 rounded-full transition-all duration-300" style={{ width: '75%' }}></div>
           </div>
         </div>
 

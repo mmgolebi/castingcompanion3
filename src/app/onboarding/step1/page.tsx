@@ -61,13 +61,9 @@ export default function Step1Page() {
   }, [status]);
 
   const formatPhoneAsYouType = (value: string): string => {
-    // Remove all non-digits
     const cleaned = value.replace(/\D/g, '');
-    
-    // Limit to 10 digits
     const limited = cleaned.slice(0, 10);
     
-    // Format as user types
     if (limited.length <= 3) {
       return limited;
     } else if (limited.length <= 6) {
@@ -86,7 +82,6 @@ export default function Step1Page() {
     const formatted = formatPhoneAsYouType(value);
     setFormData({ ...formData, phone: formatted });
     
-    // Validate
     const cleaned = formatted.replace(/\D/g, '');
     if (cleaned.length > 0 && cleaned.length < 10) {
       setPhoneError('Phone number must be 10 digits');
@@ -98,13 +93,11 @@ export default function Step1Page() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate phone
     if (!validatePhone(formData.phone)) {
       setPhoneError('Please enter a valid 10-digit US or Canadian phone number');
       return;
     }
 
-    // Validate age range
     if (formData.playableAgeMin && formData.playableAgeMax) {
       if (parseInt(formData.playableAgeMin) > parseInt(formData.playableAgeMax)) {
         alert('Minimum playable age cannot be greater than maximum');
@@ -153,10 +146,13 @@ export default function Step1Page() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-3xl font-bold">Complete Your Profile</h1>
-            <span className="text-sm font-medium text-gray-600">Step 1 of 4</span>
+            <div className="text-right">
+              <div className="text-sm font-medium text-gray-600 mb-1">Step 1 of 4</div>
+              <div className="text-xs text-gray-500">Basic Information</div>
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-purple-600 h-2 rounded-full" style={{ width: '25%' }}></div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div className="bg-purple-600 h-2.5 rounded-full transition-all duration-300" style={{ width: '25%' }}></div>
           </div>
         </div>
 

@@ -8,25 +8,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
 
 export default function Step4Page() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [selectedState, setSelectedState] = useState('');
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [formData, setFormData] = useState({
-    heightFeet: '',
-    heightInches: '',
-    weight: '',
-    ethnicity: '',
-    hairColor: '',
-    eyeColor: '',
-    visibleTattoos: false,
-    availability: '',
-    reliableTransportation: false,
-    travelWilling: false,
-    compensationPreference: '',
-    compensationMin: '',
+    city: '',
+    state: '',
+    zipCode: '',
   });
 
   useEffect(() => {
@@ -35,46 +28,63 @@ export default function Step4Page() {
     }
   }, [status, router]);
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch('/api/profile');
+        if (res.ok) {
+          const data = await res.json();
+          setFormData({
+            city: data.city || '',
+            state: data.state || '',
+            zipCode: data.zipCode || '',
+          });
+          if (data.state) {
+            setSelectedState(data.state);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (status === 'authenticated') {
+      fetchProfile();
+    }
+  }, [status]);
+
+  useEffect(() => {
+    if (selectedState) {
+      const cities = MAJOR_CITIES_BY_STATE[selectedState] || [];
+      setAvailableCities(cities);
+      setFormData({ ...formData, state: selectedState });
+    }
+  }, [selectedState]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
     try {
-      const totalHeight = (parseInt(formData.heightFeet) * 12) + parseInt(formData.heightInches);
-      
       const res = await fetch('/api/onboarding/step4', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          height: totalHeight,
-          weight: parseInt(formData.weight),
-          ethnicity: formData.ethnicity,
-          hairColor: formData.hairColor,
-          eyeColor: formData.eyeColor,
-          visibleTattoos: formData.visibleTattoos,
-          availability: formData.availability,
-          reliableTransportation: formData.reliableTransportation,
-          travelWilling: formData.travelWilling,
-          compensationPreference: formData.compensationPreference,
-          compensationMin: formData.compensationMin,
-        }),
+        body: JSON.stringify(formData),
       });
 
       if (res.ok) {
-        router.push('/onboarding/payment');
+        router.push('/dashboard');
       } else {
-        const error = await res.json();
-        alert(error.error || 'Failed to save');
+        alert('Failed to save step 4');
       }
     } catch (error) {
       console.error('Error:', error);
       alert('An error occurred');
-    } finally {
-      setLoading(false);
     }
   };
 
-  if (status === 'loading') {
+  if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -83,192 +93,109 @@ export default function Step4Page() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4">
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle>Logistics & Physical Attributes</CardTitle>
-          <CardDescription>Step 4 of 4 - Final details to complete your profile</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <Label>Availability *</Label>
-              <Select
-                value={formData.availability}
-                onValueChange={(value) => setFormData({ ...formData, availability: value })}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select availability" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="FULL_TIME">Full-time (available immediately)</SelectItem>
-                  <SelectItem value="PART_TIME">Part-time (flexible schedule)</SelectItem>
-                  <SelectItem value="WEEKENDS">Weekends only</SelectItem>
-                  <SelectItem value="EVENINGS">Evenings only</SelectItem>
-                </SelectContent>
-              </Select>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 py-12 px-4">
+      <div className="container mx-auto max-w-2xl">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-3xl font-bold">Complete Your Profile</h1>
+            <div className="text-right">
+              <div className="text-sm font-medium text-gray-600 mb-1">Step 4 of 4</div>
+              <div className="text-xs text-gray-500">Location Details</div>
             </div>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div className="bg-purple-600 h-2.5 rounded-full transition-all duration-300" style={{ width: '100%' }}></div>
+          </div>
+        </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="reliableTransportation"
-                checked={formData.reliableTransportation}
-                onCheckedChange={(checked) => setFormData({ ...formData, reliableTransportation: checked as boolean })}
-              />
-              <Label htmlFor="reliableTransportation">I have reliable transportation</Label>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="travelWilling"
-                checked={formData.travelWilling}
-                onCheckedChange={(checked) => setFormData({ ...formData, travelWilling: checked as boolean })}
-              />
-              <Label htmlFor="travelWilling">Willing to travel for roles</Label>
-            </div>
-
-            <div>
-              <Label>Compensation Preferences *</Label>
-              <Select
-                value={formData.compensationPreference}
-                onValueChange={(value) => setFormData({ ...formData, compensationPreference: value })}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select compensation preference" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PAID_ONLY">Paid roles only</SelectItem>
-                  <SelectItem value="OPEN_TO_UNPAID">Open to unpaid/student films</SelectItem>
-                  <SelectItem value="NEGOTIABLE">Negotiable</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <hr className="my-6" />
-
-            <h3 className="text-lg font-semibold">Physical Attributes</h3>
-
-            <div>
-              <Label>Height</Label>
-              <div className="grid grid-cols-2 gap-4 mt-2">
-                <Input
-                  type="number"
-                  value={formData.heightFeet}
-                  onChange={(e) => setFormData({ ...formData, heightFeet: e.target.value })}
-                  placeholder="Feet"
-                  min="0"
-                  max="8"
-                />
-                <Input
-                  type="number"
-                  value={formData.heightInches}
-                  onChange={(e) => setFormData({ ...formData, heightInches: e.target.value })}
-                  placeholder="Inches"
-                  min="0"
-                  max="11"
-                />
-              </div>
-              <p className="text-sm text-gray-600 mt-1">e.g., 5 feet 8 inches</p>
-            </div>
-
-            <div>
-              <Label htmlFor="weight">Weight</Label>
-              <Input
-                id="weight"
-                type="number"
-                value={formData.weight}
-                onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                placeholder="150 lbs"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="ethnicity">Ethnicity</Label>
-              <Select
-                value={formData.ethnicity}
-                onValueChange={(value) => setFormData({ ...formData, ethnicity: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select ethnicity" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="WHITE">White/Caucasian</SelectItem>
-                  <SelectItem value="BLACK">Black/African American</SelectItem>
-                  <SelectItem value="HISPANIC">Hispanic/Latino</SelectItem>
-                  <SelectItem value="ASIAN">Asian</SelectItem>
-                  <SelectItem value="NATIVE_AMERICAN">Native American</SelectItem>
-                  <SelectItem value="MIDDLE_EASTERN">Middle Eastern</SelectItem>
-                  <SelectItem value="PACIFIC_ISLANDER">Pacific Islander</SelectItem>
-                  <SelectItem value="MIXED">Mixed/Multiracial</SelectItem>
-                  <SelectItem value="OTHER">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Location Details</CardTitle>
+            <CardDescription>Where are you based?</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <Label htmlFor="hairColor">Hair Color</Label>
+                <Label htmlFor="state">State *</Label>
                 <Select
-                  value={formData.hairColor}
-                  onValueChange={(value) => setFormData({ ...formData, hairColor: value })}
+                  value={selectedState}
+                  onValueChange={(value) => setSelectedState(value)}
+                  required
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select hair color" />
+                    <SelectValue placeholder="Select state" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="BLACK">Black</SelectItem>
-                    <SelectItem value="BROWN">Brown</SelectItem>
-                    <SelectItem value="BLONDE">Blonde</SelectItem>
-                    <SelectItem value="RED">Red</SelectItem>
-                    <SelectItem value="GRAY">Gray</SelectItem>
-                    <SelectItem value="WHITE">White</SelectItem>
-                    <SelectItem value="OTHER">Other</SelectItem>
+                    {US_STATES.map((state) => (
+                      <SelectItem key={state.value} value={state.value}>
+                        {state.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="eyeColor">Eye Color</Label>
-                <Select
-                  value={formData.eyeColor}
-                  onValueChange={(value) => setFormData({ ...formData, eyeColor: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select eye color" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="BROWN">Brown</SelectItem>
-                    <SelectItem value="BLUE">Blue</SelectItem>
-                    <SelectItem value="GREEN">Green</SelectItem>
-                    <SelectItem value="HAZEL">Hazel</SelectItem>
-                    <SelectItem value="GRAY">Gray</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="city">City *</Label>
+                {availableCities.length > 0 ? (
+                  <Select
+                    value={formData.city}
+                    onValueChange={(value) => setFormData({ ...formData, city: value })}
+                    disabled={!selectedState}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select city" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCities.map((city) => (
+                        <SelectItem key={city} value={city}>
+                          {city}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    placeholder="Enter city"
+                    disabled={!selectedState}
+                    required
+                  />
+                )}
               </div>
-            </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="visibleTattoos"
-                checked={formData.visibleTattoos}
-                onCheckedChange={(checked) => setFormData({ ...formData, visibleTattoos: checked as boolean })}
-              />
-              <Label htmlFor="visibleTattoos">I have visible tattoos</Label>
-            </div>
+              <div>
+                <Label htmlFor="zipCode">ZIP Code *</Label>
+                <Input
+                  id="zipCode"
+                  value={formData.zipCode}
+                  onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                  maxLength={5}
+                  required
+                />
+              </div>
 
-            <div className="flex gap-4">
-              <Button type="button" variant="outline" onClick={() => router.push('/onboarding/step3')}>
-                Back
-              </Button>
-              <Button type="submit" disabled={loading} className="flex-1">
-                {loading ? 'Saving...' : 'Continue to Payment'}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+              <div className="flex gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push('/onboarding/step3')}
+                  className="flex-1"
+                >
+                  Back
+                </Button>
+                <Button type="submit" className="flex-1">
+                  Complete Profile
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
