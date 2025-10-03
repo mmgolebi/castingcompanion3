@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
+import Stripe from 'stripe';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia',
+  apiVersion: '2024-06-20',
 });
 
 export async function POST(req: Request) {
@@ -15,89 +15,51 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json();
-    const sessionId = body.sessionId;
-    const userId = (session.user as any).id;
-    const userEmail = session.user.email!;
+    const { customerId } = await req.json();
 
-    if (!sessionId) {
-      return NextResponse.json({ error: 'Missing session ID' }, { status: 400 });
+    if (!customerId) {
+      return NextResponse.json({ error: 'Customer ID required' }, { status: 400 });
     }
 
-    // Retrieve the setup session
-    const setupSession = await stripe.checkout.sessions.retrieve(sessionId);
-    const setupIntentId = setupSession.setup_intent as string;
-
-    // Get the payment method from setup intent
-    const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
-    const paymentMethodId = setupIntent.payment_method as string;
-
-    console.log('Payment Method:', paymentMethodId);
-
-    // Create a customer
-    const customer = await stripe.customers.create({
-      email: userEmail,
-      payment_method: paymentMethodId,
-      invoice_settings: {
-        default_payment_method: paymentMethodId,
-      },
-      metadata: {
-        userId,
-      },
-    });
-
-    console.log('Customer created:', customer.id);
-
-    // Charge $1 immediately
-    await stripe.paymentIntents.create({
-      amount: 100, // $1.00 in cents
-      currency: 'usd',
-      customer: customer.id,
-      payment_method: paymentMethodId,
-      off_session: true,
-      confirm: true,
-      description: '14-Day Trial Access Fee',
-      metadata: {
-        userId,
-        type: 'trial_fee',
-      },
-    });
-
-    console.log('$1 trial fee charged');
-
-    // Calculate trial end (14 days from now)
-    const trialEndDate = new Date();
-    trialEndDate.setDate(trialEndDate.getDate() + 14);
-    const trialEndTimestamp = Math.floor(trialEndDate.getTime() / 1000);
-
-    // Create subscription that starts billing in 14 days
+    // Create subscription with trial
     const subscription = await stripe.subscriptions.create({
-      customer: customer.id,
-      items: [{ price: process.env.STRIPE_MONTHLY_PRICE_ID! }],
-      default_payment_method: paymentMethodId,
-      trial_end: trialEndTimestamp,
-      metadata: { userId },
+      customer: customerId,
+      items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Casting Companion Pro',
+            },
+            unit_amount: 3997, // $39.97 in cents
+            recurring: {
+              interval: 'month',
+            },
+          },
+        },
+      ],
+      trial_period_days: 30,
+      metadata: {
+        userId: (session.user as any).id,
+      },
     });
 
-    console.log('Subscription created:', subscription.id);
-
-    // Update database
+    // Update user in database
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: (session.user as any).id },
       data: {
-        stripeCustomerId: customer.id,
+        stripeCustomerId: customerId,
         stripeSubId: subscription.id,
         subStatus: 'TRIAL',
-        trialEndsAt: trialEndDate,
-        onboardingComplete: true,
+        trialEndsAt: new Date(subscription.trial_end! * 1000),
       },
     });
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
+    return NextResponse.json({ subscriptionId: subscription.id });
+  } catch (error: any) {
     console.error('Setup subscription error:', error);
     return NextResponse.json(
-      { error: 'Failed to set up subscription' },
+      { error: error.message || 'Failed to setup subscription' },
       { status: 500 }
     );
   }
