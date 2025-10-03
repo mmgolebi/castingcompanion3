@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { X } from 'lucide-react';
+import { X, CheckCircle2 } from 'lucide-react';
 
 export default function Step3Page() {
   const { data: session, status } = useSession();
@@ -120,8 +120,8 @@ export default function Step3Page() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 to-indigo-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
       </div>
     );
   }
@@ -129,18 +129,38 @@ export default function Step3Page() {
   const customSkills = skills.filter(skill => !predefinedSkills.includes(skill));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 py-12 px-4">
-      <div className="container mx-auto max-w-2xl">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold">Complete Your Profile</h1>
-            <div className="text-right">
-              <div className="text-sm font-medium text-gray-600 mb-1">Step 3 of 4</div>
-              <div className="text-xs text-gray-500">Skills & Preferences</div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 py-12 px-4">
+      <div className="container mx-auto max-w-4xl">
+        <h1 className="text-4xl font-bold text-white mb-8">Complete Your Profile</h1>
+        
+        {/* Step Indicator */}
+        <div className="flex items-center justify-between mb-12 max-w-2xl mx-auto">
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
+              <CheckCircle2 className="h-6 w-6" />
             </div>
+            <span className="text-white text-sm font-medium">Basic Info</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div className="bg-purple-600 h-2.5 rounded-full transition-all duration-300" style={{ width: '75%' }}></div>
+          <div className="flex-1 h-1 bg-green-500 mx-4"></div>
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
+              <CheckCircle2 className="h-6 w-6" />
+            </div>
+            <span className="text-white text-sm font-medium">Media Assets</span>
+          </div>
+          <div className="flex-1 h-1 bg-green-500 mx-4"></div>
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-purple-900 mb-2 font-bold">
+              3
+            </div>
+            <span className="text-white text-sm font-medium">Preferences</span>
+          </div>
+          <div className="flex-1 h-1 bg-gray-600 mx-4"></div>
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center text-white mb-2">
+              4
+            </div>
+            <span className="text-gray-400 text-sm">Logistics</span>
           </div>
         </div>
 

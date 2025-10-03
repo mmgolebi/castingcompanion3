@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
+import { CheckCircle2 } from 'lucide-react';
 
 export default function Step4Page() {
   const { data: session, status } = useSession();
@@ -69,7 +70,6 @@ export default function Step4Page() {
     setSubmitting(true);
 
     try {
-      // Save location data
       const res = await fetch('/api/onboarding/step4', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -82,7 +82,6 @@ export default function Step4Page() {
         return;
       }
 
-      // Redirect to payment
       const checkoutRes = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
       });
@@ -103,25 +102,45 @@ export default function Step4Page() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 to-indigo-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 py-12 px-4">
-      <div className="container mx-auto max-w-2xl">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold">Complete Your Profile</h1>
-            <div className="text-right">
-              <div className="text-sm font-medium text-gray-600 mb-1">Step 4 of 4</div>
-              <div className="text-xs text-gray-500">Location Details</div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 py-12 px-4">
+      <div className="container mx-auto max-w-4xl">
+        <h1 className="text-4xl font-bold text-white mb-8">Complete Your Profile</h1>
+        
+        {/* Step Indicator */}
+        <div className="flex items-center justify-between mb-12 max-w-2xl mx-auto">
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
+              <CheckCircle2 className="h-6 w-6" />
             </div>
+            <span className="text-white text-sm font-medium">Basic Info</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div className="bg-purple-600 h-2.5 rounded-full transition-all duration-300" style={{ width: '100%' }}></div>
+          <div className="flex-1 h-1 bg-green-500 mx-4"></div>
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
+              <CheckCircle2 className="h-6 w-6" />
+            </div>
+            <span className="text-white text-sm font-medium">Media Assets</span>
+          </div>
+          <div className="flex-1 h-1 bg-green-500 mx-4"></div>
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
+              <CheckCircle2 className="h-6 w-6" />
+            </div>
+            <span className="text-white text-sm font-medium">Preferences</span>
+          </div>
+          <div className="flex-1 h-1 bg-green-500 mx-4"></div>
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-purple-900 mb-2 font-bold">
+              4
+            </div>
+            <span className="text-white text-sm font-medium">Logistics</span>
           </div>
         </div>
 
