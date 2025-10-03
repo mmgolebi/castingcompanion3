@@ -15,18 +15,16 @@ export async function POST(req: Request) {
     await prisma.user.update({
       where: { id: userId },
       data: {
-        roleTypesInterested: data.roleTypesInterested || [],
-        skills: data.skills || [],
-        comfortLevels: data.comfortLevels || [],
-        onboardingStep: 4,
+        skills: data.skills,
+        roleTypesInterested: data.roleTypesInterested,
       },
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Onboarding step 3 error:', error);
+  } catch (error: any) {
+    console.error('Step 3 error:', error);
     return NextResponse.json(
-      { error: 'Failed to save data' },
+      { error: error.message || 'Failed to save step 3' },
       { status: 500 }
     );
   }

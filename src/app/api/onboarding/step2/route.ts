@@ -18,16 +18,14 @@ export async function POST(req: Request) {
         headshot: data.headshot,
         fullBody: data.fullBody,
         resume: data.resume,
-        demoReel: data.demoReel,
-        onboardingStep: 3,
       },
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Onboarding step 2 error:', error);
+  } catch (error: any) {
+    console.error('Step 2 error:', error);
     return NextResponse.json(
-      { error: 'Failed to save data' },
+      { error: error.message || 'Failed to save step 2' },
       { status: 500 }
     );
   }

@@ -15,26 +15,20 @@ export async function POST(req: Request) {
     await prisma.user.update({
       where: { id: userId },
       data: {
-        name: data.name,
-        phone: data.phone,
-        city: data.city,
-        state: data.state,
-        zipCode: data.zipCode,
-        age: parseInt(data.age),
-        playableAgeMin: parseInt(data.playableAgeMin),
-        playableAgeMax: parseInt(data.playableAgeMax),
+        age: data.age,
+        playableAgeMin: data.playableAgeMin,
+        playableAgeMax: data.playableAgeMax,
         gender: data.gender,
         ethnicity: data.ethnicity,
         unionStatus: data.unionStatus,
-        onboardingStep: 2,
       },
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Onboarding step 1 error:', error);
+  } catch (error: any) {
+    console.error('Step 1 error:', error);
     return NextResponse.json(
-      { error: 'Failed to save data' },
+      { error: error.message || 'Failed to save step 1' },
       { status: 500 }
     );
   }
