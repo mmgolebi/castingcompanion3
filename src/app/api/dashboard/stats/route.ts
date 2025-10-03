@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { calculateMatchScore } from '@/lib/matchScore';
 
 export async function GET(req: Request) {
   try {
@@ -12,7 +13,22 @@ export async function GET(req: Request) {
 
     const userId = (session.user as any).id;
 
-    const [totalSubmissions, pendingSubmissions, activeCalls, submissions] = await Promise.all([
+    // Get user profile for match calculations
+    const userProfile = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        age: true,
+        playableAgeMin: true,
+        playableAgeMax: true,
+        gender: true,
+        state: true,
+        city: true,
+        unionStatus: true,
+        ethnicity: true,
+      },
+    });
+
+    const [totalSubmissions, pendingSubmissions, activeCalls] = await Promise.all([
       prisma.submission.count({
         where: { userId },
       }),
@@ -22,27 +38,26 @@ export async function GET(req: Request) {
           status: 'SENT',
         },
       }),
-      prisma.castingCall.count({
+      prisma.castingCall.findMany({
         where: {
           submissionDeadline: {
             gte: new Date(),
           },
         },
       }),
-      prisma.submission.findMany({
-        where: { userId },
-        select: { matchScore: true },
-      }),
     ]);
 
-    const avgMatchScore = submissions.length > 0
-      ? Math.round(submissions.reduce((acc, s) => acc + (s.matchScore || 0), 0) / submissions.length)
-      : 0;
+    // Calculate average match score from all active casting calls
+    let avgMatchScore = 0;
+    if (userProfile && activeCalls.length > 0) {
+      const matchScores = activeCalls.map(call => calculateMatchScore(userProfile, call));
+      avgMatchScore = Math.round(matchScores.reduce((sum, score) => sum + score, 0) / matchScores.length);
+    }
 
     return NextResponse.json({
       totalSubmissions,
       pendingSubmissions,
-      activeCalls,
+      activeCalls: activeCalls.length,
       avgMatchScore,
     });
   } catch (error: any) {
