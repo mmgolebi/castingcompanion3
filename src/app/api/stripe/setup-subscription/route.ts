@@ -21,23 +21,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Customer ID required' }, { status: 400 });
     }
 
+    // Create a price for the subscription
+    const price = await stripe.prices.create({
+      currency: 'usd',
+      unit_amount: 3997, // $39.97 in cents
+      recurring: {
+        interval: 'month',
+      },
+      product_data: {
+        name: 'Casting Companion Pro',
+      },
+    });
+
     // Create subscription with trial
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
-      items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Casting Companion Pro',
-            },
-            unit_amount: 3997, // $39.97 in cents
-            recurring: {
-              interval: 'month',
-            },
-          },
-        },
-      ],
+      items: [{ price: price.id }],
       trial_period_days: 30,
       metadata: {
         userId: (session.user as any).id,
