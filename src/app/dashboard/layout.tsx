@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
+import { redirect } from 'next/navigation';
 
 async function signOutAction() {
   'use server';
   const { signOut } = await import('@/lib/auth');
-  await signOut();
-  const { redirect } = await import('next/navigation');
+  await signOut({ redirect: false });
   redirect('/');
 }
 
@@ -19,6 +19,11 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
+  
+  // Redirect to login if not authenticated
+  if (!session?.user) {
+    redirect('/auth/login');
+  }
   
   let isAdmin = false;
   if (session?.user) {
