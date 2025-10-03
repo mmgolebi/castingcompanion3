@@ -14,6 +14,7 @@ export default function Step4Page() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [selectedState, setSelectedState] = useState('');
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [formData, setFormData] = useState({
@@ -65,22 +66,38 @@ export default function Step4Page() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
 
     try {
+      // Save location data
       const res = await fetch('/api/onboarding/step4', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
-      if (res.ok) {
-        router.push('/dashboard');
-      } else {
+      if (!res.ok) {
         alert('Failed to save step 4');
+        setSubmitting(false);
+        return;
+      }
+
+      // Redirect to payment
+      const checkoutRes = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+      });
+
+      if (checkoutRes.ok) {
+        const { url } = await checkoutRes.json();
+        window.location.href = url;
+      } else {
+        alert('Failed to create checkout session');
+        setSubmitting(false);
       }
     } catch (error) {
       console.error('Error:', error);
       alert('An error occurred');
+      setSubmitting(false);
     }
   };
 
@@ -179,17 +196,24 @@ export default function Step4Page() {
                 />
               </div>
 
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-900">
+                  <strong>Almost there!</strong> After completing this step, you'll be redirected to set up your $1 trial subscription.
+                </p>
+              </div>
+
               <div className="flex gap-4">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => router.push('/onboarding/step3')}
                   className="flex-1"
+                  disabled={submitting}
                 >
                   Back
                 </Button>
-                <Button type="submit" className="flex-1">
-                  Complete Profile
+                <Button type="submit" className="flex-1" disabled={submitting}>
+                  {submitting ? 'Processing...' : 'Complete & Continue to Payment'}
                 </Button>
               </div>
             </form>

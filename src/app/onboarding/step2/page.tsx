@@ -1,23 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UploadButton } from '@/lib/uploadthing';
+import { FileText, Image as ImageIcon, User } from 'lucide-react';
 
-export default function OnboardingStep2() {
+export default function Step2Page() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [loading, setLoading] = useState(true);
+  const [uploads, setUploads] = useState({
     headshot: '',
     fullBody: '',
     resume: '',
-    demoReel: '',
   });
 
   useEffect(() => {
@@ -26,140 +25,202 @@ export default function OnboardingStep2() {
     }
   }, [status, router]);
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch('/api/profile');
+        if (res.ok) {
+          const data = await res.json();
+          setUploads({
+            headshot: data.headshot || '',
+            fullBody: data.fullBody || '',
+            resume: data.resume || '',
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (status === 'authenticated') {
+      fetchProfile();
+    }
+  }, [status]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+
+    if (!uploads.headshot || !uploads.fullBody || !uploads.resume) {
+      alert('Please upload all required files');
+      return;
+    }
 
     try {
       const res = await fetch('/api/onboarding/step2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(uploads),
       });
 
       if (res.ok) {
         router.push('/onboarding/step3');
       } else {
-        alert('Failed to save. Please try again.');
+        alert('Failed to save step 2');
       }
     } catch (error) {
-      console.error('Submit error:', error);
+      console.error('Error:', error);
       alert('An error occurred');
-    } finally {
-      setLoading(false);
     }
   };
 
-  if (status === 'loading') {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (status === 'loading' || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 py-12 px-4">
+      <div className="container mx-auto max-w-2xl">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="bg-green-500 rounded-full w-10 h-10 flex items-center justify-center">
-                <span className="font-bold text-white">✓</span>
-              </div>
-              <div className="bg-green-500 h-1 w-24"></div>
-              <div className="bg-white rounded-full w-10 h-10 flex items-center justify-center">
-                <span className="font-bold text-primary">2</span>
-              </div>
-              <div className="bg-gray-300 h-1 w-24"></div>
-              <div className="bg-gray-300 rounded-full w-10 h-10 flex items-center justify-center">
-                <span className="font-bold text-gray-500">3</span>
-              </div>
-              <div className="bg-gray-300 h-1 w-24"></div>
-              <div className="bg-gray-300 rounded-full w-10 h-10 flex items-center justify-center">
-                <span className="font-bold text-gray-500">4</span>
-              </div>
+            <h1 className="text-3xl font-bold">Complete Your Profile</h1>
+            <div className="text-right">
+              <div className="text-sm font-medium text-gray-600 mb-1">Step 2 of 4</div>
+              <div className="text-xs text-gray-500">Photos & Resume</div>
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-4 text-white text-xs">
-            <div>Basic Info</div>
-            <div className="font-semibold">Media Assets</div>
-            <div>Preferences</div>
-            <div>Logistics</div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div className="bg-purple-600 h-2.5 rounded-full transition-all duration-300" style={{ width: '50%' }}></div>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Media Assets</CardTitle>
-            <CardDescription>Upload your professional materials (optional - you can add these later)</CardDescription>
+            <CardTitle>Upload Your Materials</CardTitle>
+            <CardDescription>Professional headshot, full body photo, and resume required</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <Label>Headshot (Optional)</Label>
-                <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                <Label className="flex items-center gap-2 mb-2">
+                  <ImageIcon className="h-4 w-4" />
+                  Headshot *
+                </Label>
+                {uploads.headshot ? (
+                  <div className="space-y-2">
+                    <img src={uploads.headshot} alt="Headshot" className="w-48 h-48 object-cover rounded" />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUploads({ ...uploads, headshot: '' })}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ) : (
                   <UploadButton
                     endpoint="imageUploader"
                     onClientUploadComplete={(res) => {
-                      setFormData({ ...formData, headshot: res[0].url });
+                      if (res && res[0]) {
+                        setUploads({ ...uploads, headshot: res[0].url });
+                      }
                     }}
-                    onUploadError={(error: Error) => {
+                    onUploadError={(error) => {
                       alert(`Upload failed: ${error.message}`);
                     }}
                   />
-                  <p className="text-sm text-gray-500 mt-2">Professional headshot (JPG, PNG, up to 4MB)</p>
-                </div>
+                )}
               </div>
 
               <div>
-                <Label>Full Body Shot (Optional)</Label>
-                <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                <Label className="flex items-center gap-2 mb-2">
+                  <User className="h-4 w-4" />
+                  Full Body Photo *
+                </Label>
+                {uploads.fullBody ? (
+                  <div className="space-y-2">
+                    <img src={uploads.fullBody} alt="Full Body" className="w-48 h-64 object-cover rounded" />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUploads({ ...uploads, fullBody: '' })}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ) : (
                   <UploadButton
                     endpoint="imageUploader"
                     onClientUploadComplete={(res) => {
-                      setFormData({ ...formData, fullBody: res[0].url });
+                      if (res && res[0]) {
+                        setUploads({ ...uploads, fullBody: res[0].url });
+                      }
                     }}
-                    onUploadError={(error: Error) => {
+                    onUploadError={(error) => {
                       alert(`Upload failed: ${error.message}`);
                     }}
                   />
-                  <p className="text-sm text-gray-500 mt-2">Full body photo (JPG, PNG, up to 4MB)</p>
-                </div>
+                )}
               </div>
 
               <div>
-                <Label>Resume (Optional)</Label>
-                <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                <Label className="flex items-center gap-2 mb-2">
+                  <FileText className="h-4 w-4" />
+                  Acting Resume (PDF) *
+                </Label>
+                {uploads.resume ? (
+                  <div className="space-y-2">
+                    
+                      href={uploads.resume}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline text-sm"
+                    >
+                      View Resume
+                    </a>
+                    <br />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUploads({ ...uploads, resume: '' })}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ) : (
                   <UploadButton
-                    endpoint="imageUploader"
+                    endpoint="pdfUploader"
                     onClientUploadComplete={(res) => {
-                      setFormData({ ...formData, resume: res[0].url });
+                      if (res && res[0]) {
+                        setUploads({ ...uploads, resume: res[0].url });
+                      }
                     }}
-                    onUploadError={(error: Error) => {
+                    onUploadError={(error) => {
                       alert(`Upload failed: ${error.message}`);
                     }}
                   />
-                  <p className="text-sm text-gray-500 mt-2">Acting resume (PDF, up to 4MB)</p>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="demoReel">Demo Reel Link (Optional)</Label>
-                <Input
-                  id="demoReel"
-                  value={formData.demoReel}
-                  onChange={(e) => setFormData({ ...formData, demoReel: e.target.value })}
-                  placeholder="https://vimeo.com/your-reel"
-                />
-                <p className="text-xs text-gray-500 mt-1">YouTube, Vimeo, or other video platform</p>
+                )}
               </div>
 
               <div className="flex gap-4">
-                <Button type="button" variant="outline" onClick={() => router.push('/onboarding/step1')} className="flex-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push('/onboarding/step1')}
+                  className="flex-1"
+                >
                   Back
                 </Button>
-                <Button type="button" variant="ghost" onClick={() => router.push('/onboarding/step3')} className="flex-1">
-                  Skip for Now
-                </Button>
-                <Button type="submit" disabled={loading} className="flex-1">
-                  {loading ? 'Saving...' : 'Continue'}
+                <Button type="submit" className="flex-1">
+                  Continue to Step 3
                 </Button>
               </div>
             </form>
