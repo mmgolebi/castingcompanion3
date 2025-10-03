@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from '@/lib/db';
 import { calculateMatchScore } from '@/lib/matchScore';
-import { sendSubmissionEmail } from '@/lib/email';
+import { sendSubmissionEmail, sendWelcomeEmail } from '@/lib/email';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
@@ -40,13 +40,11 @@ export async function POST(req: Request) {
         console.log('Checkout completed for user:', userId);
 
         if (isTrial) {
-          // This is the $1 trial payment
-          const trialEndDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days from now
+          const trialEndDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 
-          // Create the main $39.97 recurring subscription that starts after trial
           const mainPrice = await stripe.prices.create({
             currency: 'usd',
-            unit_amount: 3997, // $39.97
+            unit_amount: 3997,
             recurring: {
               interval: 'month',
             },
@@ -64,7 +62,6 @@ export async function POST(req: Request) {
             },
           });
 
-          // Update user with trial info
           await prisma.user.update({
             where: { id: userId },
             data: {
@@ -75,10 +72,10 @@ export async function POST(req: Request) {
             },
           });
 
-          console.log(`Trial subscription created for user ${userId}, starts billing on ${trialEndDate}`);
+          console.log(`Trial subscription created for user ${userId}`);
         }
 
-        // Get user profile for auto-submission
+        // Get user profile for welcome email and auto-submission
         const userProfile = await prisma.user.findUnique({
           where: { id: userId },
           select: {
@@ -106,6 +103,14 @@ export async function POST(req: Request) {
         if (!userProfile) {
           console.error('User profile not found:', userId);
           break;
+        }
+
+        // Send welcome email
+        try {
+          await sendWelcomeEmail(userProfile.email, userProfile.name || 'Actor');
+          console.log(`Welcome email sent to ${userProfile.email}`);
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
         }
 
         // Get all active casting calls
@@ -145,9 +150,9 @@ export async function POST(req: Request) {
                 castingCall: call,
                 submissionId: call.id,
               });
-              console.log(`Submission email sent for ${call.title}`);
+              console.log(`Auto-submission email sent for ${call.title}`);
             } catch (emailError) {
-              console.error('Failed to send submission email:', emailError);
+              console.error('Failed to send auto-submission email:', emailError);
             }
           }
         }
