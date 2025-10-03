@@ -1,58 +1,53 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { sendPasswordResetEmail } from '@/lib/email';
-import { z } from 'zod';
 import crypto from 'crypto';
-
-const resetRequestSchema = z.object({
-  email: z.string().email('Invalid email address'),
-});
+import { sendPasswordResetEmail } from '@/lib/email';
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { email } = resetRequestSchema.parse(body);
+    const { email } = await req.json();
+
+    if (!email) {
+      return NextResponse.json(
+        { error: 'Email is required' },
+        { status: 400 }
+      );
+    }
 
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email },
     });
 
-    // Always return success for security (don't reveal if email exists)
+    // Don't reveal if user exists or not for security
     if (!user) {
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ 
+        success: true,
+        message: 'If an account exists, a reset link has been sent' 
+      });
     }
 
     // Generate reset token
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+    const expiresAt = new Date(Date.now() + 3600000); // 1 hour
 
-    // Delete any existing tokens for this user
-    await prisma.passwordResetToken.deleteMany({
-      where: { userId: user.id },
-    });
-
-    // Create new reset token
+    // Save token to database
     await prisma.passwordResetToken.create({
       data: {
-        userId: user.id,
         token,
+        userId: user.id,
         expiresAt,
       },
     });
 
     // Send email
-    await sendPasswordResetEmail(user.email, token);
+    await sendPasswordResetEmail({
+      email: user.email,
+      resetToken: token,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors[0].message },
-        { status: 400 }
-      );
-    }
-
-    console.error('Reset request error:', error);
+    console.error('Password reset request error:', error);
     return NextResponse.json(
       { error: 'Failed to process request' },
       { status: 500 }
