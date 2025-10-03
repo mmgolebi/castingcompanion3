@@ -5,44 +5,35 @@ import { prisma } from '@/lib/db';
 export async function GET() {
   try {
     const session = await auth();
+    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = (session.user as any).id;
-
-    const [recentSubmissions, allSubmissions] = await Promise.all([
-      prisma.submission.findMany({
-        where: { userId },
-        include: {
-          call: {
-            select: {
-              title: true,
-              production: true,
-            },
+    const submissions = await prisma.submission.findMany({
+      where: {
+        userId: (session.user as any).id,
+      },
+      include: {
+        call: {
+          select: {
+            title: true,
+            production: true,
+            roleType: true,
           },
         },
-        orderBy: {
-          submittedAt: 'desc',
-        },
-        take: 5,
-      }),
-      prisma.submission.findMany({
-        where: { userId },
-        select: {
-          callId: true,
-        },
-      }),
-    ]);
-
-    return NextResponse.json({
-      recent: recentSubmissions,
-      allCallIds: allSubmissions.map(s => s.callId),
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 5,
     });
-  } catch (error) {
-    console.error('Recent submissions error:', error);
+
+    return NextResponse.json(submissions);
+  } catch (error: any) {
+    console.error('Get recent submissions error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch submissions' },
+      { error: error.message || 'Failed to fetch submissions' },
       { status: 500 }
     );
   }
