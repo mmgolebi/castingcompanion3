@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
 import { useToast } from '@/components/ui/use-toast';
+import { X } from 'lucide-react';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -23,6 +24,8 @@ export default function ProfilePage() {
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [heightFeet, setHeightFeet] = useState('');
   const [heightInches, setHeightInches] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [customSkill, setCustomSkill] = useState('');
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -158,6 +161,36 @@ export default function ProfilePage() {
     }
   }, [heightFeet, heightInches]);
 
+  const formatPhoneAsYouType = (value: string): string => {
+    const cleaned = value.replace(/\D/g, '');
+    const limited = cleaned.slice(0, 10);
+    
+    if (limited.length <= 3) {
+      return limited;
+    } else if (limited.length <= 6) {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3)}`;
+    } else {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6)}`;
+    }
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    const cleaned = phone.replace(/\D/g, '');
+    return cleaned.length === 10;
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhoneAsYouType(value);
+    setProfile({ ...profile, phone: formatted });
+    
+    const cleaned = formatted.replace(/\D/g, '');
+    if (cleaned.length > 0 && cleaned.length < 10) {
+      setPhoneError('Phone number must be 10 digits');
+    } else {
+      setPhoneError('');
+    }
+  };
+
   const handleSkillToggle = (skill: string) => {
     setProfile({
       ...profile,
@@ -165,6 +198,26 @@ export default function ProfilePage() {
         ? profile.skills.filter(s => s !== skill)
         : [...profile.skills, skill]
     });
+  };
+
+  const handleAddCustomSkill = () => {
+    const trimmed = customSkill.trim();
+    if (trimmed && !profile.skills.includes(trimmed)) {
+      setProfile({
+        ...profile,
+        skills: [...profile.skills, trimmed]
+      });
+      setCustomSkill('');
+    }
+  };
+
+  const handleRemoveCustomSkill = (skill: string) => {
+    if (!availableSkills.includes(skill)) {
+      setProfile({
+        ...profile,
+        skills: profile.skills.filter(s => s !== skill)
+      });
+    }
   };
 
   const handleRoleTypeToggle = (roleType: string) => {
@@ -187,6 +240,17 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validatePhone(profile.phone)) {
+      setPhoneError('Please enter a valid 10-digit US or Canadian phone number');
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -253,6 +317,8 @@ export default function ProfilePage() {
     );
   }
 
+  const customSkills = profile.skills.filter(skill => !availableSkills.includes(skill));
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <h1 className="text-3xl font-bold mb-6">Your Profile</h1>
@@ -300,9 +366,13 @@ export default function ProfilePage() {
                     id="phone"
                     type="tel"
                     value={profile.phone}
-                    onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    placeholder="(555) 123-4567"
                     required
+                    className={phoneError ? 'border-red-500' : ''}
                   />
+                  {phoneError && <p className="text-sm text-red-600 mt-1">{phoneError}</p>}
+                  <p className="text-xs text-gray-500 mt-1">US and Canadian numbers only (10 digits)</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -619,7 +689,7 @@ export default function ProfilePage() {
 
                 <div>
                   <Label>Special Skills</Label>
-                  <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div className="grid grid-cols-2 gap-4 mt-2 mb-4">
                     {availableSkills.map((skill) => (
                       <div key={skill} className="flex items-center space-x-2">
                         <Checkbox
@@ -631,6 +701,50 @@ export default function ProfilePage() {
                       </div>
                     ))}
                   </div>
+
+                  <div className="mt-4">
+                    <Label htmlFor="customSkill">Add Custom Skill</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        id="customSkill"
+                        value={customSkill}
+                        onChange={(e) => setCustomSkill(e.target.value)}
+                        placeholder="e.g., Fire breathing, Contortionist"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddCustomSkill();
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={handleAddCustomSkill} variant="outline">
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+
+                  {customSkills.length > 0 && (
+                    <div className="mt-4">
+                      <Label className="text-sm text-gray-600 mb-2 block">Custom Skills:</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {customSkills.map((skill) => (
+                          <div
+                            key={skill}
+                            className="flex items-center gap-1 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm"
+                          >
+                            <span>{skill}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCustomSkill(skill)}
+                              className="hover:bg-purple-200 rounded-full p-0.5"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -726,7 +840,7 @@ export default function ProfilePage() {
           </TabsContent>
 
           <div className="mt-6 flex justify-end">
-            <Button type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving || !!phoneError}>
               {saving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
