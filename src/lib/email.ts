@@ -2,287 +2,122 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+interface SubmissionEmailParams {
+  castingEmail: string;
+  userProfile: any;
+  castingCall: any;
+  submissionId: string;
+}
+
 export async function sendSubmissionEmail({
   castingEmail,
   userProfile,
   castingCall,
   submissionId,
-}: {
-  castingEmail: string;
-  userProfile: any;
-  castingCall: any;
-  submissionId: string;
-}) {
-  const unsubscribeUrl = `${process.env.NEXT_PUBLIC_URL}/unsubscribe/${submissionId}`;
-  
-  const html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-          .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
-          .profile-section { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-          .info-row { display: flex; justify-content: space-between; margin: 10px 0; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
-          .label { font-weight: bold; color: #6b7280; }
-          .value { color: #1f2937; }
-          .attachments { margin: 20px 0; }
-          .attachment-link { display: inline-block; background: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin: 5px; }
-          .footer { text-align: center; color: #6b7280; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>New Actor Submission</h1>
-            <p>${castingCall.title} - ${castingCall.production}</p>
-          </div>
-          
-          <div class="content">
-            <div class="profile-section">
-              <h2>${userProfile.name || 'Actor'}</h2>
-              
-              <div class="info-row">
-                <span class="label">Contact:</span>
-                <span class="value">${userProfile.email}${userProfile.phone ? ' | ' + userProfile.phone : ''}</span>
-              </div>
-              
-              ${userProfile.city ? `
-              <div class="info-row">
-                <span class="label">Location:</span>
-                <span class="value">${userProfile.city}, ${userProfile.state} ${userProfile.zipCode || ''}</span>
-              </div>
-              ` : ''}
-              
-              ${userProfile.age ? `
-              <div class="info-row">
-                <span class="label">Age:</span>
-                <span class="value">${userProfile.age}${userProfile.playableAgeMin ? ` (plays ${userProfile.playableAgeMin}-${userProfile.playableAgeMax})` : ''}</span>
-              </div>
-              ` : ''}
-              
-              ${userProfile.gender || userProfile.height || userProfile.ethnicity ? `
-              <div class="info-row">
-                <span class="label">Physical:</span>
-                <span class="value">
-                  ${userProfile.gender || ''} 
-                  ${userProfile.height ? `| ${Math.floor(userProfile.height / 12)}'${userProfile.height % 12}"` : ''} 
-                  ${userProfile.weight ? `| ${userProfile.weight} lbs` : ''} 
-                  ${userProfile.ethnicity ? `| ${userProfile.ethnicity}` : ''}
-                </span>
-              </div>
-              ` : ''}
-              
-              ${userProfile.unionStatus ? `
-              <div class="info-row">
-                <span class="label">Union Status:</span>
-                <span class="value">${userProfile.unionStatus}</span>
-              </div>
-              ` : ''}
-              
-              ${userProfile.skills && userProfile.skills.length > 0 ? `
-              <div class="info-row">
-                <span class="label">Special Skills:</span>
-                <span class="value">${userProfile.skills.join(', ')}</span>
-              </div>
-              ` : ''}
-              
-              ${userProfile.demoReel ? `
-              <div class="info-row">
-                <span class="label">Demo Reel:</span>
-                <span class="value"><a href="${userProfile.demoReel}" target="_blank">View Reel</a></span>
-              </div>
-              ` : ''}
-            </div>
-            
-            <div class="attachments">
-              <h3>Materials:</h3>
-              ${userProfile.headshot ? `<a href="${userProfile.headshot}" class="attachment-link" target="_blank">View Headshot</a>` : ''}
-              ${userProfile.fullBody ? `<a href="${userProfile.fullBody}" class="attachment-link" target="_blank">View Full Body Shot</a>` : ''}
-              ${userProfile.resume ? `<a href="${userProfile.resume}" class="attachment-link" target="_blank">View Resume</a>` : ''}
-            </div>
-            
-            <div class="footer">
-              <p>This submission was sent via Casting Companion</p>
-              <p><a href="${unsubscribeUrl}">Unsubscribe from future submissions</a></p>
-            </div>
-          </div>
-        </div>
-      </body>
-    </html>
-  `;
+}: SubmissionEmailParams) {
+  try {
+    console.log('Attempting to send email to:', castingEmail);
+    
+    if (!process.env.RESEND_API_KEY) {
+      console.error('RESEND_API_KEY is not set');
+      throw new Error('Email service not configured');
+    }
 
-  await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
-    to: castingEmail,
-    subject: `New Submission: ${userProfile.name || 'Actor'} - ${castingCall.title}`,
-    html,
-  });
+    const emailHtml = `
+      <h2>New Talent Submission</h2>
+      <p>You have received a new submission for: <strong>${castingCall.title}</strong></p>
+      
+      <h3>Talent Information</h3>
+      <ul>
+        <li><strong>Name:</strong> ${userProfile.name}</li>
+        <li><strong>Email:</strong> ${userProfile.email}</li>
+        <li><strong>Phone:</strong> ${userProfile.phone || 'Not provided'}</li>
+        <li><strong>Age:</strong> ${userProfile.age}</li>
+        <li><strong>Playable Age Range:</strong> ${userProfile.playableAgeMin}-${userProfile.playableAgeMax}</li>
+        <li><strong>Gender:</strong> ${userProfile.gender}</li>
+        <li><strong>Location:</strong> ${userProfile.city}, ${userProfile.state}</li>
+        <li><strong>Union Status:</strong> ${userProfile.unionStatus}</li>
+        <li><strong>Ethnicity:</strong> ${userProfile.ethnicity}</li>
+      </ul>
+
+      ${userProfile.skills?.length > 0 ? `
+        <h3>Special Skills</h3>
+        <p>${userProfile.skills.join(', ')}</p>
+      ` : ''}
+
+      <h3>Materials</h3>
+      <ul>
+        ${userProfile.headshot ? `<li><a href="${userProfile.headshot}">Headshot</a></li>` : ''}
+        ${userProfile.fullBody ? `<li><a href="${userProfile.fullBody}">Full Body Shot</a></li>` : ''}
+        ${userProfile.resume ? `<li><a href="${userProfile.resume}">Resume</a></li>` : ''}
+        ${userProfile.demoReel ? `<li><a href="${userProfile.demoReel}">Demo Reel</a></li>` : ''}
+      </ul>
+
+      <p style="color: #666; font-size: 12px; margin-top: 20px;">
+        Submission ID: ${submissionId}
+      </p>
+    `;
+
+    const result = await resend.emails.send({
+      from: 'Casting Companion <onboarding@resend.dev>',
+      to: castingEmail,
+      subject: `New Submission: ${castingCall.title} - ${userProfile.name}`,
+      html: emailHtml,
+    });
+
+    console.log('Email sent successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Failed to send submission email:', error);
+    throw error;
+  }
 }
 
-export async function sendSubmissionConfirmation({
-  userEmail,
-  userName,
-  castingCall,
-}: {
-  userEmail: string;
-  userName: string;
-  castingCall: any;
-}) {
-  const html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-          .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
-          .success-icon { font-size: 48px; text-align: center; margin: 20px 0; }
-          .call-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-          .detail-row { margin: 10px 0; }
-          .label { font-weight: bold; color: #6b7280; }
-          .cta { text-align: center; margin: 30px 0; }
-          .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Submission Confirmed!</h1>
-          </div>
-          
-          <div class="content">
-            <div class="success-icon">✓</div>
-            
-            <p>Hi ${userName},</p>
-            
-            <p>Your submission has been successfully sent to the casting team!</p>
-            
-            <div class="call-details">
-              <h3>${castingCall.title}</h3>
-              <div class="detail-row">
-                <span class="label">Production:</span> ${castingCall.production}
-              </div>
-              <div class="detail-row">
-                <span class="label">Location:</span> ${castingCall.location}
-              </div>
-              <div class="detail-row">
-                <span class="label">Compensation:</span> ${castingCall.compensation}
-              </div>
-            </div>
-            
-            <p>The casting director has received your headshot, resume, and contact information. They will reach out directly if they'd like to schedule an audition.</p>
-            
-            <div class="cta">
-              <a href="${process.env.NEXT_PUBLIC_URL}/dashboard" class="button">View Dashboard</a>
-            </div>
-            
-            <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
-              Good luck! We'll notify you of any updates.
-            </p>
-          </div>
-        </div>
-      </body>
-    </html>
-  `;
+export async function sendWelcomeEmail(userEmail: string, userName: string) {
+  try {
+    console.log('Sending welcome email to:', userEmail);
+    
+    if (!process.env.RESEND_API_KEY) {
+      console.error('RESEND_API_KEY is not set');
+      throw new Error('Email service not configured');
+    }
 
-  await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
-    to: userEmail,
-    subject: `Submission Confirmed: ${castingCall.title}`,
-    html,
-  });
-}
+    const emailHtml = `
+      <h1>Welcome to Casting Companion, ${userName}!</h1>
+      
+      <p>We're excited to have you join our platform. Here's what you can do:</p>
+      
+      <ul>
+        <li><strong>Auto-Submissions:</strong> We automatically submit your profile to casting calls that match your criteria with 85%+ compatibility</li>
+        <li><strong>Browse Opportunities:</strong> Search and filter casting calls to find the perfect roles</li>
+        <li><strong>Track Applications:</strong> Monitor your submissions and their status</li>
+        <li><strong>Update Your Profile:</strong> Keep your information current to get better matches</li>
+      </ul>
 
-export async function sendWeeklyDigest({
-  userEmail,
-  userName,
-  newCalls,
-}: {
-  userEmail: string;
-  userName: string;
-  newCalls: any[];
-}) {
-  if (newCalls.length === 0) return;
+      <p>Your profile is now active and we'll start matching you with relevant casting calls.</p>
+      
+      <p style="margin-top: 30px;">
+        <a href="${process.env.NEXT_PUBLIC_URL}/dashboard" style="background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+          Go to Dashboard
+        </a>
+      </p>
 
-  const html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-          .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
-          .call-card { background: white; padding: 20px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #667eea; }
-          .match-badge { display: inline-block; background: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; }
-          .cta { text-align: center; margin: 30px 0; }
-          .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Your Weekly Casting Digest</h1>
-            <p>${newCalls.length} New Opportunities</p>
-          </div>
-          
-          <div class="content">
-            <p>Hi ${userName},</p>
-            
-            <p>Here are the new casting calls that match your profile this week:</p>
-            
-            ${newCalls.map(call => `
-              <div class="call-card">
-                <h3>${call.title}</h3>
-                <p><strong>${call.production}</strong> | ${call.location}</p>
-                <p>${call.description.substring(0, 150)}...</p>
-                <p>
-                  <span class="match-badge">${call.matchScore}% Match</span>
-                  ${call.wasAutoSubmitted ? '<span style="color: #10b981; margin-left: 10px;">✓ Auto-Submitted</span>' : ''}
-                </p>
-              </div>
-            `).join('')}
-            
-            <div class="cta">
-              <a href="${process.env.NEXT_PUBLIC_URL}/dashboard" class="button">View All Opportunities</a>
-            </div>
-          </div>
-        </div>
-      </body>
-    </html>
-  `;
+      <p style="color: #666; font-size: 14px; margin-top: 40px;">
+        Questions? Reply to this email and we'll be happy to help!
+      </p>
+    `;
 
-  await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
-    to: userEmail,
-    subject: `${newCalls.length} New Casting Opportunities`,
-    html,
-  });
-}
+    const result = await resend.emails.send({
+      from: 'Casting Companion <onboarding@resend.dev>',
+      to: userEmail,
+      subject: 'Welcome to Casting Companion!',
+      html: emailHtml,
+    });
 
-export async function sendPasswordResetEmail({
-  email,
-  resetToken,
-}: {
-  email: string;
-  resetToken: string;
-}) {
-  const resetUrl = `${process.env.NEXT_PUBLIC_URL}/auth/reset-password?token=${resetToken}`;
-
-  await resend.emails.send({
-    from: 'Casting Companion <noreply@castingcompanion.com>',
-    to: email,
-    subject: 'Reset Your Password',
-    html: `
-      <h2>Reset Your Password</h2>
-      <p>Click the link below to reset your password:</p>
-      <a href="${resetUrl}">${resetUrl}</a>
-      <p>This link will expire in 1 hour.</p>
-      <p>If you didn't request this, please ignore this email.</p>
-    `,
-  });
+    console.log('Welcome email sent successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Failed to send welcome email:', error);
+    throw error;
+  }
 }
