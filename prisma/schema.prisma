@@ -7,90 +7,128 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  ACTOR
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
   name      String?
-  phone     String?
-  city      String?
-  state     String?
-  zipCode   String?
-  age       Int?
-  playableAgeMin Int?
-  playableAgeMax Int?
-  gender    String?
-  height    Int?
-  weight    Int?
-  ethnicity String?
-  hairColor String?
-  eyeColor  String?
-  visibleTattoos Boolean @default(false)
-  
-  headshot  String?
-  fullBody  String?
-  resume    String?
-  demoReel  String?
-  
-  unionStatus String?
-  skills      String[]
-  roleTypesInterested String[]
-  comfortLevels String[]
-  
-  availability String?
-  reliableTransportation Boolean @default(false)
-  travelWilling Boolean @default(false)
-  compensationPreference String?
-  compensationMin String?
-  
+  role      Role     @default(ACTOR)
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Stripe
   stripeCustomerId String?
   stripeSubId      String?
   subStatus        String?
   trialEndsAt      DateTime?
-  
-  isAdmin   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  submissions Submission[]
+
+  // Basic Info
+  age             Int?
+  playableAgeMin  Int?
+  playableAgeMax  Int?
+  gender          String?
+  ethnicity       String?
+  unionStatus     String?
+  phone           String?
+
+  // Physical Attributes
+  height          Int?
+  weight          Int?
+  hairColor       String?
+  eyeColor        String?
+  visibleTattoos  Boolean @default(false)
+
+  // Location
+  city    String?
+  state   String?
+  zipCode String?
+
+  // Media
+  headshot  String?
+  fullBody  String?
+  resume    String?
+  demoReel  String?
+
+  // Skills & Preferences
+  skills              String[]
+  roleTypesInterested String[]
+  comfortLevels       String[]
+
+  // Availability
+  availability           String?
+  reliableTransportation Boolean @default(false)
+  travelWilling          Boolean @default(false)
+  compensationPreference String?
+  compensationMin        String?
+
+  submissions          Submission[]
+  passwordResetTokens  PasswordResetToken[]
+
+  @@index([email])
 }
 
 model CastingCall {
-  id                  String   @id @default(cuid())
-  title               String
-  production          String
-  description         String   @db.Text
-  roleType            String
-  location            String
-  compensation        String
-  submissionDeadline  DateTime
-  shootingDates       String?
-  ageRangeMin         Int?
-  ageRangeMax         Int?
-  gender              String?
-  ethnicity           String?
-  unionStatus         String?
-  castingEmail        String
-  featuredImage       String?
+  id          String   @id @default(cuid())
+  title       String
+  production  String
+  description String
+  roleType    String
+  location    String
+  compensation String
+  
+  ageRangeMin Int?
+  ageRangeMax Int?
+  gender      String?
+  ethnicity   String?
+  unionStatus String?
+  
+  submissionDeadline DateTime
+  shootingDates      String?
+  castingEmail       String
+  featuredImage      String?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
   submissions Submission[]
+
+  @@index([submissionDeadline])
 }
 
 model Submission {
-  id            String   @id @default(cuid())
-  userId        String
-  callId        String
-  status        String   @default("SENT")
-  method        String
-  matchScore    Int?
-  castingEmail  String
-  createdAt     DateTime @default(now())
+  id              String   @id @default(cuid())
+  userId          String
+  callId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  call            CastingCall @relation(fields: [callId], references: [id], onDelete: Cascade)
+  status          String   @default("SENT")
+  method          String   @default("MANUAL")
+  matchScore      Int      @default(0)
+  castingEmail    String
+  submittedAt     DateTime @default(now())
   
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  call CastingCall @relation(fields: [callId], references: [id], onDelete: Cascade)
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
   @@unique([userId, callId])
+  @@index([userId])
+  @@index([callId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
 }
