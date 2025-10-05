@@ -42,60 +42,65 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4 py-8">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Welcome Back</CardTitle>
-          <CardDescription className="text-center">
+        <CardHeader className="space-y-1 pb-6">
+          <CardTitle className="text-2xl md:text-3xl font-bold text-center">Welcome Back</CardTitle>
+          <CardDescription className="text-center text-base">
             Sign in to your Casting Companion account
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
                 {error}
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-base">Email</Label>
               <Input
                 id="email"
                 type="email"
+                inputMode="email"
+                autoComplete="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="h-12 text-base"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-base">Password</Label>
               <Input
                 id="password"
                 type="password"
+                autoComplete="current-password"
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="h-12 text-base"
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={loading}>
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
 
-            <div className="text-center">
+            <div className="text-center pt-2">
               <Link 
                 href="/auth/forgot-password" 
-                className="text-sm text-primary hover:underline"
+                className="text-sm md:text-base text-primary hover:underline inline-block py-2"
               >
                 Forgot your password?
               </Link>
             </div>
 
-            <div className="relative">
+            <div className="relative py-4">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
               </div>
@@ -107,7 +112,7 @@ export default function LoginPage() {
             </div>
 
             <Link href="/auth/register">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full h-12 text-base font-semibold">
                 Create Account
               </Button>
             </Link>
