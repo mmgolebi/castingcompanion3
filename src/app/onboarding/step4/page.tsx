@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Search } from 'lucide-react';
 
 export default function Step4Page() {
   const { data: session, status } = useSession();
@@ -19,6 +19,8 @@ export default function Step4Page() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedState, setSelectedState] = useState('');
   const [availableCities, setAvailableCities] = useState<string[]>([]);
+  const [stateSearch, setStateSearch] = useState('');
+  const [showStateDropdown, setShowStateDropdown] = useState(false);
   const [formData, setFormData] = useState({
     city: '',
     state: '',
@@ -54,6 +56,8 @@ export default function Step4Page() {
           });
           if (data.state) {
             setSelectedState(data.state);
+            const stateName = US_STATES.find(s => s.value === data.state)?.label || '';
+            setStateSearch(stateName);
           }
         }
       } catch (error) {
@@ -75,6 +79,16 @@ export default function Step4Page() {
       setFormData({ ...formData, state: selectedState });
     }
   }, [selectedState]);
+
+  const filteredStates = US_STATES.filter(state =>
+    state.label.toLowerCase().includes(stateSearch.toLowerCase())
+  );
+
+  const handleStateSelect = (stateValue: string, stateLabel: string) => {
+    setSelectedState(stateValue);
+    setStateSearch(stateLabel);
+    setShowStateDropdown(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,22 +182,37 @@ export default function Step4Page() {
             <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
               <div>
                 <Label htmlFor="state" className="text-base">State *</Label>
-                <Select
-                  value={selectedState}
-                  onValueChange={(value) => setSelectedState(value)}
-                  required
-                >
-                  <SelectTrigger className="h-12 text-base mt-2">
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {US_STATES.map((state) => (
-                      <SelectItem key={state.value} value={state.value}>
-                        {state.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative mt-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Search for your state..."
+                      value={stateSearch}
+                      onChange={(e) => {
+                        setStateSearch(e.target.value);
+                        setShowStateDropdown(true);
+                      }}
+                      onFocus={() => setShowStateDropdown(true)}
+                      className="h-12 text-base pl-10"
+                      required
+                    />
+                  </div>
+                  {showStateDropdown && filteredStates.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {filteredStates.map((state) => (
+                        <button
+                          key={state.value}
+                          type="button"
+                          onClick={() => handleStateSelect(state.value, state.label)}
+                          className="w-full text-left px-4 py-3 hover:bg-gray-100 text-base"
+                        >
+                          {state.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -198,7 +227,7 @@ export default function Step4Page() {
                     <SelectTrigger className="h-12 text-base mt-2">
                       <SelectValue placeholder="Select city" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-60">
                       {availableCities.map((city) => (
                         <SelectItem key={city} value={city}>
                           {city}
