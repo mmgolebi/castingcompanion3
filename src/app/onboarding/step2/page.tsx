@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ImageIcon, UserIcon, FileTextIcon, UploadIcon, CheckCircle2 } from 'lucide-react';
+import { ImageIcon, UserIcon, FileTextIcon, UploadIcon, CheckCircle2, Loader2 } from 'lucide-react';
 
 export default function Step2Page() {
   const router = useRouter();
@@ -11,6 +11,7 @@ export default function Step2Page() {
   const [fullBody, setFullBody] = useState<File | null>(null);
   const [resume, setResume] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
 
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -28,19 +29,98 @@ export default function Step2Page() {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
+  const uploadFile = async (file: File, endpoint: 'imageUploader' | 'pdfUploader') => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`/api/uploadthing?slug=${endpoint}`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Upload failed');
+    }
+
+    const data = await response.json();
+    return data.url;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploading(true);
 
     try {
-      // TODO: Upload files to UploadThing
-      // For now, just proceed to next step
+      const uploadData: any = {};
+
+      if (headshot) {
+        setUploadProgress('Uploading headshot...');
+        const formData = new FormData();
+        formData.append('files', headshot);
+        
+        const response = await fetch('/api/uploadthing', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        const result = await response.json();
+        if (result[0]?.url) {
+          uploadData.headshot = result[0].url;
+        }
+      }
+
+      if (fullBody) {
+        setUploadProgress('Uploading full body photo...');
+        const formData = new FormData();
+        formData.append('files', fullBody);
+        
+        const response = await fetch('/api/uploadthing', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        const result = await response.json();
+        if (result[0]?.url) {
+          uploadData.fullBodyPhoto = result[0].url;
+        }
+      }
+
+      if (resume) {
+        setUploadProgress('Uploading resume...');
+        const formData = new FormData();
+        formData.append('files', resume);
+        
+        const response = await fetch('/api/uploadthing', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        const result = await response.json();
+        if (result[0]?.url) {
+          uploadData.resume = result[0].url;
+        }
+      }
+
+      if (Object.keys(uploadData).length > 0) {
+        setUploadProgress('Saving to profile...');
+        const profileResponse = await fetch('/api/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(uploadData),
+        });
+
+        if (!profileResponse.ok) {
+          throw new Error('Failed to save profile');
+        }
+      }
+
       router.push('/onboarding/step3');
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Failed to upload files');
+      alert('Failed to upload files. Please try again.');
     } finally {
       setUploading(false);
+      setUploadProgress('');
     }
   };
 
@@ -77,10 +157,11 @@ export default function Step2Page() {
                 accept="image/*"
                 onChange={(e) => handleFileChange(e, setHeadshot)}
                 className="hidden"
+                disabled={uploading}
               />
               <label
                 htmlFor="headshot"
-                className="cursor-pointer flex flex-col items-center gap-3"
+                className={`flex flex-col items-center gap-3 ${uploading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 {headshot ? (
                   <>
@@ -123,10 +204,11 @@ export default function Step2Page() {
                 accept="image/*"
                 onChange={(e) => handleFileChange(e, setFullBody)}
                 className="hidden"
+                disabled={uploading}
               />
               <label
                 htmlFor="fullbody"
-                className="cursor-pointer flex flex-col items-center gap-3"
+                className={`flex flex-col items-center gap-3 ${uploading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 {fullBody ? (
                   <>
@@ -169,10 +251,11 @@ export default function Step2Page() {
                 accept=".pdf"
                 onChange={(e) => handleFileChange(e, setResume)}
                 className="hidden"
+                disabled={uploading}
               />
               <label
                 htmlFor="resume"
-                className="cursor-pointer flex flex-col items-center gap-3"
+                className={`flex flex-col items-center gap-3 ${uploading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 {resume ? (
                   <>
@@ -199,12 +282,20 @@ export default function Step2Page() {
             </div>
           </div>
 
+          {uploading && uploadProgress && (
+            <div className="flex items-center justify-center gap-3 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
+              <span className="text-purple-700 font-medium">{uploadProgress}</span>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => router.push('/onboarding/step1')}
               className="w-full sm:w-auto h-12 text-base"
+              disabled={uploading}
             >
               Back
             </Button>
@@ -222,7 +313,14 @@ export default function Step2Page() {
               className="w-full sm:flex-1 h-12 text-base bg-purple-600 hover:bg-purple-700"
               disabled={uploading}
             >
-              {uploading ? 'Uploading...' : 'Continue'}
+              {uploading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Uploading...
+                </span>
+              ) : (
+                'Continue'
+              )}
             </Button>
           </div>
         </form>
