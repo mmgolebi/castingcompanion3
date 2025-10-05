@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +39,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      // First, create the account
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,7 +57,20 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push('/auth/login?registered=true');
+      // Then automatically log them in
+      const result = await signIn('credentials', {
+        email: formData.email.toLowerCase(),
+        password: formData.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        // Account was created but login failed - redirect to login page
+        router.push('/auth/login?registered=true');
+      } else {
+        // Success! Redirect to onboarding
+        router.push('/onboarding/step1');
+      }
     } catch (error) {
       console.error('Registration error:', error);
       setError('An error occurred. Please try again.');
