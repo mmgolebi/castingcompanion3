@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { X, CheckCircle2 } from 'lucide-react';
+import { X, CheckCircle2, Plus } from 'lucide-react';
 
 export default function Step3Page() {
   const { data: session, status } = useSession();
@@ -171,21 +171,22 @@ export default function Step3Page() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg md:text-xl">Skills & Preferences</CardTitle>
-            <CardDescription>Tell us about your abilities and interests</CardDescription>
+            <CardDescription className="text-sm md:text-base">Tell us about your abilities and interests</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
               <div>
-                <Label className="text-base font-semibold mb-3 block">Role Types Interested In *</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Label className="text-base font-semibold mb-4 block">Role Types Interested In *</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {roleTypes.map((roleType) => (
-                    <div key={roleType.value} className="flex items-center space-x-2">
+                    <div key={roleType.value} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
                       <Checkbox
                         id={`role-${roleType.value}`}
                         checked={roleTypesInterested.includes(roleType.value)}
                         onCheckedChange={() => handleRoleTypeToggle(roleType.value)}
+                        className="h-5 w-5"
                       />
-                      <Label htmlFor={`role-${roleType.value}`} className="font-normal cursor-pointer">
+                      <Label htmlFor={`role-${roleType.value}`} className="font-normal cursor-pointer text-base flex-1">
                         {roleType.label}
                       </Label>
                     </div>
@@ -194,25 +195,26 @@ export default function Step3Page() {
               </div>
 
               <div>
-                <Label className="text-base font-semibold mb-3 block">Special Skills</Label>
+                <Label className="text-base font-semibold mb-4 block">Special Skills</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                   {predefinedSkills.map((skill) => (
-                    <div key={skill} className="flex items-center space-x-2">
+                    <div key={skill} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
                       <Checkbox
                         id={`skill-${skill}`}
                         checked={skills.includes(skill)}
                         onCheckedChange={() => handleSkillToggle(skill)}
+                        className="h-5 w-5"
                       />
-                      <Label htmlFor={`skill-${skill}`} className="font-normal cursor-pointer">
+                      <Label htmlFor={`skill-${skill}`} className="font-normal cursor-pointer text-base flex-1">
                         {skill}
                       </Label>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-4">
-                  <Label htmlFor="customSkill">Add Custom Skill</Label>
-                  <div className="flex gap-2 mt-2">
+                <div className="mt-6">
+                  <Label htmlFor="customSkill" className="text-base mb-2 block">Add Custom Skill</Label>
+                  <div className="flex gap-2">
                     <Input
                       id="customSkill"
                       value={customSkill}
@@ -224,9 +226,10 @@ export default function Step3Page() {
                           handleAddCustomSkill();
                         }
                       }}
+                      className="h-12 text-base flex-1"
                     />
-                    <Button type="button" onClick={handleAddCustomSkill} variant="outline">
-                      Add
+                    <Button type="button" onClick={handleAddCustomSkill} variant="outline" className="h-12 px-6">
+                      <Plus className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
@@ -238,15 +241,15 @@ export default function Step3Page() {
                       {customSkills.map((skill) => (
                         <div
                           key={skill}
-                          className="flex items-center gap-1 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm"
+                          className="flex items-center gap-2 bg-purple-100 text-purple-800 px-4 py-2 rounded-full text-sm md:text-base"
                         >
                           <span>{skill}</span>
                           <button
                             type="button"
                             onClick={() => handleRemoveCustomSkill(skill)}
-                            className="hover:bg-purple-200 rounded-full p-0.5"
+                            className="hover:bg-purple-200 rounded-full p-1"
                           >
-                            <X className="h-3 w-3" />
+                            <X className="h-4 w-4" />
                           </button>
                         </div>
                       ))}
@@ -255,16 +258,16 @@ export default function Step3Page() {
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <div className="flex flex-col gap-3 pt-4">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => router.push('/onboarding/step2')}
-                  className="flex-1"
+                  className="w-full h-12 text-base"
                 >
                   Back
                 </Button>
-                <Button type="submit" className="flex-1">
+                <Button type="submit" className="w-full h-12 text-base font-semibold">
                   Continue to Step 4
                 </Button>
               </div>

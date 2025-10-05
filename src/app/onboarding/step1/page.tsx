@@ -225,76 +225,86 @@ export default function Step1Page() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
               <div>
-                <Label htmlFor="name">Full Name *</Label>
+                <Label htmlFor="name" className="text-base">Full Name *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
+                  className="h-12 text-base mt-2"
+                  autoComplete="name"
                 />
               </div>
 
               <div>
-                <Label htmlFor="phone">Phone Number *</Label>
+                <Label htmlFor="phone" className="text-base">Phone Number *</Label>
                 <Input
                   id="phone"
                   type="tel"
+                  inputMode="tel"
                   value={formData.phone}
                   onChange={(e) => handlePhoneChange(e.target.value)}
                   placeholder="(555) 123-4567"
                   required
-                  className={phoneError ? 'border-red-500' : ''}
+                  className={`h-12 text-base mt-2 ${phoneError ? 'border-red-500' : ''}`}
+                  autoComplete="tel"
                 />
                 {phoneError && <p className="text-sm text-red-600 mt-1">{phoneError}</p>}
                 <p className="text-xs text-gray-500 mt-1">US and Canadian numbers only (10 digits)</p>
               </div>
 
               <div>
-                <Label htmlFor="age">Current Age *</Label>
+                <Label htmlFor="age" className="text-base">Current Age *</Label>
                 <Input
                   id="age"
                   type="number"
+                  inputMode="numeric"
                   min="1"
                   max="120"
                   value={formData.age}
                   onChange={(e) => setFormData({ ...formData, age: e.target.value })}
                   required
+                  className="h-12 text-base mt-2"
                 />
               </div>
 
               <div>
-                <Label>Playable Age Range *</Label>
+                <Label className="text-base">Playable Age Range *</Label>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min="1"
                     max="120"
                     value={formData.playableAgeMin}
                     onChange={(e) => setFormData({ ...formData, playableAgeMin: e.target.value })}
                     placeholder="Min age"
                     required
+                    className="h-12 text-base"
                   />
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min="1"
                     max="120"
                     value={formData.playableAgeMax}
                     onChange={(e) => setFormData({ ...formData, playableAgeMax: e.target.value })}
                     placeholder="Max age"
                     required
+                    className="h-12 text-base"
                   />
                 </div>
                 <p className="text-sm text-gray-600 mt-1">The age range you can convincingly portray</p>
               </div>
 
               <div>
-                <Label htmlFor="gender">Gender *</Label>
+                <Label htmlFor="gender" className="text-base">Gender *</Label>
                 <Select
                   value={formData.gender}
                   onValueChange={(value) => setFormData({ ...formData, gender: value })}
                   required
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 text-base mt-2">
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
@@ -306,46 +316,52 @@ export default function Step1Page() {
               </div>
 
               <div>
-                <Label>Height</Label>
+                <Label className="text-base">Height</Label>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   <Input
                     type="number"
+                    inputMode="numeric"
                     value={heightFeet}
                     onChange={(e) => setHeightFeet(e.target.value)}
                     placeholder="Feet"
                     min="0"
                     max="8"
+                    className="h-12 text-base"
                   />
                   <Input
                     type="number"
+                    inputMode="numeric"
                     value={heightInches}
                     onChange={(e) => setHeightInches(e.target.value)}
                     placeholder="Inches"
                     min="0"
                     max="11"
+                    className="h-12 text-base"
                   />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="weight">Weight (lbs)</Label>
+                <Label htmlFor="weight" className="text-base">Weight (lbs)</Label>
                 <Input
                   id="weight"
                   type="number"
+                  inputMode="numeric"
                   value={formData.weight}
                   onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                   placeholder="150"
+                  className="h-12 text-base mt-2"
                 />
               </div>
 
               <div>
-                <Label htmlFor="ethnicity">Ethnicity *</Label>
+                <Label htmlFor="ethnicity" className="text-base">Ethnicity *</Label>
                 <Select
                   value={formData.ethnicity}
                   onValueChange={(value) => setFormData({ ...formData, ethnicity: value })}
                   required
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 text-base mt-2">
                     <SelectValue placeholder="Select ethnicity" />
                   </SelectTrigger>
                   <SelectContent>
@@ -364,12 +380,12 @@ export default function Step1Page() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="hairColor">Hair Color</Label>
+                  <Label htmlFor="hairColor" className="text-base">Hair Color</Label>
                   <Select
                     value={formData.hairColor}
                     onValueChange={(value) => setFormData({ ...formData, hairColor: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12 text-base mt-2">
                       <SelectValue placeholder="Select hair color" />
                     </SelectTrigger>
                     <SelectContent>
@@ -384,12 +400,12 @@ export default function Step1Page() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="eyeColor">Eye Color</Label>
+                  <Label htmlFor="eyeColor" className="text-base">Eye Color</Label>
                   <Select
                     value={formData.eyeColor}
                     onValueChange={(value) => setFormData({ ...formData, eyeColor: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12 text-base mt-2">
                       <SelectValue placeholder="Select eye color" />
                     </SelectTrigger>
                     <SelectContent>
@@ -403,23 +419,24 @@ export default function Step1Page() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3 py-2">
                 <Checkbox
                   id="visibleTattoos"
                   checked={formData.visibleTattoos}
                   onCheckedChange={(checked) => setFormData({ ...formData, visibleTattoos: checked as boolean })}
+                  className="h-5 w-5"
                 />
-                <Label htmlFor="visibleTattoos">I have visible tattoos</Label>
+                <Label htmlFor="visibleTattoos" className="text-base cursor-pointer">I have visible tattoos</Label>
               </div>
 
               <div>
-                <Label htmlFor="unionStatus">Union Status *</Label>
+                <Label htmlFor="unionStatus" className="text-base">Union Status *</Label>
                 <Select
                   value={formData.unionStatus}
                   onValueChange={(value) => setFormData({ ...formData, unionStatus: value })}
                   required
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 text-base mt-2">
                     <SelectValue placeholder="Select union status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -435,7 +452,7 @@ export default function Step1Page() {
 
               <Button 
                 type="submit" 
-                className="w-full"
+                className="w-full h-12 text-base font-semibold"
                 disabled={!!phoneError}
               >
                 Continue to Step 2

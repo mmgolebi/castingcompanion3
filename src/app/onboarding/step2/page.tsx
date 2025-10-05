@@ -125,93 +125,101 @@ export default function Step2Page() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg md:text-xl">Upload Your Materials (Optional)</CardTitle>
-            <CardDescription>Professional headshot, full body photo, and resume - you can add these later</CardDescription>
+            <CardDescription className="text-sm md:text-base">Professional headshot, full body photo, and resume - you can add these later</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
               <div>
-                <Label className="flex items-center gap-2 mb-2">
-                  <ImageIcon className="h-4 w-4" />
+                <Label className="flex items-center gap-2 mb-3 text-base">
+                  <ImageIcon className="h-5 w-5" />
                   Headshot
                 </Label>
                 {uploads.headshot ? (
-                  <div className="space-y-2">
-                    <img src={uploads.headshot} alt="Headshot" className="w-48 h-48 object-cover rounded" />
-                    <Button type="button" variant="outline" size="sm" onClick={() => setUploads({ ...uploads, headshot: '' })}>
+                  <div className="space-y-3">
+                    <img src={uploads.headshot} alt="Headshot" className="w-full max-w-sm mx-auto h-auto object-cover rounded-lg shadow-md" />
+                    <Button type="button" variant="outline" size="sm" onClick={() => setUploads({ ...uploads, headshot: '' })} className="w-full md:w-auto h-10">
                       Remove
                     </Button>
                   </div>
                 ) : (
-                  <UploadButton
-                    endpoint="imageUploader"
-                    onClientUploadComplete={(res) => {
-                      if (res && res[0]) {
-                        setUploads({ ...uploads, headshot: res[0].url });
-                      }
-                    }}
-                    onUploadError={(error) => alert(`Upload failed: ${error.message}`)}
-                  />
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
+                    <UploadButton
+                      endpoint="imageUploader"
+                      onClientUploadComplete={(res) => {
+                        if (res && res[0]) {
+                          setUploads({ ...uploads, headshot: res[0].url });
+                        }
+                      }}
+                      onUploadError={(error) => alert(`Upload failed: ${error.message}`)}
+                    />
+                  </div>
                 )}
               </div>
+
               <div>
-                <Label className="flex items-center gap-2 mb-2">
-                  <User className="h-4 w-4" />
+                <Label className="flex items-center gap-2 mb-3 text-base">
+                  <User className="h-5 w-5" />
                   Full Body Photo
                 </Label>
                 {uploads.fullBody ? (
-                  <div className="space-y-2">
-                    <img src={uploads.fullBody} alt="Full Body" className="w-48 h-64 object-cover rounded" />
-                    <Button type="button" variant="outline" size="sm" onClick={() => setUploads({ ...uploads, fullBody: '' })}>
+                  <div className="space-y-3">
+                    <img src={uploads.fullBody} alt="Full Body" className="w-full max-w-sm mx-auto h-auto object-cover rounded-lg shadow-md" />
+                    <Button type="button" variant="outline" size="sm" onClick={() => setUploads({ ...uploads, fullBody: '' })} className="w-full md:w-auto h-10">
                       Remove
                     </Button>
                   </div>
                 ) : (
-                  <UploadButton
-                    endpoint="imageUploader"
-                    onClientUploadComplete={(res) => {
-                      if (res && res[0]) {
-                        setUploads({ ...uploads, fullBody: res[0].url });
-                      }
-                    }}
-                    onUploadError={(error) => alert(`Upload failed: ${error.message}`)}
-                  />
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
+                    <UploadButton
+                      endpoint="imageUploader"
+                      onClientUploadComplete={(res) => {
+                        if (res && res[0]) {
+                          setUploads({ ...uploads, fullBody: res[0].url });
+                        }
+                      }}
+                      onUploadError={(error) => alert(`Upload failed: ${error.message}`)}
+                    />
+                  </div>
                 )}
               </div>
+
               <div>
-                <Label className="flex items-center gap-2 mb-2">
-                  <FileText className="h-4 w-4" />
+                <Label className="flex items-center gap-2 mb-3 text-base">
+                  <FileText className="h-5 w-5" />
                   Acting Resume (PDF)
                 </Label>
                 {uploads.resume ? (
-                  <div className="space-y-2">
-                    <a href={uploads.resume} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm">
+                  <div className="space-y-3">
+                    <a href={uploads.resume} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-base block p-4 bg-gray-50 rounded-lg border">
                       View Resume
                     </a>
-                    <br />
-                    <Button type="button" variant="outline" size="sm" onClick={() => setUploads({ ...uploads, resume: '' })}>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setUploads({ ...uploads, resume: '' })} className="w-full md:w-auto h-10">
                       Remove
                     </Button>
                   </div>
                 ) : (
-                  <UploadButton
-                    endpoint="pdfUploader"
-                    onClientUploadComplete={(res) => {
-                      if (res && res[0]) {
-                        setUploads({ ...uploads, resume: res[0].url });
-                      }
-                    }}
-                    onUploadError={(error) => alert(`Upload failed: ${error.message}`)}
-                  />
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
+                    <UploadButton
+                      endpoint="pdfUploader"
+                      onClientUploadComplete={(res) => {
+                        if (res && res[0]) {
+                          setUploads({ ...uploads, resume: res[0].url });
+                        }
+                      }}
+                      onUploadError={(error) => alert(`Upload failed: ${error.message}`)}
+                    />
+                  </div>
                 )}
               </div>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <Button type="button" variant="outline" onClick={() => router.push('/onboarding/step1')} className="flex-1">
+
+              <div className="flex flex-col gap-3 pt-4">
+                <Button type="button" variant="outline" onClick={() => router.push('/onboarding/step1')} className="w-full h-12 text-base">
                   Back
                 </Button>
-                <Button type="button" variant="secondary" onClick={handleSkip} className="flex-1">
+                <Button type="button" variant="secondary" onClick={handleSkip} className="w-full h-12 text-base">
                   Skip for Now
                 </Button>
-                <Button type="submit" className="flex-1">
+                <Button type="submit" className="w-full h-12 text-base font-semibold">
                   Continue to Step 3
                 </Button>
               </div>

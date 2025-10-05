@@ -162,18 +162,18 @@ export default function Step4Page() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg md:text-xl">Location & Logistics</CardTitle>
-            <CardDescription>Where are you based and what's your availability?</CardDescription>
+            <CardDescription className="text-sm md:text-base">Where are you based and what's your availability?</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
               <div>
-                <Label htmlFor="state">State *</Label>
+                <Label htmlFor="state" className="text-base">State *</Label>
                 <Select
                   value={selectedState}
                   onValueChange={(value) => setSelectedState(value)}
                   required
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 text-base mt-2">
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
                   <SelectContent>
@@ -187,7 +187,7 @@ export default function Step4Page() {
               </div>
 
               <div>
-                <Label htmlFor="city">City *</Label>
+                <Label htmlFor="city" className="text-base">City *</Label>
                 {availableCities.length > 0 ? (
                   <Select
                     value={formData.city}
@@ -195,7 +195,7 @@ export default function Step4Page() {
                     disabled={!selectedState}
                     required
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12 text-base mt-2">
                       <SelectValue placeholder="Select city" />
                     </SelectTrigger>
                     <SelectContent>
@@ -215,29 +215,33 @@ export default function Step4Page() {
                     placeholder="Enter city"
                     disabled={!selectedState}
                     required
+                    className="h-12 text-base mt-2"
                   />
                 )}
               </div>
 
               <div>
-                <Label htmlFor="zipCode">ZIP Code *</Label>
+                <Label htmlFor="zipCode" className="text-base">ZIP Code *</Label>
                 <Input
                   id="zipCode"
+                  type="text"
+                  inputMode="numeric"
                   value={formData.zipCode}
                   onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
                   maxLength={5}
                   required
+                  className="h-12 text-base mt-2"
                 />
               </div>
 
               <div>
-                <Label htmlFor="availability">Availability *</Label>
+                <Label htmlFor="availability" className="text-base">Availability *</Label>
                 <Select
                   value={formData.availability}
                   onValueChange={(value) => setFormData({ ...formData, availability: value })}
                   required
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 text-base mt-2">
                     <SelectValue placeholder="Select availability" />
                   </SelectTrigger>
                   <SelectContent>
@@ -249,32 +253,34 @@ export default function Step4Page() {
                 </Select>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3 p-3 border rounded-lg">
                 <Checkbox
                   id="reliableTransportation"
                   checked={formData.reliableTransportation}
                   onCheckedChange={(checked) => setFormData({ ...formData, reliableTransportation: checked as boolean })}
+                  className="h-5 w-5"
                 />
-                <Label htmlFor="reliableTransportation">I have reliable transportation</Label>
+                <Label htmlFor="reliableTransportation" className="text-base cursor-pointer flex-1">I have reliable transportation</Label>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3 p-3 border rounded-lg">
                 <Checkbox
                   id="travelWilling"
                   checked={formData.travelWilling}
                   onCheckedChange={(checked) => setFormData({ ...formData, travelWilling: checked as boolean })}
+                  className="h-5 w-5"
                 />
-                <Label htmlFor="travelWilling">Willing to travel for roles</Label>
+                <Label htmlFor="travelWilling" className="text-base cursor-pointer flex-1">Willing to travel for roles</Label>
               </div>
 
               <div>
-                <Label htmlFor="compensationPreference">Compensation Preferences *</Label>
+                <Label htmlFor="compensationPreference" className="text-base">Compensation Preferences *</Label>
                 <Select
                   value={formData.compensationPreference}
                   onValueChange={(value) => setFormData({ ...formData, compensationPreference: value })}
                   required
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 text-base mt-2">
                     <SelectValue placeholder="Select preference" />
                   </SelectTrigger>
                   <SelectContent>
@@ -286,32 +292,33 @@ export default function Step4Page() {
               </div>
 
               <div>
-                <Label htmlFor="compensationMin">Minimum Day Rate (optional)</Label>
+                <Label htmlFor="compensationMin" className="text-base">Minimum Day Rate (optional)</Label>
                 <Input
                   id="compensationMin"
                   value={formData.compensationMin}
                   onChange={(e) => setFormData({ ...formData, compensationMin: e.target.value })}
                   placeholder="e.g., $200/day"
+                  className="h-12 text-base mt-2"
                 />
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-900">
+                <p className="text-sm md:text-base text-blue-900">
                   <strong>Almost there!</strong> After completing this step, you'll be redirected to set up your $1 trial subscription.
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <div className="flex flex-col gap-3 pt-4">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => router.push('/onboarding/step3')}
-                  className="flex-1"
+                  className="w-full h-12 text-base"
                   disabled={submitting}
                 >
                   Back
                 </Button>
-                <Button type="submit" className="flex-1" disabled={submitting}>
+                <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={submitting}>
                   {submitting ? 'Processing...' : 'Complete & Continue to Payment'}
                 </Button>
               </div>
