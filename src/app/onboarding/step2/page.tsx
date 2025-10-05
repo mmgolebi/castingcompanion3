@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ImageIcon, UserIcon, FileTextIcon, UploadIcon } from 'lucide-react';
+import { ImageIcon, UserIcon, FileTextIcon, UploadIcon, CheckCircle2 } from 'lucide-react';
 
 export default function Step2Page() {
   const router = useRouter();
@@ -18,6 +18,14 @@ export default function Step2Page() {
   ) => {
     const file = e.target.files?.[0] || null;
     setter(file);
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,13 +61,16 @@ export default function Step2Page() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Headshot Upload */}
           <div>
             <label className="flex items-center gap-2 text-base md:text-lg font-medium text-gray-900 mb-3">
               <ImageIcon className="w-5 h-5" />
               Headshot
             </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors">
+            <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+              headshot 
+                ? 'border-green-500 bg-green-50' 
+                : 'border-gray-300 hover:border-purple-500'
+            }`}>
               <input
                 type="file"
                 id="headshot"
@@ -71,13 +82,19 @@ export default function Step2Page() {
                 htmlFor="headshot"
                 className="cursor-pointer flex flex-col items-center gap-3"
               >
-                <UploadIcon className="w-10 h-10 text-gray-400" />
                 {headshot ? (
-                  <span className="text-purple-600 font-medium">
-                    {headshot.name}
-                  </span>
+                  <>
+                    <CheckCircle2 className="w-10 h-10 text-green-600" />
+                    <span className="text-green-700 font-semibold">
+                      {headshot.name}
+                    </span>
+                    <span className="text-green-600 text-sm">
+                      {formatFileSize(headshot.size)} • Click to change
+                    </span>
+                  </>
                 ) : (
                   <>
+                    <UploadIcon className="w-10 h-10 text-gray-400" />
                     <span className="text-purple-600 font-medium text-base md:text-lg">
                       Choose File
                     </span>
@@ -90,13 +107,16 @@ export default function Step2Page() {
             </div>
           </div>
 
-          {/* Full Body Photo Upload */}
           <div>
             <label className="flex items-center gap-2 text-base md:text-lg font-medium text-gray-900 mb-3">
               <UserIcon className="w-5 h-5" />
               Full Body Photo
             </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors">
+            <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+              fullBody 
+                ? 'border-green-500 bg-green-50' 
+                : 'border-gray-300 hover:border-purple-500'
+            }`}>
               <input
                 type="file"
                 id="fullbody"
@@ -108,13 +128,19 @@ export default function Step2Page() {
                 htmlFor="fullbody"
                 className="cursor-pointer flex flex-col items-center gap-3"
               >
-                <UploadIcon className="w-10 h-10 text-gray-400" />
                 {fullBody ? (
-                  <span className="text-purple-600 font-medium">
-                    {fullBody.name}
-                  </span>
+                  <>
+                    <CheckCircle2 className="w-10 h-10 text-green-600" />
+                    <span className="text-green-700 font-semibold">
+                      {fullBody.name}
+                    </span>
+                    <span className="text-green-600 text-sm">
+                      {formatFileSize(fullBody.size)} • Click to change
+                    </span>
+                  </>
                 ) : (
                   <>
+                    <UploadIcon className="w-10 h-10 text-gray-400" />
                     <span className="text-purple-600 font-medium text-base md:text-lg">
                       Choose File
                     </span>
@@ -127,13 +153,16 @@ export default function Step2Page() {
             </div>
           </div>
 
-          {/* Resume Upload */}
           <div>
             <label className="flex items-center gap-2 text-base md:text-lg font-medium text-gray-900 mb-3">
               <FileTextIcon className="w-5 h-5" />
               Acting Resume (PDF)
             </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors">
+            <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+              resume 
+                ? 'border-green-500 bg-green-50' 
+                : 'border-gray-300 hover:border-purple-500'
+            }`}>
               <input
                 type="file"
                 id="resume"
@@ -145,13 +174,19 @@ export default function Step2Page() {
                 htmlFor="resume"
                 className="cursor-pointer flex flex-col items-center gap-3"
               >
-                <UploadIcon className="w-10 h-10 text-gray-400" />
                 {resume ? (
-                  <span className="text-purple-600 font-medium">
-                    {resume.name}
-                  </span>
+                  <>
+                    <CheckCircle2 className="w-10 h-10 text-green-600" />
+                    <span className="text-green-700 font-semibold">
+                      {resume.name}
+                    </span>
+                    <span className="text-green-600 text-sm">
+                      {formatFileSize(resume.size)} • Click to change
+                    </span>
+                  </>
                 ) : (
                   <>
+                    <UploadIcon className="w-10 h-10 text-gray-400" />
                     <span className="text-purple-600 font-medium text-base md:text-lg">
                       Choose File
                     </span>
@@ -164,7 +199,6 @@ export default function Step2Page() {
             </div>
           </div>
 
-          {/* Navigation Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <Button
               type="button"
