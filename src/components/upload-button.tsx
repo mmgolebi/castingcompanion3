@@ -1,8 +1,10 @@
 "use client";
 
-import { UploadButton as UTButton, UploadDropzone } from "@uploadthing/react";
+import { UploadButton as UTButton } from "@uploadthing/react";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 
-export function UploadButton(props: Parameters<typeof UTButton<OurFileRouter>>[0]) {
-  return <UTButton<OurFileRouter> {...props} />;
+export function UploadButton<T extends keyof OurFileRouter>(
+  props: React.ComponentProps<typeof UTButton<OurFileRouter, T>>
+) {
+  return <UTButton<OurFileRouter, T> {...props} />;
 }

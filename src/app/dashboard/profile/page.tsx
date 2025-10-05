@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UploadButton } from '@/lib/uploadthing';
+import { UploadButton } from '@/components/upload-button';
 import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
 import { User, Image as ImageIcon, MapPin, Briefcase, Settings, Search, X, Plus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
