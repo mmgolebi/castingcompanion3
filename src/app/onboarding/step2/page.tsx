@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ImageIcon, UserIcon, FileTextIcon, UploadIcon, CheckCircle2, Loader2 } from 'lucide-react';
+import { useUploadThing } from '@/lib/uploadthing';
 
 export default function Step2Page() {
   const router = useRouter();
@@ -12,6 +13,9 @@ export default function Step2Page() {
   const [resume, setResume] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
+
+  const { startUpload: uploadImage } = useUploadThing("imageUploader");
+  const { startUpload: uploadPdf } = useUploadThing("pdfUploader");
 
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -29,23 +33,6 @@ export default function Step2Page() {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
-  const uploadFile = async (file: File, endpoint: 'imageUploader' | 'pdfUploader') => {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await fetch(`/api/uploadthing?slug=${endpoint}`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error('Upload failed');
-    }
-
-    const data = await response.json();
-    return data.url;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploading(true);
@@ -55,49 +42,25 @@ export default function Step2Page() {
 
       if (headshot) {
         setUploadProgress('Uploading headshot...');
-        const formData = new FormData();
-        formData.append('files', headshot);
-        
-        const response = await fetch('/api/uploadthing', {
-          method: 'POST',
-          body: formData,
-        });
-        
-        const result = await response.json();
-        if (result[0]?.url) {
-          uploadData.headshot = result[0].url;
+        const res = await uploadImage([headshot]);
+        if (res?.[0]?.url) {
+          uploadData.headshot = res[0].url;
         }
       }
 
       if (fullBody) {
         setUploadProgress('Uploading full body photo...');
-        const formData = new FormData();
-        formData.append('files', fullBody);
-        
-        const response = await fetch('/api/uploadthing', {
-          method: 'POST',
-          body: formData,
-        });
-        
-        const result = await response.json();
-        if (result[0]?.url) {
-          uploadData.fullBodyPhoto = result[0].url;
+        const res = await uploadImage([fullBody]);
+        if (res?.[0]?.url) {
+          uploadData.fullBodyPhoto = res[0].url;
         }
       }
 
       if (resume) {
         setUploadProgress('Uploading resume...');
-        const formData = new FormData();
-        formData.append('files', resume);
-        
-        const response = await fetch('/api/uploadthing', {
-          method: 'POST',
-          body: formData,
-        });
-        
-        const result = await response.json();
-        if (result[0]?.url) {
-          uploadData.resume = result[0].url;
+        const res = await uploadPdf([resume]);
+        if (res?.[0]?.url) {
+          uploadData.resume = res[0].url;
         }
       }
 
