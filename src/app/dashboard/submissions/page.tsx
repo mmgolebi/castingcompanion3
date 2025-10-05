@@ -37,10 +37,13 @@ export default function SubmissionsPage() {
         const res = await fetch('/api/submissions');
         if (res.ok) {
           const data = await res.json();
-          setSubmissions(data);
+          // Handle both array and object responses
+          const submissionsArray = Array.isArray(data) ? data : (data.submissions || []);
+          setSubmissions(submissionsArray);
         }
       } catch (error) {
         console.error('Error fetching submissions:', error);
+        setSubmissions([]);
       } finally {
         setLoading(false);
       }
@@ -53,8 +56,8 @@ export default function SubmissionsPage() {
 
   const filteredSubmissions = submissions.filter(submission => {
     const matchesSearch = 
-      submission.call.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-      submission.call.production.toLowerCase().includes(filters.search.toLowerCase());
+      submission.call?.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
+      submission.call?.production?.toLowerCase().includes(filters.search.toLowerCase());
     
     const matchesMethod = filters.method === 'all' || submission.method === filters.method;
     const matchesStatus = filters.status === 'all' || submission.status === filters.status;
@@ -224,8 +227,8 @@ export default function SubmissionsPage() {
                       <div className="flex flex-col gap-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-base md:text-lg font-bold truncate">{submission.call.title}</h3>
-                            <p className="text-sm text-gray-600 truncate">{submission.call.production}</p>
+                            <h3 className="text-base md:text-lg font-bold truncate">{submission.call?.title || 'Unknown'}</h3>
+                            <p className="text-sm text-gray-600 truncate">{submission.call?.production || 'Unknown'}</p>
                           </div>
                           {getStatusBadge(submission.status)}
                         </div>
@@ -237,11 +240,11 @@ export default function SubmissionsPage() {
                           </span>
                           <span className="flex items-center gap-1">
                             <MapPin className="h-3 w-3 md:h-4 md:w-4" />
-                            {submission.call.location}
+                            {submission.call?.location || 'Unknown'}
                           </span>
                           <span className="flex items-center gap-1">
                             <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
-                            {submission.matchScore}% match
+                            {submission.matchScore || 0}% match
                           </span>
                         </div>
 
@@ -260,14 +263,6 @@ export default function SubmissionsPage() {
                               <span className="font-medium">Manual Submission</span>
                             )}
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => router.push(`/dashboard/submissions/${submission.id}`)}
-                            className="text-xs md:text-sm h-8"
-                          >
-                            View Details
-                          </Button>
                         </div>
                       </div>
                     </div>
