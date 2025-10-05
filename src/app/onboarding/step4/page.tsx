@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +21,7 @@ export default function Step4Page() {
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [stateSearch, setStateSearch] = useState('');
   const [showStateDropdown, setShowStateDropdown] = useState(false);
+  const stateDropdownRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState({
     city: '',
     state: '',
@@ -31,6 +32,18 @@ export default function Step4Page() {
     compensationPreference: '',
     compensationMin: '',
   });
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (stateDropdownRef.current && !stateDropdownRef.current.contains(event.target as Node)) {
+        setShowStateDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -92,6 +105,12 @@ export default function Step4Page() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!selectedState) {
+      alert('Please select a state');
+      return;
+    }
+    
     setSubmitting(true);
 
     try {
@@ -182,7 +201,7 @@ export default function Step4Page() {
             <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
               <div>
                 <Label htmlFor="state" className="text-base">State *</Label>
-                <div className="relative mt-2">
+                <div ref={stateDropdownRef} className="relative mt-2">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
@@ -205,7 +224,7 @@ export default function Step4Page() {
                           key={state.value}
                           type="button"
                           onClick={() => handleStateSelect(state.value, state.label)}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-100 text-base"
+                          className="w-full text-left px-4 py-3 hover:bg-gray-100 text-base border-b last:border-b-0"
                         >
                           {state.label}
                         </button>
@@ -347,7 +366,7 @@ export default function Step4Page() {
                 >
                   Back
                 </Button>
-                <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={submitting}>
+                <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={submitting || !selectedState}>
                   {submitting ? 'Processing...' : 'Complete & Continue to Payment'}
                 </Button>
               </div>
