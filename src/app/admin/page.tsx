@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trash2, Edit, ArrowLeft } from 'lucide-react';
-import { UploadButton } from '@/lib/uploadthing';
+import { UploadButton } from '@/components/upload-button';
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -427,7 +427,7 @@ export default function AdminPage() {
                   )}
                   <UploadButton
                     endpoint="imageUploader"
-                    onClientUploadComplete={(res) => {
+                    onClientUploadComplete={(res: any) => {
                       if (res?.[0]) {
                         setFormData({ ...formData, featuredImage: res[0].url });
                         alert('Image uploaded!');
