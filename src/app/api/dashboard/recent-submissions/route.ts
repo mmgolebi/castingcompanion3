@@ -11,9 +11,8 @@ export async function GET() {
 
     const submissions = await prisma.submission.findMany({
       where: {
-        // @ts-expect-error - userId exists in schema but Prisma types don't reflect it
         userId: session.user.id,
-      },
+      } as any,
       include: {
         castingCall: {
           select: {

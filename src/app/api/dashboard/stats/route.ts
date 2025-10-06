@@ -11,9 +11,8 @@ export async function GET() {
 
     const totalSubmissions = await prisma.submission.count({
       where: {
-        // @ts-expect-error - userId exists in schema
         userId: session.user.id,
-      },
+      } as any,
     });
 
     const weekAgo = new Date();
@@ -21,10 +20,9 @@ export async function GET() {
     
     const submissionsThisWeek = await prisma.submission.count({
       where: {
-        // @ts-expect-error - userId exists in schema
         userId: session.user.id,
         createdAt: { gte: weekAgo },
-      },
+      } as any,
     });
 
     const totalMatches = await prisma.castingCall.count({
