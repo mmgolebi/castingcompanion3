@@ -9,14 +9,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const whereClause: any = {
-      userId: session.user.id,
-    };
-
     const submissions = await prisma.submission.findMany({
-      where: whereClause,
+      where: {
+        userId: session.user.id,
+      },
       include: {
-        CastingCall: {
+        castingCall: {
           select: {
             title: true,
             production: true,

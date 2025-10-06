@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
 
-    const whereClause: any = {
+    const where: any = {
       userId: session.user.id,
     };
 
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
       prisma.submission.findMany({
         where,
         include: {
-          CastingCall: true,
+          castingCall: true,
         },
         orderBy: { createdAt: 'desc' },
         skip,
