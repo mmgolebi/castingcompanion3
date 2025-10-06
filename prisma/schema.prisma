@@ -7,62 +7,71 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  ACTOR
+}
+
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  password      String
-  role          Role      @default(ACTOR)
-  profile       Profile?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  subscriptionStatus String? @default("inactive")
-  stripeCustomerId String?
-  resetToken    String?   @unique
-  resetTokenExpiry DateTime?
+  id                  String    @id @default(cuid())
+  name                String?
+  email               String    @unique
+  password            String
+  role                Role      @default(ACTOR)
+  profile             Profile?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  subscriptionStatus  String?   @default("inactive")
+  stripeCustomerId    String?
+  resetToken          String?   @unique
+  resetTokenExpiry    DateTime?
+  
+  @@map("User")
 }
 
 model Profile {
-  id                    String   @id @default(cuid())
-  userId                String   @unique
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                     String       @id @default(cuid())
+  userId                 String       @unique
+  user                   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  profileSlug           String?  @unique
-  isPublic              Boolean  @default(false)
+  profileSlug            String?      @unique
+  isPublic               Boolean      @default(false)
   
-  phone                 String?
-  age                   Int?
-  playableAgeMin        Int?
-  playableAgeMax        Int?
-  gender                Gender?
-  ethnicity             Ethnicity?
-  unionStatus           UnionStatus?
+  phone                  String?
+  age                    Int?
+  playableAgeMin         Int?
+  playableAgeMax         Int?
+  gender                 String?
+  ethnicity              String?
+  unionStatus            String?
   
-  height                Int?
-  weight                Int?
-  hairColor             String?
-  eyeColor              String?
-  visibleTattoos        Boolean  @default(false)
+  height                 Int?
+  weight                 Int?
+  hairColor              String?
+  eyeColor               String?
+  visibleTattoos         Boolean      @default(false)
   
-  headshot              String?
-  fullBodyPhoto         String?
-  resume                String?
+  headshot               String?
+  fullBodyPhoto          String?
+  resume                 String?
   
-  city                  String?
-  state                 String?
-  zipCode               String?
-  availability          String?
-  reliableTransportation Boolean @default(false)
-  travelWilling         Boolean  @default(false)
+  city                   String?
+  state                  String?
+  zipCode                String?
+  availability           String?
+  reliableTransportation Boolean      @default(false)
+  travelWilling          Boolean      @default(false)
   compensationPreference String?
-  compensationMin       String?
+  compensationMin        String?
   
-  skills                String[]
-  roleTypesInterested   String[]
+  skills                 String[]     @default([])
+  roleTypesInterested    String[]     @default([])
   
-  submissions           Submission[]
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  submissions            Submission[]
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  
+  @@map("Profile")
 }
 
 model CastingCall {
@@ -89,56 +98,24 @@ model CastingCall {
   submissions         Submission[]
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
+  
+  @@map("CastingCall")
 }
 
 model Submission {
-  id                String         @id @default(cuid())
-  profileId         String
-  profile           Profile        @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  castingCallId     String
-  castingCall       CastingCall    @relation(fields: [castingCallId], references: [id], onDelete: Cascade)
+  id              String      @id @default(cuid())
+  profileId       String
+  profile         Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  castingCallId   String
+  castingCall     CastingCall @relation(fields: [castingCallId], references: [id], onDelete: Cascade)
   
-  submissionMethod  String
-  matchScore        Int
-  status            String         @default("PENDING")
+  matchScore      Int         @default(0)
+  submissionMethod String     @default("MANUAL")
+  status          String      @default("PENDING")
   
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
   
   @@unique([profileId, castingCallId])
-}
-
-enum Role {
-  ACTOR
-  CASTING_DIRECTOR
-  ADMIN
-}
-
-enum Gender {
-  MALE
-  FEMALE
-  NON_BINARY
-}
-
-enum Ethnicity {
-  WHITE
-  BLACK
-  HISPANIC
-  ASIAN
-  NATIVE_AMERICAN
-  MIDDLE_EASTERN
-  PACIFIC_ISLANDER
-  MIXED
-  OTHER
-}
-
-enum UnionStatus {
-  SAG_AFTRA
-  AEA
-  AGVA
-  ACTRA
-  NON_UNION
-  ELIGIBLE
-  UNION
-  EITHER
+  @@map("Submission")
 }
