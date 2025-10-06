@@ -181,7 +181,7 @@ export default function Step2Page() {
                         Choose File
                       </span>
                       <span className="text-gray-500 text-sm">
-                        Image (20MB max)
+                        Image (16MB max)
                       </span>
                     </>
                   )}
@@ -228,7 +228,7 @@ export default function Step2Page() {
                         Choose File
                       </span>
                       <span className="text-gray-500 text-sm">
-                        Image (20MB max)
+                        Image (16MB max)
                       </span>
                     </>
                   )}
@@ -275,7 +275,7 @@ export default function Step2Page() {
                         Choose File
                       </span>
                       <span className="text-gray-500 text-sm">
-                        PDF (20MB max)
+                        PDF (16MB max)
                       </span>
                     </>
                   )}
