@@ -6,8 +6,17 @@ export async function GET(req: Request) {
   try {
     const session = await auth();
     
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: { profile: true },
+    });
+
+    if (!user?.profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -17,7 +26,7 @@ export async function GET(req: Request) {
     const skip = (page - 1) * limit;
 
     const where: any = {
-      userId: (session.user as any).id,
+      profileId: user.profile.id,
     };
 
     if (status && status !== 'all') {
@@ -28,7 +37,7 @@ export async function GET(req: Request) {
       prisma.submission.findMany({
         where,
         include: {
-          call: true,
+          castingCall: true,
         },
         orderBy: { createdAt: 'desc' },
         skip,
