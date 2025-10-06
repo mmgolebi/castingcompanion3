@@ -89,7 +89,8 @@ export async function PATCH(req: Request) {
     const data = await req.json();
     console.log('Received profile update data:', data);
     
-    const cleanData = {
+    // Profile data (everything except name)
+    const profileData = {
       userId: session.user.id,
       phone: cleanValue(data.phone),
       age: cleanNumber(data.age),
@@ -121,16 +122,28 @@ export async function PATCH(req: Request) {
       updatedAt: new Date(),
     };
     
-    console.log('Cleaned data for Prisma:', cleanData);
+    console.log('Cleaned profile data for Prisma:', profileData);
     
-    const profile = await prisma.profile.upsert({
-      where: { userId: session.user.id },
-      update: cleanData,
-      create: {
-        ...cleanData,
-        id: `profile_${session.user.id}_${Date.now()}`,
-      },
-    });
+    // Use a transaction to update both User and Profile
+    const [user, profile] = await prisma.$transaction([
+      // Update User name
+      prisma.user.update({
+        where: { id: session.user.id },
+        data: {
+          name: cleanValue(data.name),
+          updatedAt: new Date(),
+        },
+      }),
+      // Upsert Profile
+      prisma.profile.upsert({
+        where: { userId: session.user.id },
+        update: profileData,
+        create: {
+          ...profileData,
+          id: `profile_${session.user.id}_${Date.now()}`,
+        },
+      }),
+    ]);
     
     console.log('Profile saved successfully:', profile.id);
     
@@ -142,6 +155,7 @@ export async function PATCH(req: Request) {
     
     return NextResponse.json({ 
       success: true, 
+      user,
       profile 
     });
     
