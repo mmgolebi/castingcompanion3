@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import type { Prisma } from '@prisma/client';
 
 export async function GET(req: Request) {
   try {
@@ -17,7 +16,7 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
 
-    const where: Prisma.SubmissionWhereInput = {
+    const whereClause: any = {
       userId: session.user.id,
     };
 
