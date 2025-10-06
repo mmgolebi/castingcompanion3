@@ -568,12 +568,12 @@ export default function ProfilePage() {
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
                       <UploadButton
                         endpoint="imageUploader"
-                        onClientUploadComplete={(res) => {
+                        onClientUploadComplete={(res: any) => {
                           if (res && res[0]) {
                             setProfile({ ...profile, headshot: res[0].url });
                           }
                         }}
-                        onUploadError={(error) => alert(`Upload failed: ${error.message}`)}
+                        onUploadError={(error: Error) => alert(`Upload failed: ${error.message}`)}
                       />
                     </div>
                   )}
@@ -595,12 +595,12 @@ export default function ProfilePage() {
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
                       <UploadButton
                         endpoint="imageUploader"
-                        onClientUploadComplete={(res) => {
+                        onClientUploadComplete={(res: any) => {
                           if (res && res[0]) {
                             setProfile({ ...profile, fullBody: res[0].url });
                           }
                         }}
-                        onUploadError={(error) => alert(`Upload failed: ${error.message}`)}
+                        onUploadError={(error: Error) => alert(`Upload failed: ${error.message}`)}
                       />
                     </div>
                   )}
@@ -623,12 +623,12 @@ export default function ProfilePage() {
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
                       <UploadButton
                         endpoint="pdfUploader"
-                        onClientUploadComplete={(res) => {
+                        onClientUploadComplete={(res: any) => {
                           if (res && res[0]) {
                             setProfile({ ...profile, resume: res[0].url });
                           }
                         }}
-                        onUploadError={(error) => alert(`Upload failed: ${error.message}`)}
+                        onUploadError={(error: Error) => alert(`Upload failed: ${error.message}`)}
                       />
                     </div>
                   )}
