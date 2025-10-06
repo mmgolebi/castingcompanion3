@@ -1,22 +1,10 @@
-import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/db';
-import { redirect } from 'next/navigation';
+import { prisma } from './db';
 
-export async function requireAdmin() {
-  const session = await auth();
-  
-  if (!session?.user) {
-    redirect('/auth/login');
-  }
-
+export async function isUserAdmin(userId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
-    where: { id: (session.user as any).id },
-    select: { isAdmin: true },
+    where: { id: userId },
+    select: { role: true },
   });
 
-  if (!user?.isAdmin) {
-    redirect('/dashboard');
-  }
-
-  return session;
+  return user?.role === 'ADMIN';
 }

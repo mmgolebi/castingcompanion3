@@ -30,9 +30,9 @@ export default async function DashboardLayout({
     try {
       const user = await prisma.user.findUnique({
         where: { id: (session.user as any).id },
-        select: { isAdmin: true },
+        select: { role: true },
       });
-      isAdmin = user?.isAdmin || false;
+      isAdmin = user?.role === "ADMIN" || false;
     } catch (error) {
       console.error('Failed to check admin status:', error);
     }

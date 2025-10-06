@@ -1,15 +1,11 @@
-export function assertAdmin(session: any): asserts session is { user: { id: string; role: string } } {
-  if (!session || session.user?.role !== 'ADMIN') {
-    throw new Error('FORBIDDEN');
-  }
-}
-
-export function assertAuthenticated(session: any): asserts session is { user: { id: string; role: string } } {
-  if (!session?.user) {
-    throw new Error('UNAUTHORIZED');
-  }
-}
-
 export function isAdmin(session: any): boolean {
   return session?.user?.role === 'ADMIN';
+}
+
+export function isCastingDirector(session: any): boolean {
+  return session?.user?.role === 'CASTING_DIRECTOR';
+}
+
+export function isActor(session: any): boolean {
+  return session?.user?.role === 'ACTOR';
 }
