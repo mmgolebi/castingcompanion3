@@ -1,229 +1,59 @@
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import { headers } from 'next/headers';
 import { prisma } from '@/lib/db';
-import { calculateMatchScore } from '@/lib/matchScore';
-import { sendSubmissionEmail, sendWelcomeEmail } from '@/lib/email';
+import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
-});
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' });
 
 export async function POST(req: Request) {
+  const body = await req.text();
+  const signature = headers().get('stripe-signature')!;
+
+  let event: Stripe.Event;
+
   try {
-    const body = await req.text();
-    const signature = req.headers.get('stripe-signature')!;
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+  } catch (err: any) {
+    console.error('Webhook signature verification failed:', err.message);
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+  }
 
-    let event: Stripe.Event;
-
-    try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    } catch (err: any) {
-      console.error('Webhook signature verification failed:', err.message);
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
-    }
-
-    console.log('Stripe webhook event:', event.type);
-
+  try {
     switch (event.type) {
-      case 'checkout.session.completed': {
+      case 'checkout.session.completed':
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.metadata?.userId;
-        const isTrial = session.metadata?.isTrial === 'true';
-
-        if (!userId) {
-          console.error('No userId in session metadata');
-          break;
-        }
-
-        console.log('Checkout completed for user:', userId);
-        console.log('Customer ID:', session.customer);
-
-        // Get user profile first
-        const userProfile = await prisma.user.findUnique({
-          where: { id: userId },
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            age: true,
-            playableAgeMin: true,
-            playableAgeMax: true,
-            gender: true,
-            state: true,
-            city: true,
-            unionStatus: true,
-            ethnicity: true,
-            roleTypesInterested: true,
-            phone: true,
-            headshot: true,
-            fullBody: true,
-            resume: true,
-            demoReel: true,
-            skills: true,
-          },
-        });
-
-        if (!userProfile) {
-          console.error('User profile not found:', userId);
-          break;
-        }
-
-        if (isTrial && session.customer) {
-          const trialEndDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-
-          const mainPrice = await stripe.prices.create({
-            currency: 'usd',
-            unit_amount: 3997,
-            recurring: {
-              interval: 'month',
-            },
-            product_data: {
-              name: 'Casting Companion Pro',
-            },
-          });
-
-          const subscription = await stripe.subscriptions.create({
-            customer: session.customer as string,
-            items: [{ price: mainPrice.id }],
-            trial_end: Math.floor(trialEndDate.getTime() / 1000),
-            metadata: {
-              userId: userId,
-            },
-          });
-
+        
+        if (session.metadata?.userId) {
           await prisma.user.update({
-            where: { id: userId },
+            where: { id: session.metadata.userId },
             data: {
               stripeCustomerId: session.customer as string,
-              stripeSubId: subscription.id,
-              subStatus: 'TRIAL',
-              trialEndsAt: trialEndDate,
-            },
-          });
-
-          console.log(`Trial subscription created for user ${userId}`);
-        } else if (session.customer) {
-          // Not a trial, just update customer ID
-          await prisma.user.update({
-            where: { id: userId },
-            data: {
-              stripeCustomerId: session.customer as string,
-              subStatus: 'ACTIVE',
+              subscriptionStatus: 'active',
             },
           });
         }
-
-        // Send welcome email
-        try {
-          await sendWelcomeEmail(userProfile.email, userProfile.name || 'Actor');
-          console.log(`Welcome email sent to ${userProfile.email}`);
-        } catch (emailError) {
-          console.error('Failed to send welcome email:', emailError);
-        }
-
-        // Get all active casting calls
-        const castingCalls = await prisma.castingCall.findMany({
-          where: {
-            submissionDeadline: {
-              gte: new Date(),
-            },
-          },
-        });
-
-        console.log(`Checking ${castingCalls.length} casting calls for auto-submission`);
-
-        // Auto-submit to matching casting calls
-        for (const call of castingCalls) {
-          const matchScore = calculateMatchScore(userProfile, call);
-          console.log(`Match score for ${call.title}: ${matchScore}%`);
-
-          if (matchScore >= 85) {
-            console.log(`Auto-submitting to: ${call.title}`);
-
-            // Check if already submitted
-            const existingSubmission = await prisma.submission.findUnique({
-              where: {
-                userId_callId: {
-                  userId: userProfile.id,
-                  callId: call.id,
-                },
-              },
-            });
-
-            if (existingSubmission) {
-              console.log(`Already submitted to ${call.title}, skipping`);
-              continue;
-            }
-
-            await prisma.submission.create({
-              data: {
-                userId: userProfile.id,
-                callId: call.id,
-                status: 'SENT',
-                method: 'AUTO',
-                matchScore,
-                castingEmail: call.castingEmail,
-              },
-            });
-
-            try {
-              await sendSubmissionEmail({
-                castingEmail: call.castingEmail,
-                userProfile,
-                castingCall: call,
-                submissionId: call.id,
-              });
-              console.log(`Auto-submission email sent for ${call.title}`);
-            } catch (emailError) {
-              console.error('Failed to send auto-submission email:', emailError);
-            }
-          }
-        }
-
         break;
-      }
 
-      case 'customer.subscription.updated': {
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.userId;
-
-        if (!userId) break;
-
-        await prisma.user.update({
-          where: { id: userId },
+        
+        await prisma.user.updateMany({
+          where: { stripeCustomerId: subscription.customer as string },
           data: {
-            subStatus: subscription.status === 'active' ? 'ACTIVE' : 'CANCELLED',
+            subscriptionStatus: subscription.status === 'active' ? 'active' : 'inactive',
           },
         });
-
         break;
-      }
-
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.userId;
-
-        if (!userId) break;
-
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            subStatus: 'CANCELLED',
-          },
-        });
-
-        break;
-      }
     }
 
     return NextResponse.json({ received: true });
-  } catch (error: any) {
-    console.error('Webhook error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Webhook handler failed' },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error('Webhook handler error:', error);
+    return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
   }
 }
