@@ -1,84 +1,87 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, CheckCircle2 } from 'lucide-react';
 
-function SetupSubscriptionContent() {
+export default function SetupSubscriptionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [error, setError] = useState('');
-  const [attempted, setAttempted] = useState(false);
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
 
   useEffect(() => {
     const setupSubscription = async () => {
-      const sessionId = searchParams?.get('session_id');
-      
-      console.log('Session ID from URL:', sessionId);
-      
-      if (!sessionId) {
-        if (!attempted) {
-          // Wait a bit for searchParams to load
-          setAttempted(true);
+      try {
+        const sessionId = searchParams.get('session_id');
+        
+        if (!sessionId) {
+          setStatus('error');
           return;
         }
-        setError('Missing session information');
-        return;
-      }
 
-      try {
-        console.log('Calling API with sessionId:', sessionId);
-        
+        // Call the API to create the subscription
         const res = await fetch('/api/stripe/setup-subscription', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId }),
         });
 
         if (res.ok) {
-          router.push('/onboarding/success');
+          setStatus('success');
+          // Redirect to dashboard after 2 seconds
+          setTimeout(() => {
+            router.push('/dashboard?trial=started');
+          }, 2000);
         } else {
-          const data = await res.json();
-          setError(data.error || 'Failed to set up subscription');
+          setStatus('error');
         }
-      } catch (err) {
-        console.error('Setup error:', err);
-        setError('An error occurred');
+      } catch (error) {
+        console.error('Setup error:', error);
+        setStatus('error');
       }
     };
 
     setupSubscription();
-  }, [searchParams, router, attempted]);
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <div className="bg-white p-8 rounded-lg">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button 
-            onClick={() => router.push('/onboarding/payment')}
-            className="text-blue-600 underline"
-          >
-            Try again
-          </button>
-        </div>
-      </div>
-    );
-  }
+  }, [searchParams, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="bg-white p-8 rounded-lg text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-gray-700">Setting up your subscription...</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 flex items-center justify-center px-4">
+      <Card className="max-w-md w-full">
+        <CardHeader>
+          <CardTitle className="text-center">
+            {status === 'loading' && 'Setting up your trial...'}
+            {status === 'success' && 'Trial activated!'}
+            {status === 'error' && 'Setup failed'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center gap-4">
+          {status === 'loading' && (
+            <>
+              <Loader2 className="h-12 w-12 animate-spin text-purple-600" />
+              <p className="text-center text-gray-600">
+                Please wait while we activate your 14-day trial...
+              </p>
+            </>
+          )}
+          
+          {status === 'success' && (
+            <>
+              <CheckCircle2 className="h-12 w-12 text-green-600" />
+              <p className="text-center text-gray-600">
+                Your trial is active! You'll be charged $39.97/month after 14 days.
+                Redirecting to dashboard...
+              </p>
+            </>
+          )}
+          
+          {status === 'error' && (
+            <>
+              <p className="text-center text-red-600">
+                Something went wrong. Please contact support.
+              </p>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
-  );
-}
-
-export default function SetupSubscriptionPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <SetupSubscriptionContent />
-    </Suspense>
   );
 }

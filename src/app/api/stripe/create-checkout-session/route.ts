@@ -21,19 +21,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Create checkout for $1 one-time payment
     const checkoutSession = await stripe.checkout.sessions.create({
       customer_email: user.email,
+      payment_method_types: ['card'],
       line_items: [
         {
-          price: process.env.STRIPE_PRICE_ID_MONTHLY!,
+          price_data: {
+            currency: 'usd',
+            unit_amount: 100, // $1 in cents
+            product_data: {
+              name: 'Casting Companion Pro - Trial Access',
+              description: '$1 trial, then $39.97/month after 14 days',
+            },
+          },
           quantity: 1,
         },
       ],
-      mode: 'subscription',
-      success_url: `${process.env.NEXTAUTH_URL}/dashboard?success=true`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/dashboard?canceled=true`,
+      mode: 'payment',
+      success_url: `${process.env.NEXTAUTH_URL}/onboarding/setup-subscription?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXTAUTH_URL}/onboarding/step4?canceled=true`,
       metadata: {
         userId: user.id,
+        isTrial: 'true',
       },
     });
 
