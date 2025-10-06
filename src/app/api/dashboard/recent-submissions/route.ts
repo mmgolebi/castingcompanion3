@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import type { Prisma } from '@prisma/client';
 
 export async function GET() {
   try {
@@ -9,12 +10,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const whereClause: Prisma.SubmissionWhereInput = {
+      userId: session.user.id,
+    };
+
     const submissions = await prisma.submission.findMany({
-      where: {
-        User: {
-          id: session.user.id,
-        },
-      },
+      where: whereClause,
       include: {
         CastingCall: {
           select: {

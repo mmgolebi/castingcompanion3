@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import type { Prisma } from '@prisma/client';
 
 export async function GET() {
   try {
@@ -9,24 +10,24 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const whereClause: Prisma.SubmissionWhereInput = {
+      userId: session.user.id,
+    };
+
     const totalSubmissions = await prisma.submission.count({
-      where: { 
-        User: {
-          id: session.user.id,
-        },
-      },
+      where: whereClause,
     });
 
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     
+    const whereClauseWeek: Prisma.SubmissionWhereInput = {
+      userId: session.user.id,
+      createdAt: { gte: weekAgo },
+    };
+
     const submissionsThisWeek = await prisma.submission.count({
-      where: {
-        User: {
-          id: session.user.id,
-        },
-        createdAt: { gte: weekAgo },
-      },
+      where: whereClauseWeek,
     });
 
     const totalMatches = await prisma.castingCall.count({
