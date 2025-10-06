@@ -15,15 +15,6 @@ import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
 import { User, Image as ImageIcon, MapPin, Briefcase, Search, X, Plus, Eye, Copy, Check, ExternalLink } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
-// Helper function to generate slug from name
-function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .substring(0, 50);
-}
-
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -86,7 +77,7 @@ export default function ProfilePage() {
     { value: 'COMMERCIAL', label: 'Commercial' },
   ];
 
-  const publicProfileUrl = profile.profileSlug 
+  const publicProfileUrl = typeof window !== 'undefined' && profile.profileSlug 
     ? `${window.location.origin}/actors/${profile.profileSlug}`
     : '';
 
@@ -250,22 +241,23 @@ export default function ProfilePage() {
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(publicProfileUrl);
-    setCopied(true);
-    toast({
-      title: "Link copied!",
-      description: "Public profile link copied to clipboard",
-    });
-    setTimeout(() => setCopied(false), 2000);
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(publicProfileUrl);
+      setCopied(true);
+      toast({
+        title: "Link copied!",
+        description: "Public profile link copied to clipboard",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleSave = async (section: string) => {
     setSaving(true);
     try {
-      // Auto-generate slug from name if not set
       let slug = profile.profileSlug;
       if (!slug && profile.name) {
-        slug = generateSlug(profile.name);
+        slug = profile.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').substring(0, 50);
       }
 
       const res = await fetch('/api/profile', {
@@ -342,7 +334,6 @@ export default function ProfilePage() {
       </div>
 
       <div className="container mx-auto px-4 py-4 md:py-8 pb-20 md:pb-8">
-        {/* Public Profile Settings Card */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Public Profile</CardTitle>
@@ -431,9 +422,6 @@ export default function ProfilePage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Keep all your existing tab content - Basic, Media, Skills, Location */}
-          {/* I'll add just the Basic tab here as an example, but keep all your existing content */}
-
           <TabsContent value="basic">
             <Card>
               <CardHeader>
@@ -451,7 +439,209 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                {/* ... rest of your existing basic info fields ... */}
+                <div>
+                  <Label htmlFor="email" className="text-base">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={profile.email}
+                    disabled
+                    className="h-12 text-base mt-2 bg-gray-50"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="phone" className="text-base">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    inputMode="tel"
+                    value={profile.phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    placeholder="(555) 123-4567"
+                    className="h-12 text-base mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="age" className="text-base">Current Age</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    inputMode="numeric"
+                    value={profile.age}
+                    onChange={(e) => setProfile({ ...profile, age: e.target.value })}
+                    className="h-12 text-base mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-base">Playable Age Range</Label>
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      value={profile.playableAgeMin}
+                      onChange={(e) => setProfile({ ...profile, playableAgeMin: e.target.value })}
+                      placeholder="Min age"
+                      className="h-12 text-base"
+                    />
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      value={profile.playableAgeMax}
+                      onChange={(e) => setProfile({ ...profile, playableAgeMax: e.target.value })}
+                      placeholder="Max age"
+                      className="h-12 text-base"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="gender" className="text-base">Gender</Label>
+                  <Select
+                    value={profile.gender}
+                    onValueChange={(value) => setProfile({ ...profile, gender: value })}
+                  >
+                    <SelectTrigger className="h-12 text-base mt-2">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MALE">Male</SelectItem>
+                      <SelectItem value="FEMALE">Female</SelectItem>
+                      <SelectItem value="NON_BINARY">Non-Binary</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-base">Height</Label>
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      value={heightFeet}
+                      onChange={(e) => setHeightFeet(e.target.value)}
+                      placeholder="Feet"
+                      className="h-12 text-base"
+                    />
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      value={heightInches}
+                      onChange={(e) => setHeightInches(e.target.value)}
+                      placeholder="Inches"
+                      className="h-12 text-base"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="weight" className="text-base">Weight (lbs)</Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    inputMode="numeric"
+                    value={profile.weight}
+                    onChange={(e) => setProfile({ ...profile, weight: e.target.value })}
+                    className="h-12 text-base mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="ethnicity" className="text-base">Ethnicity</Label>
+                  <Select
+                    value={profile.ethnicity}
+                    onValueChange={(value) => setProfile({ ...profile, ethnicity: value })}
+                  >
+                    <SelectTrigger className="h-12 text-base mt-2">
+                      <SelectValue placeholder="Select ethnicity" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="WHITE">White/Caucasian</SelectItem>
+                      <SelectItem value="BLACK">Black/African American</SelectItem>
+                      <SelectItem value="HISPANIC">Hispanic/Latino</SelectItem>
+                      <SelectItem value="ASIAN">Asian</SelectItem>
+                      <SelectItem value="NATIVE_AMERICAN">Native American</SelectItem>
+                      <SelectItem value="MIDDLE_EASTERN">Middle Eastern</SelectItem>
+                      <SelectItem value="PACIFIC_ISLANDER">Pacific Islander</SelectItem>
+                      <SelectItem value="MIXED">Mixed/Multiracial</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="hairColor" className="text-base">Hair Color</Label>
+                    <Select
+                      value={profile.hairColor}
+                      onValueChange={(value) => setProfile({ ...profile, hairColor: value })}
+                    >
+                      <SelectTrigger className="h-12 text-base mt-2">
+                        <SelectValue placeholder="Select hair color" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="BLACK">Black</SelectItem>
+                        <SelectItem value="BROWN">Brown</SelectItem>
+                        <SelectItem value="BLONDE">Blonde</SelectItem>
+                        <SelectItem value="RED">Red</SelectItem>
+                        <SelectItem value="GRAY">Gray</SelectItem>
+                        <SelectItem value="WHITE">White</SelectItem>
+                        <SelectItem value="OTHER">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="eyeColor" className="text-base">Eye Color</Label>
+                    <Select
+                      value={profile.eyeColor}
+                      onValueChange={(value) => setProfile({ ...profile, eyeColor: value })}
+                    >
+                      <SelectTrigger className="h-12 text-base mt-2">
+                        <SelectValue placeholder="Select eye color" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="BROWN">Brown</SelectItem>
+                        <SelectItem value="BLUE">Blue</SelectItem>
+                        <SelectItem value="GREEN">Green</SelectItem>
+                        <SelectItem value="HAZEL">Hazel</SelectItem>
+                        <SelectItem value="GRAY">Gray</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                  <Checkbox
+                    id="visibleTattoos"
+                    checked={profile.visibleTattoos}
+                    onCheckedChange={(checked) => setProfile({ ...profile, visibleTattoos: checked as boolean })}
+                    className="h-5 w-5"
+                  />
+                  <Label htmlFor="visibleTattoos" className="text-base cursor-pointer flex-1">I have visible tattoos</Label>
+                </div>
+
+                <div>
+                  <Label htmlFor="unionStatus" className="text-base">Union Status</Label>
+                  <Select
+                    value={profile.unionStatus}
+                    onValueChange={(value) => setProfile({ ...profile, unionStatus: value })}
+                  >
+                    <SelectTrigger className="h-12 text-base mt-2">
+                      <SelectValue placeholder="Select union status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SAG_AFTRA">SAG-AFTRA</SelectItem>
+                      <SelectItem value="AEA">AEA (Actors' Equity)</SelectItem>
+                      <SelectItem value="AGVA">AGVA</SelectItem>
+                      <SelectItem value="ACTRA">ACTRA (Canadian)</SelectItem>
+                      <SelectItem value="NON_UNION">Non-Union</SelectItem>
+                      <SelectItem value="ELIGIBLE">Union Eligible</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 <Button 
                   onClick={() => handleSave('basic')} 
@@ -464,7 +654,369 @@ export default function ProfilePage() {
             </Card>
           </TabsContent>
 
-          {/* Keep all other existing TabsContent sections */}
+          <TabsContent value="media">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg md:text-xl">Media Assets</CardTitle>
+                <CardDescription className="text-sm md:text-base">Your headshots, photos, and resume</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label className="flex items-center gap-2 mb-3 text-base">
+                    <ImageIcon className="h-5 w-5" />
+                    Headshot
+                  </Label>
+                  {profile.headshot ? (
+                    <div className="space-y-3">
+                      <img src={profile.headshot} alt="Headshot" className="w-full max-w-sm mx-auto h-auto object-cover rounded-lg shadow-md" />
+                      <Button type="button" variant="outline" size="sm" onClick={() => setProfile({ ...profile, headshot: '' })} className="w-full md:w-auto h-10">
+                        Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
+                      <UploadButton
+                        endpoint="imageUploader"
+                        onClientUploadComplete={(res: any) => {
+                          if (res && res[0]) {
+                            setProfile({ ...profile, headshot: res[0].url });
+                          }
+                        }}
+                        onUploadError={(error: Error) => alert(`Upload failed: ${error.message}`)}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label className="flex items-center gap-2 mb-3 text-base">
+                    <User className="h-5 w-5" />
+                    Full Body Photo
+                  </Label>
+                  {profile.fullBody ? (
+                    <div className="space-y-3">
+                      <img src={profile.fullBody} alt="Full Body" className="w-full max-w-sm mx-auto h-auto object-cover rounded-lg shadow-md" />
+                      <Button type="button" variant="outline" size="sm" onClick={() => setProfile({ ...profile, fullBody: '' })} className="w-full md:w-auto h-10">
+                        Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
+                      <UploadButton
+                        endpoint="imageUploader"
+                        onClientUploadComplete={(res: any) => {
+                          if (res && res[0]) {
+                            setProfile({ ...profile, fullBody: res[0].url });
+                          }
+                        }}
+                        onUploadError={(error: Error) => alert(`Upload failed: ${error.message}`)}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label className="flex items-center gap-2 mb-3 text-base">
+                    Resume (PDF)
+                  </Label>
+                  {profile.resume ? (
+                    <div className="space-y-3">
+                      <a href={profile.resume} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-base block p-4 bg-gray-50 rounded-lg border">
+                        View Resume
+                      </a>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setProfile({ ...profile, resume: '' })} className="w-full md:w-auto h-10">
+                        Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
+                      <UploadButton
+                        endpoint="pdfUploader"
+                        onClientUploadComplete={(res: any) => {
+                          if (res && res[0]) {
+                            setProfile({ ...profile, resume: res[0].url });
+                          }
+                        }}
+                        onUploadError={(error: Error) => alert(`Upload failed: ${error.message}`)}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <Button 
+                  onClick={() => handleSave('media')} 
+                  disabled={saving}
+                  className="w-full h-12 text-base font-semibold"
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="preferences">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg md:text-xl">Skills & Preferences</CardTitle>
+                <CardDescription className="text-sm md:text-base">Your talents and role interests</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label className="text-base font-semibold mb-4 block">Role Types Interested In</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {roleTypes.map((roleType) => (
+                      <div key={roleType.value} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                        <Checkbox
+                          id={`role-${roleType.value}`}
+                          checked={profile.roleTypesInterested.includes(roleType.value)}
+                          onCheckedChange={() => handleRoleTypeToggle(roleType.value)}
+                          className="h-5 w-5"
+                        />
+                        <Label htmlFor={`role-${roleType.value}`} className="font-normal cursor-pointer text-base flex-1">
+                          {roleType.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-base font-semibold mb-4 block">Special Skills</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    {predefinedSkills.map((skill) => (
+                      <div key={skill} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                        <Checkbox
+                          id={`skill-${skill}`}
+                          checked={profile.skills.includes(skill)}
+                          onCheckedChange={() => handleSkillToggle(skill)}
+                          className="h-5 w-5"
+                        />
+                        <Label htmlFor={`skill-${skill}`} className="font-normal cursor-pointer text-base flex-1">
+                          {skill}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4">
+                    <Label htmlFor="customSkill" className="text-base mb-2 block">Add Custom Skill</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="customSkill"
+                        value={customSkill}
+                        onChange={(e) => setCustomSkill(e.target.value)}
+                        placeholder="e.g., Fire breathing"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddCustomSkill();
+                          }
+                        }}
+                        className="h-12 text-base flex-1"
+                      />
+                      <Button type="button" onClick={handleAddCustomSkill} variant="outline" className="h-12 px-6">
+                        <Plus className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {customSkills.length > 0 && (
+                    <div className="mt-4">
+                      <Label className="text-sm text-gray-600 mb-2 block">Custom Skills:</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {customSkills.map((skill) => (
+                          <div
+                            key={skill}
+                            className="flex items-center gap-2 bg-purple-100 text-purple-800 px-4 py-2 rounded-full text-sm md:text-base"
+                          >
+                            <span>{skill}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCustomSkill(skill)}
+                              className="hover:bg-purple-200 rounded-full p-1"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <Button 
+                  onClick={() => handleSave('preferences')} 
+                  disabled={saving}
+                  className="w-full h-12 text-base font-semibold"
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="location">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg md:text-xl">Location & Logistics</CardTitle>
+                <CardDescription className="text-sm md:text-base">Your location and availability</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div>
+                  <Label htmlFor="state" className="text-base">State</Label>
+                  <div ref={stateDropdownRef} className="relative mt-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input
+                        type="text"
+                        placeholder="Search for your state..."
+                        value={stateSearch}
+                        onChange={(e) => {
+                          setStateSearch(e.target.value);
+                          setShowStateDropdown(true);
+                        }}
+                        onFocus={() => setShowStateDropdown(true)}
+                        className="h-12 text-base pl-10"
+                      />
+                    </div>
+                    {showStateDropdown && filteredStates.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {filteredStates.map((state) => (
+                          <button
+                            key={state.value}
+                            type="button"
+                            onClick={() => handleStateSelect(state.value, state.label)}
+                            className="w-full text-left px-4 py-3 hover:bg-gray-100 text-base border-b last:border-b-0"
+                          >
+                            {state.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="city" className="text-base">City</Label>
+                  {availableCities.length > 0 ? (
+                    <Select
+                      value={profile.city}
+                      onValueChange={(value) => setProfile({ ...profile, city: value })}
+                      disabled={!selectedState}
+                    >
+                      <SelectTrigger className="h-12 text-base mt-2">
+                        <SelectValue placeholder="Select city" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {availableCities.map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      id="city"
+                      value={profile.city}
+                      onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+                      placeholder="Enter city"
+                      disabled={!selectedState}
+                      className="h-12 text-base mt-2"
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="zipCode" className="text-base">ZIP Code</Label>
+                  <Input
+                    id="zipCode"
+                    type="text"
+                    inputMode="numeric"
+                    value={profile.zipCode}
+                    onChange={(e) => setProfile({ ...profile, zipCode: e.target.value })}
+                    maxLength={5}
+                    className="h-12 text-base mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="availability" className="text-base">Availability</Label>
+                  <Select
+                    value={profile.availability}
+                    onValueChange={(value) => setProfile({ ...profile, availability: value })}
+                  >
+                    <SelectTrigger className="h-12 text-base mt-2">
+                      <SelectValue placeholder="Select availability" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FULL_TIME">Full-time (available immediately)</SelectItem>
+                      <SelectItem value="PART_TIME">Part-time (flexible schedule)</SelectItem>
+                      <SelectItem value="WEEKENDS">Weekends only</SelectItem>
+                      <SelectItem value="EVENINGS">Evenings only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                  <Checkbox
+                    id="reliableTransportation"
+                    checked={profile.reliableTransportation}
+                    onCheckedChange={(checked) => setProfile({ ...profile, reliableTransportation: checked as boolean })}
+                    className="h-5 w-5"
+                  />
+                  <Label htmlFor="reliableTransportation" className="text-base cursor-pointer flex-1">I have reliable transportation</Label>
+                </div>
+
+                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                  <Checkbox
+                    id="travelWilling"
+                    checked={profile.travelWilling}
+                    onCheckedChange={(checked) => setProfile({ ...profile, travelWilling: checked as boolean })}
+                    className="h-5 w-5"
+                  />
+                  <Label htmlFor="travelWilling" className="text-base cursor-pointer flex-1">Willing to travel for roles</Label>
+                </div>
+
+                <div>
+                  <Label htmlFor="compensationPreference" className="text-base">Compensation Preferences</Label>
+                  <Select
+                    value={profile.compensationPreference}
+                    onValueChange={(value) => setProfile({ ...profile, compensationPreference: value })}
+                  >
+                    <SelectTrigger className="h-12 text-base mt-2">
+                      <SelectValue placeholder="Select preference" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PAID_ONLY">Paid roles only</SelectItem>
+                      <SelectItem value="OPEN_TO_UNPAID">Open to unpaid/student films</SelectItem>
+                      <SelectItem value="NEGOTIABLE">Negotiable</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="compensationMin" className="text-base">Minimum Day Rate (optional)</Label>
+                  <Input
+                    id="compensationMin"
+                    value={profile.compensationMin}
+                    onChange={(e) => setProfile({ ...profile, compensationMin: e.target.value })}
+                    placeholder="e.g., $200/day"
+                    className="h-12 text-base mt-2"
+                  />
+                </div>
+
+                <Button 
+                  onClick={() => handleSave('location')} 
+                  disabled={saving}
+                  className="w-full h-12 text-base font-semibold"
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </div>
