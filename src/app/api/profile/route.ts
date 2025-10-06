@@ -27,11 +27,50 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const profile = await prisma.profile.findUnique({
-      where: { userId: session.user.id },
+    // Fetch both user and profile data
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        Profile: true,
+      },
     });
     
-    return NextResponse.json(profile);
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    
+    // Combine user and profile data
+    const combinedData = {
+      name: user.name,
+      email: user.email,
+      phone: user.Profile?.phone || '',
+      age: user.Profile?.age || null,
+      playableAgeMin: user.Profile?.playableAgeMin || null,
+      playableAgeMax: user.Profile?.playableAgeMax || null,
+      gender: user.Profile?.gender || '',
+      ethnicity: user.Profile?.ethnicity || '',
+      unionStatus: user.Profile?.unionStatus || '',
+      height: user.Profile?.height || null,
+      weight: user.Profile?.weight || null,
+      hairColor: user.Profile?.hairColor || '',
+      eyeColor: user.Profile?.eyeColor || '',
+      visibleTattoos: user.Profile?.visibleTattoos || false,
+      headshot: user.Profile?.headshot || '',
+      fullBody: user.Profile?.fullBodyPhoto || '',
+      resume: user.Profile?.resume || '',
+      city: user.Profile?.city || '',
+      state: user.Profile?.state || '',
+      zipCode: user.Profile?.zipCode || '',
+      availability: user.Profile?.availability || '',
+      reliableTransportation: user.Profile?.reliableTransportation || false,
+      travelWilling: user.Profile?.travelWilling || false,
+      compensationPreference: user.Profile?.compensationPreference || '',
+      compensationMin: user.Profile?.compensationMin || '',
+      skills: user.Profile?.skills || [],
+      roleTypesInterested: user.Profile?.roleTypesInterested || [],
+    };
+    
+    return NextResponse.json(combinedData);
   } catch (error) {
     console.error('Profile GET error:', error);
     return NextResponse.json(
@@ -52,64 +91,40 @@ export async function PATCH(req: Request) {
     const data = await req.json();
     console.log('Received profile update data:', data);
     
-    // Clean all data - convert empty strings to null
     const cleanData = {
       userId: session.user.id,
-      
-      // Contact
       phone: cleanValue(data.phone),
-      
-      // Basic info
       age: cleanNumber(data.age),
       playableAgeMin: cleanNumber(data.playableAgeMin),
       playableAgeMax: cleanNumber(data.playableAgeMax),
       gender: cleanValue(data.gender),
       ethnicity: cleanValue(data.ethnicity),
-      
-      // Physical
       height: cleanNumber(data.height),
       weight: cleanNumber(data.weight),
       hairColor: cleanValue(data.hairColor),
       eyeColor: cleanValue(data.eyeColor),
       visibleTattoos: Boolean(data.visibleTattoos),
-      
-      // Media
       headshot: cleanValue(data.headshot),
-      fullBodyPhoto: cleanValue(data.fullBodyPhoto),
+      fullBodyPhoto: cleanValue(data.fullBody),
       resume: cleanValue(data.resume),
-      
-      // Professional
       unionStatus: cleanValue(data.unionStatus),
-      
-      // Location
       city: cleanValue(data.city),
       state: cleanValue(data.state),
       zipCode: cleanValue(data.zipCode),
-      
-      // Availability
       availability: cleanValue(data.availability),
       reliableTransportation: Boolean(data.reliableTransportation),
       travelWilling: Boolean(data.travelWilling),
-      
-      // Compensation
       compensationPreference: cleanValue(data.compensationPreference),
       compensationMin: cleanValue(data.compensationMin),
-      
-      // Arrays
       skills: Array.isArray(data.skills) ? data.skills : [],
       roleTypesInterested: Array.isArray(data.roleTypesInterested) ? data.roleTypesInterested : [],
-      
-      // Public profile
       profileSlug: cleanValue(data.profileSlug),
       isPublic: Boolean(data.isPublic),
-      
-      // Timestamp
       updatedAt: new Date(),
     };
     
     console.log('Cleaned data for Prisma:', cleanData);
     
-    // Upsert - create if doesn't exist, update if it does
     const profile = await prisma.profile.upsert({
       where: { userId: session.user.id },
       update: cleanData,
@@ -121,7 +136,6 @@ export async function PATCH(req: Request) {
     
     console.log('Profile saved successfully:', profile.id);
     
-    // Revalidate cache
     revalidatePath('/dashboard/profile');
     revalidatePath('/dashboard');
     if (profile.profileSlug) {
@@ -140,7 +154,6 @@ export async function PATCH(req: Request) {
       message: error.message,
       code: error.code,
       meta: error.meta,
-      stack: error.stack
     });
     
     return NextResponse.json(

@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UploadButton } from '@/components/upload-button';
 import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
-import { User, Image as ImageIcon, MapPin, Briefcase, Settings, Search, X, Plus } from 'lucide-react';
+import { User, Image as ImageIcon, MapPin, Briefcase, Search, X, Plus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function ProfilePage() {
@@ -74,6 +74,63 @@ export default function ProfilePage() {
     { value: 'COMMERCIAL', label: 'Commercial' },
   ];
 
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch('/api/profile');
+      if (res.ok) {
+        const data = await res.json();
+        
+        if (data.height) {
+          const totalInches = data.height;
+          const feet = Math.floor(totalInches / 12);
+          const inches = totalInches % 12;
+          setHeightFeet(feet.toString());
+          setHeightInches(inches.toString());
+        }
+
+        if (data.state) {
+          setSelectedState(data.state);
+          const stateName = US_STATES.find(s => s.value === data.state)?.label || '';
+          setStateSearch(stateName);
+        }
+        
+        setProfile({
+          name: data.name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          age: data.age?.toString() || '',
+          playableAgeMin: data.playableAgeMin?.toString() || '',
+          playableAgeMax: data.playableAgeMax?.toString() || '',
+          gender: data.gender || '',
+          ethnicity: data.ethnicity || '',
+          unionStatus: data.unionStatus || '',
+          height: data.height?.toString() || '',
+          weight: data.weight?.toString() || '',
+          hairColor: data.hairColor || '',
+          eyeColor: data.eyeColor || '',
+          visibleTattoos: data.visibleTattoos || false,
+          headshot: data.headshot || '',
+          fullBody: data.fullBody || '',
+          resume: data.resume || '',
+          city: data.city || '',
+          state: data.state || '',
+          zipCode: data.zipCode || '',
+          availability: data.availability || '',
+          reliableTransportation: data.reliableTransportation || false,
+          travelWilling: data.travelWilling || false,
+          compensationPreference: data.compensationPreference || '',
+          compensationMin: data.compensationMin || '',
+          skills: data.skills || [],
+          roleTypesInterested: data.roleTypesInterested || [],
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (stateDropdownRef.current && !stateDropdownRef.current.contains(event.target as Node)) {
@@ -92,63 +149,6 @@ export default function ProfilePage() {
   }, [status, router]);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch('/api/profile');
-        if (res.ok) {
-          const data = await res.json();
-          
-          if (data.height) {
-            const totalInches = data.height;
-            const feet = Math.floor(totalInches / 12);
-            const inches = totalInches % 12;
-            setHeightFeet(feet.toString());
-            setHeightInches(inches.toString());
-          }
-
-          if (data.state) {
-            setSelectedState(data.state);
-            const stateName = US_STATES.find(s => s.value === data.state)?.label || '';
-            setStateSearch(stateName);
-          }
-          
-          setProfile({
-            name: data.name || '',
-            email: data.email || '',
-            phone: data.phone || '',
-            age: data.age?.toString() || '',
-            playableAgeMin: data.playableAgeMin?.toString() || '',
-            playableAgeMax: data.playableAgeMax?.toString() || '',
-            gender: data.gender || '',
-            ethnicity: data.ethnicity || '',
-            unionStatus: data.unionStatus || '',
-            height: data.height?.toString() || '',
-            weight: data.weight?.toString() || '',
-            hairColor: data.hairColor || '',
-            eyeColor: data.eyeColor || '',
-            visibleTattoos: data.visibleTattoos || false,
-            headshot: data.headshot || '',
-            fullBody: data.fullBody || '',
-            resume: data.resume || '',
-            city: data.city || '',
-            state: data.state || '',
-            zipCode: data.zipCode || '',
-            availability: data.availability || '',
-            reliableTransportation: data.reliableTransportation || false,
-            travelWilling: data.travelWilling || false,
-            compensationPreference: data.compensationPreference || '',
-            compensationMin: data.compensationMin || '',
-            skills: data.skills || [],
-            roleTypesInterested: data.roleTypesInterested || [],
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (status === 'authenticated') {
       fetchProfile();
     }
@@ -158,7 +158,7 @@ export default function ProfilePage() {
     if (selectedState) {
       const cities = MAJOR_CITIES_BY_STATE[selectedState] || [];
       setAvailableCities(cities);
-      setProfile({ ...profile, state: selectedState });
+      setProfile(prev => ({ ...prev, state: selectedState }));
     }
   }, [selectedState]);
 
@@ -167,7 +167,7 @@ export default function ProfilePage() {
       const feet = parseInt(heightFeet) || 0;
       const inches = parseInt(heightInches) || 0;
       const totalHeight = (feet * 12) + inches;
-      setProfile({ ...profile, height: totalHeight.toString() });
+      setProfile(prev => ({ ...prev, height: totalHeight.toString() }));
     }
   }, [heightFeet, heightInches]);
 
@@ -228,7 +228,7 @@ export default function ProfilePage() {
 
   const handlePhoneChange = (value: string) => {
     const formatted = formatPhoneAsYouType(value);
-    setProfile({ ...profile, phone: formatted });
+    setProfile(prev => ({ ...prev, phone: formatted }));
   };
 
   const handleSave = async (section: string) => {
@@ -248,6 +248,8 @@ export default function ProfilePage() {
       });
 
       if (res.ok) {
+        await fetchProfile();
+        
         toast({
           title: "Success!",
           description: "Your profile has been updated.",
@@ -311,7 +313,6 @@ export default function ProfilePage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Basic Info Tab */}
           <TabsContent value="basic">
             <Card>
               <CardHeader>
@@ -544,7 +545,6 @@ export default function ProfilePage() {
             </Card>
           </TabsContent>
 
-          {/* Media Tab */}
           <TabsContent value="media">
             <Card>
               <CardHeader>
@@ -645,7 +645,6 @@ export default function ProfilePage() {
             </Card>
           </TabsContent>
 
-          {/* Skills Tab */}
           <TabsContent value="preferences">
             <Card>
               <CardHeader>
@@ -747,7 +746,6 @@ export default function ProfilePage() {
             </Card>
           </TabsContent>
 
-          {/* Location Tab */}
           <TabsContent value="location">
             <Card>
               <CardHeader>
