@@ -92,201 +92,240 @@ export default function Step2Page() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white rounded-lg shadow-xl p-6 md:p-8">
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            Upload Your Materials (Optional)
-          </h1>
-          <p className="text-gray-600 text-sm md:text-base">
-            Professional headshot, full body photo, and resume - you can add these later
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 py-6 md:py-12 px-4">
+      <div className="container mx-auto max-w-4xl">
+        <h1 className="text-2xl md:text-4xl font-bold text-white mb-6 md:mb-8 text-center">Complete Your Profile</h1>
+        
+        {/* Step Indicator */}
+        <div className="flex items-center justify-center mb-8 md:mb-12">
+          <div className="flex items-center max-w-3xl w-full">
+            <div className="flex flex-col items-center flex-1">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-1 md:mb-2 font-bold text-sm md:text-base">
+                <CheckCircle2 className="w-6 h-6 md:w-7 md:h-7" />
+              </div>
+              <span className="text-green-300 text-xs md:text-sm font-medium text-center">Basic Info</span>
+            </div>
+            <div className="flex-1 h-1 bg-green-500 mx-1 md:mx-2"></div>
+            <div className="flex flex-col items-center flex-1">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white flex items-center justify-center text-purple-900 mb-1 md:mb-2 font-bold text-sm md:text-base">
+                2
+              </div>
+              <span className="text-white text-xs md:text-sm font-medium text-center hidden sm:inline">Media Assets</span>
+              <span className="text-white text-xs font-medium text-center sm:hidden">Media</span>
+            </div>
+            <div className="flex-1 h-1 bg-purple-700 mx-1 md:mx-2"></div>
+            <div className="flex flex-col items-center flex-1">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-purple-700 flex items-center justify-center text-white mb-1 md:mb-2 text-sm md:text-base">
+                3
+              </div>
+              <span className="text-purple-300 text-xs md:text-sm text-center hidden sm:inline">Preferences</span>
+              <span className="text-purple-300 text-xs text-center sm:hidden">Prefs</span>
+            </div>
+            <div className="flex-1 h-1 bg-purple-700 mx-1 md:mx-2"></div>
+            <div className="flex flex-col items-center flex-1">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-purple-700 flex items-center justify-center text-white mb-1 md:mb-2 text-sm md:text-base">
+                4
+              </div>
+              <span className="text-purple-300 text-xs md:text-sm text-center">Location</span>
+            </div>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="flex items-center gap-2 text-base md:text-lg font-medium text-gray-900 mb-3">
-              <ImageIcon className="w-5 h-5" />
-              Headshot
-            </label>
-            <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
-              headshot 
-                ? 'border-green-500 bg-green-50' 
-                : 'border-gray-300 hover:border-purple-500'
-            }`}>
-              <input
-                type="file"
-                id="headshot"
-                accept="image/*"
-                onChange={(e) => handleFileChange(e, setHeadshot)}
-                className="hidden"
-                disabled={uploading}
-              />
-              <label
-                htmlFor="headshot"
-                className={`flex flex-col items-center gap-3 ${uploading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-              >
-                {headshot ? (
-                  <>
-                    <CheckCircle2 className="w-10 h-10 text-green-600" />
-                    <span className="text-green-700 font-semibold">
-                      {headshot.name}
-                    </span>
-                    <span className="text-green-600 text-sm">
-                      {formatFileSize(headshot.size)} • Click to change
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <UploadIcon className="w-10 h-10 text-gray-400" />
-                    <span className="text-purple-600 font-medium text-base md:text-lg">
-                      Choose File
-                    </span>
-                    <span className="text-gray-500 text-sm">
-                      Image (4MB max)
-                    </span>
-                  </>
-                )}
+        <div className="w-full max-w-2xl mx-auto bg-white rounded-lg shadow-xl p-6 md:p-8">
+          <div className="mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              Upload Your Materials (Optional)
+            </h2>
+            <p className="text-gray-600 text-sm md:text-base">
+              Professional headshot, full body photo, and resume - you can add these later
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="flex items-center gap-2 text-base md:text-lg font-medium text-gray-900 mb-3">
+                <ImageIcon className="w-5 h-5" />
+                Headshot
               </label>
+              <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+                headshot 
+                  ? 'border-green-500 bg-green-50' 
+                  : 'border-gray-300 hover:border-purple-500'
+              }`}>
+                <input
+                  type="file"
+                  id="headshot"
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, setHeadshot)}
+                  className="hidden"
+                  disabled={uploading}
+                />
+                <label
+                  htmlFor="headshot"
+                  className={`flex flex-col items-center gap-3 ${uploading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  {headshot ? (
+                    <>
+                      <CheckCircle2 className="w-10 h-10 text-green-600" />
+                      <span className="text-green-700 font-semibold">
+                        {headshot.name}
+                      </span>
+                      <span className="text-green-600 text-sm">
+                        {formatFileSize(headshot.size)} • Click to change
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <UploadIcon className="w-10 h-10 text-gray-400" />
+                      <span className="text-purple-600 font-medium text-base md:text-lg">
+                        Choose File
+                      </span>
+                      <span className="text-gray-500 text-sm">
+                        Image (20MB max)
+                      </span>
+                    </>
+                  )}
+                </label>
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="flex items-center gap-2 text-base md:text-lg font-medium text-gray-900 mb-3">
-              <UserIcon className="w-5 h-5" />
-              Full Body Photo
-            </label>
-            <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
-              fullBody 
-                ? 'border-green-500 bg-green-50' 
-                : 'border-gray-300 hover:border-purple-500'
-            }`}>
-              <input
-                type="file"
-                id="fullbody"
-                accept="image/*"
-                onChange={(e) => handleFileChange(e, setFullBody)}
-                className="hidden"
-                disabled={uploading}
-              />
-              <label
-                htmlFor="fullbody"
-                className={`flex flex-col items-center gap-3 ${uploading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-              >
-                {fullBody ? (
-                  <>
-                    <CheckCircle2 className="w-10 h-10 text-green-600" />
-                    <span className="text-green-700 font-semibold">
-                      {fullBody.name}
-                    </span>
-                    <span className="text-green-600 text-sm">
-                      {formatFileSize(fullBody.size)} • Click to change
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <UploadIcon className="w-10 h-10 text-gray-400" />
-                    <span className="text-purple-600 font-medium text-base md:text-lg">
-                      Choose File
-                    </span>
-                    <span className="text-gray-500 text-sm">
-                      Image (4MB max)
-                    </span>
-                  </>
-                )}
+            <div>
+              <label className="flex items-center gap-2 text-base md:text-lg font-medium text-gray-900 mb-3">
+                <UserIcon className="w-5 h-5" />
+                Full Body Photo
               </label>
+              <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+                fullBody 
+                  ? 'border-green-500 bg-green-50' 
+                  : 'border-gray-300 hover:border-purple-500'
+              }`}>
+                <input
+                  type="file"
+                  id="fullbody"
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, setFullBody)}
+                  className="hidden"
+                  disabled={uploading}
+                />
+                <label
+                  htmlFor="fullbody"
+                  className={`flex flex-col items-center gap-3 ${uploading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  {fullBody ? (
+                    <>
+                      <CheckCircle2 className="w-10 h-10 text-green-600" />
+                      <span className="text-green-700 font-semibold">
+                        {fullBody.name}
+                      </span>
+                      <span className="text-green-600 text-sm">
+                        {formatFileSize(fullBody.size)} • Click to change
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <UploadIcon className="w-10 h-10 text-gray-400" />
+                      <span className="text-purple-600 font-medium text-base md:text-lg">
+                        Choose File
+                      </span>
+                      <span className="text-gray-500 text-sm">
+                        Image (20MB max)
+                      </span>
+                    </>
+                  )}
+                </label>
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="flex items-center gap-2 text-base md:text-lg font-medium text-gray-900 mb-3">
-              <FileTextIcon className="w-5 h-5" />
-              Acting Resume (PDF)
-            </label>
-            <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
-              resume 
-                ? 'border-green-500 bg-green-50' 
-                : 'border-gray-300 hover:border-purple-500'
-            }`}>
-              <input
-                type="file"
-                id="resume"
-                accept=".pdf"
-                onChange={(e) => handleFileChange(e, setResume)}
-                className="hidden"
-                disabled={uploading}
-              />
-              <label
-                htmlFor="resume"
-                className={`flex flex-col items-center gap-3 ${uploading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-              >
-                {resume ? (
-                  <>
-                    <CheckCircle2 className="w-10 h-10 text-green-600" />
-                    <span className="text-green-700 font-semibold">
-                      {resume.name}
-                    </span>
-                    <span className="text-green-600 text-sm">
-                      {formatFileSize(resume.size)} • Click to change
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <UploadIcon className="w-10 h-10 text-gray-400" />
-                    <span className="text-purple-600 font-medium text-base md:text-lg">
-                      Choose File
-                    </span>
-                    <span className="text-gray-500 text-sm">
-                      PDF (4MB max)
-                    </span>
-                  </>
-                )}
+            <div>
+              <label className="flex items-center gap-2 text-base md:text-lg font-medium text-gray-900 mb-3">
+                <FileTextIcon className="w-5 h-5" />
+                Acting Resume (PDF)
               </label>
+              <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+                resume 
+                  ? 'border-green-500 bg-green-50' 
+                  : 'border-gray-300 hover:border-purple-500'
+              }`}>
+                <input
+                  type="file"
+                  id="resume"
+                  accept=".pdf"
+                  onChange={(e) => handleFileChange(e, setResume)}
+                  className="hidden"
+                  disabled={uploading}
+                />
+                <label
+                  htmlFor="resume"
+                  className={`flex flex-col items-center gap-3 ${uploading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  {resume ? (
+                    <>
+                      <CheckCircle2 className="w-10 h-10 text-green-600" />
+                      <span className="text-green-700 font-semibold">
+                        {resume.name}
+                      </span>
+                      <span className="text-green-600 text-sm">
+                        {formatFileSize(resume.size)} • Click to change
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <UploadIcon className="w-10 h-10 text-gray-400" />
+                      <span className="text-purple-600 font-medium text-base md:text-lg">
+                        Choose File
+                      </span>
+                      <span className="text-gray-500 text-sm">
+                        PDF (20MB max)
+                      </span>
+                    </>
+                  )}
+                </label>
+              </div>
             </div>
-          </div>
 
-          {uploading && uploadProgress && (
-            <div className="flex items-center justify-center gap-3 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-              <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
-              <span className="text-purple-700 font-medium">{uploadProgress}</span>
+            {uploading && uploadProgress && (
+              <div className="flex items-center justify-center gap-3 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
+                <span className="text-purple-700 font-medium">{uploadProgress}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push('/onboarding/step1')}
+                className="w-full sm:w-auto h-12 text-base"
+                disabled={uploading}
+              >
+                Back
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleSkip}
+                className="w-full sm:w-auto h-12 text-base"
+                disabled={uploading}
+              >
+                Skip for Now
+              </Button>
+              <Button
+                type="submit"
+                className="w-full sm:flex-1 h-12 text-base bg-purple-600 hover:bg-purple-700"
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Uploading...
+                  </span>
+                ) : (
+                  'Continue'
+                )}
+              </Button>
             </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.push('/onboarding/step1')}
-              className="w-full sm:w-auto h-12 text-base"
-              disabled={uploading}
-            >
-              Back
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={handleSkip}
-              className="w-full sm:w-auto h-12 text-base"
-              disabled={uploading}
-            >
-              Skip for Now
-            </Button>
-            <Button
-              type="submit"
-              className="w-full sm:flex-1 h-12 text-base bg-purple-600 hover:bg-purple-700"
-              disabled={uploading}
-            >
-              {uploading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Uploading...
-                </span>
-              ) : (
-                'Continue'
-              )}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );
