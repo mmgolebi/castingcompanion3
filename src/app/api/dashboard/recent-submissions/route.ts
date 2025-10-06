@@ -9,9 +9,18 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: { profile: true },
+    });
+
+    if (!user?.profile) {
+      return NextResponse.json({ submissions: [] });
+    }
+
     const submissions = await prisma.submission.findMany({
       where: {
-        userId: session.user.id,
+        profileId: user.profile.id,
       } as any,
       include: {
         castingCall: {

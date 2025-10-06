@@ -10,6 +10,15 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: { profile: true },
+    });
+
+    if (!user?.profile) {
+      return NextResponse.json({ submissions: [], total: 0, pages: 0, currentPage: 1 });
+    }
+
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
     const page = parseInt(searchParams.get('page') || '1');
@@ -17,7 +26,7 @@ export async function GET(req: Request) {
     const skip = (page - 1) * limit;
 
     const where: any = {
-      userId: session.user.id,
+      profileId: user.profile.id,
     };
 
     if (status && status !== 'all') {

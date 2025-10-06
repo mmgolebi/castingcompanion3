@@ -9,9 +9,23 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: { profile: true },
+    });
+
+    if (!user?.profile) {
+      return NextResponse.json({
+        totalSubmissions: 0,
+        submissionsThisWeek: 0,
+        totalMatches: 0,
+        responseRate: 0,
+      });
+    }
+
     const totalSubmissions = await prisma.submission.count({
       where: {
-        userId: session.user.id,
+        profileId: user.profile.id,
       } as any,
     });
 
@@ -20,7 +34,7 @@ export async function GET() {
     
     const submissionsThisWeek = await prisma.submission.count({
       where: {
-        userId: session.user.id,
+        profileId: user.profile.id,
         createdAt: { gte: weekAgo },
       } as any,
     });
