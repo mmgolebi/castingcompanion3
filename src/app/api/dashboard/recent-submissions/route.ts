@@ -5,36 +5,39 @@ import { prisma } from '@/lib/db';
 export async function GET() {
   try {
     const session = await auth();
-    
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: { profile: true },
+    });
+
+    if (!user?.profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
     const submissions = await prisma.submission.findMany({
       where: {
-        userId: (session.user as any).id,
+        profileId: user.profile.id,
       },
       include: {
-        call: {
+        castingCall: {
           select: {
             title: true,
             production: true,
-            roleType: true,
+            submissionDeadline: true,
           },
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 5,
+      orderBy: { createdAt: 'desc' },
+      take: 10,
     });
 
-    return NextResponse.json(submissions);
-  } catch (error: any) {
-    console.error('Get recent submissions error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch submissions' },
-      { status: 500 }
-    );
+    return NextResponse.json({ submissions });
+  } catch (error) {
+    console.error('Error fetching submissions:', error);
+    return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
   }
 }
