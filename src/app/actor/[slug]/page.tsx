@@ -1,13 +1,15 @@
 import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
+import { prisma } from '@/lib/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Briefcase, User, Download, Mail } from 'lucide-react';
+import { MapPin, User, Download } from 'lucide-react';
 
-export default async function PublicProfilePage({ params }: { params: { slug: string } }) {
-  const profile = await db.profile.findUnique({
-    where: { profileSlug: params.slug },
+export default async function PublicProfilePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  
+  const profile = await prisma.profile.findUnique({
+    where: { profileSlug: slug },
     include: { user: true },
   });
 
@@ -56,7 +58,6 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-              {/* Physical Stats */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Physical Details</CardTitle>
@@ -95,7 +96,6 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
                 </CardContent>
               </Card>
 
-              {/* Experience */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Experience</CardTitle>
@@ -123,7 +123,6 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
               </Card>
             </div>
 
-            {/* Skills */}
             {profile.skills.length > 0 && (
               <Card className="mt-6">
                 <CardHeader>
@@ -141,7 +140,6 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
               </Card>
             )}
 
-            {/* Full Body Photo */}
             {profile.fullBodyPhoto && (
               <Card className="mt-6">
                 <CardHeader>
@@ -157,7 +155,6 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
               </Card>
             )}
 
-            {/* Resume Download */}
             {profile.resume && (
               <div className="mt-6 flex justify-center">
                 <Button asChild size="lg">
