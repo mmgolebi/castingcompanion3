@@ -11,10 +11,12 @@ export async function GET() {
 
     const submissions = await prisma.submission.findMany({
       where: {
-        userId: session.user.id,
+        User: {
+          id: session.user.id,
+        },
       },
       include: {
-        castingCall: {
+        CastingCall: {
           select: {
             title: true,
             production: true,

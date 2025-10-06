@@ -10,7 +10,11 @@ export async function GET() {
     }
 
     const totalSubmissions = await prisma.submission.count({
-      where: { userId: session.user.id },
+      where: { 
+        User: {
+          id: session.user.id,
+        },
+      },
     });
 
     const weekAgo = new Date();
@@ -18,7 +22,9 @@ export async function GET() {
     
     const submissionsThisWeek = await prisma.submission.count({
       where: {
-        userId: session.user.id,
+        User: {
+          id: session.user.id,
+        },
         createdAt: { gte: weekAgo },
       },
     });
