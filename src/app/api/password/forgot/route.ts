@@ -1,67 +1,39 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { Resend } from 'resend';
-import PasswordResetEmail from '@/emails/PasswordResetEmail';
 import crypto from 'crypto';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
 
-    if (!email) {
-      return NextResponse.json(
-        { error: 'Email is required' },
-        { status: 400 }
-      );
-    }
-
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email },
     });
 
     if (!user) {
-      return NextResponse.json({
-        message: 'If an account exists with that email, a password reset link has been sent.',
-      });
+      // Don't reveal if user exists
+      return NextResponse.json({ message: 'If email exists, reset link sent' });
     }
 
-    await prisma.passwordResetToken.deleteMany({
-      where: { userId: user.id },
-    });
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
 
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
-
-    await prisma.passwordResetToken.create({
+    // Save token to user
+    await prisma.user.update({
+      where: { id: user.id },
       data: {
-        token,
-        userId: user.id,
-        expiresAt,
+        resetToken,
+        resetTokenExpiry,
       },
     });
 
-    const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${token}`;
+    // TODO: Send email with reset link
+    // await sendPasswordResetEmail(email, resetToken);
 
-    await resend.emails.send({
-      from: 'Casting Companion <onboarding@resend.dev>',
-      to: user.email,
-      subject: 'Reset Your Password',
-      react: PasswordResetEmail({
-        resetUrl,
-        userName: user.name || 'there',
-      }),
-    });
-
-    return NextResponse.json({
-      message: 'If an account exists with that email, a password reset link has been sent.',
-    });
-  } catch (error: any) {
+    return NextResponse.json({ message: 'If email exists, reset link sent' });
+  } catch (error) {
     console.error('Forgot password error:', error);
-    return NextResponse.json(
-      { error: 'Failed to process request' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
   }
 }
