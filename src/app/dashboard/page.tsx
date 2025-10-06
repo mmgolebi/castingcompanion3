@@ -68,12 +68,12 @@ export default function DashboardPage() {
 
       if (callsRes.ok) {
         const callsData = await callsRes.json();
-        setCalls(callsData);
+        setCalls(Array.isArray(callsData) ? callsData : []);
       }
 
       if (submissionsRes.ok) {
         const submissionsData = await submissionsRes.json();
-        setRecentSubmissions(submissionsData);
+        setRecentSubmissions(Array.isArray(submissionsData) ? submissionsData : []);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -122,7 +122,7 @@ export default function DashboardPage() {
     }
   };
 
-  const filteredCalls = calls.filter(call =>
+  const filteredCalls = (calls || []).filter(call =>
     call.title.toLowerCase().includes(filters.search.toLowerCase()) ||
     call.production.toLowerCase().includes(filters.search.toLowerCase())
   );
