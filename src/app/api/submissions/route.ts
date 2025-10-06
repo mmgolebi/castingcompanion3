@@ -17,9 +17,7 @@ export async function GET(req: Request) {
     const skip = (page - 1) * limit;
 
     const where: any = {
-      User: {
-        id: session.user.id,
-      },
+      userId: session.user.id,
     };
 
     if (status && status !== 'all') {

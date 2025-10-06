@@ -11,9 +11,7 @@ export async function GET() {
 
     const submissions = await prisma.submission.findMany({
       where: {
-        User: {
-          id: session.user.id,
-        },
+        userId: session.user.id,
       },
       include: {
         CastingCall: {
