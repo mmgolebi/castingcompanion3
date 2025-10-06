@@ -28,7 +28,7 @@ export async function GET(req: Request) {
       prisma.submission.findMany({
         where,
         include: {
-          CastingCall: true,
+          castingCall: true,
         },
         orderBy: { createdAt: 'desc' },
         skip,
