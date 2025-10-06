@@ -27,11 +27,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Fetch both user and profile data
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
-        Profile: true,
+        profile: true,
       },
     });
     
@@ -39,35 +38,34 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
     
-    // Combine user and profile data
     const combinedData = {
       name: user.name,
       email: user.email,
-      phone: user.Profile?.phone || '',
-      age: user.Profile?.age || null,
-      playableAgeMin: user.Profile?.playableAgeMin || null,
-      playableAgeMax: user.Profile?.playableAgeMax || null,
-      gender: user.Profile?.gender || '',
-      ethnicity: user.Profile?.ethnicity || '',
-      unionStatus: user.Profile?.unionStatus || '',
-      height: user.Profile?.height || null,
-      weight: user.Profile?.weight || null,
-      hairColor: user.Profile?.hairColor || '',
-      eyeColor: user.Profile?.eyeColor || '',
-      visibleTattoos: user.Profile?.visibleTattoos || false,
-      headshot: user.Profile?.headshot || '',
-      fullBody: user.Profile?.fullBodyPhoto || '',
-      resume: user.Profile?.resume || '',
-      city: user.Profile?.city || '',
-      state: user.Profile?.state || '',
-      zipCode: user.Profile?.zipCode || '',
-      availability: user.Profile?.availability || '',
-      reliableTransportation: user.Profile?.reliableTransportation || false,
-      travelWilling: user.Profile?.travelWilling || false,
-      compensationPreference: user.Profile?.compensationPreference || '',
-      compensationMin: user.Profile?.compensationMin || '',
-      skills: user.Profile?.skills || [],
-      roleTypesInterested: user.Profile?.roleTypesInterested || [],
+      phone: user.profile?.phone || '',
+      age: user.profile?.age || null,
+      playableAgeMin: user.profile?.playableAgeMin || null,
+      playableAgeMax: user.profile?.playableAgeMax || null,
+      gender: user.profile?.gender || '',
+      ethnicity: user.profile?.ethnicity || '',
+      unionStatus: user.profile?.unionStatus || '',
+      height: user.profile?.height || null,
+      weight: user.profile?.weight || null,
+      hairColor: user.profile?.hairColor || '',
+      eyeColor: user.profile?.eyeColor || '',
+      visibleTattoos: user.profile?.visibleTattoos || false,
+      headshot: user.profile?.headshot || '',
+      fullBody: user.profile?.fullBodyPhoto || '',
+      resume: user.profile?.resume || '',
+      city: user.profile?.city || '',
+      state: user.profile?.state || '',
+      zipCode: user.profile?.zipCode || '',
+      availability: user.profile?.availability || '',
+      reliableTransportation: user.profile?.reliableTransportation || false,
+      travelWilling: user.profile?.travelWilling || false,
+      compensationPreference: user.profile?.compensationPreference || '',
+      compensationMin: user.profile?.compensationMin || '',
+      skills: user.profile?.skills || [],
+      roleTypesInterested: user.profile?.roleTypesInterested || [],
     };
     
     return NextResponse.json(combinedData);
