@@ -4,10 +4,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Briefcase, User } from 'lucide-react';
 
-export default async function PublicProfilePage({ params }: { params: { slug: string } }) {
+export default async function PublicProfilePage({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}) {
+  const { slug } = await params;
+  
   const profile = await prisma.profile.findUnique({
     where: { 
-      profileSlug: params.slug,
+      profileSlug: slug,
       isPublic: true,
     },
     include: {
