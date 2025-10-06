@@ -352,9 +352,60 @@ export default function ProfilePage() {
               <Checkbox
                 id="isPublic"
                 checked={profile.isPublic}
-                onCheckedChange={(checked) => {
-                  setProfile({ ...profile, isPublic: checked as boolean });
-                  handleSave('public');
+                onCheckedChange={async (checked) => {
+                  const newIsPublic = checked as boolean;
+                  setProfile({ ...profile, isPublic: newIsPublic });
+                  
+                  setSaving(true);
+                  try {
+                    let slug = profile.profileSlug;
+                    if (!slug && profile.name) {
+                      slug = profile.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').substring(0, 50);
+                    }
+
+                    const res = await fetch('/api/profile', {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        ...profile,
+                        isPublic: newIsPublic,
+                        profileSlug: slug,
+                        age: profile.age ? parseInt(profile.age) : null,
+                        playableAgeMin: profile.playableAgeMin ? parseInt(profile.playableAgeMin) : null,
+                        playableAgeMax: profile.playableAgeMax ? parseInt(profile.playableAgeMax) : null,
+                        height: profile.height ? parseInt(profile.height) : null,
+                        weight: profile.weight ? parseInt(profile.weight) : null,
+                      }),
+                    });
+
+                    if (res.ok) {
+                      if (slug && !profile.profileSlug) {
+                        setProfile(prev => ({ ...prev, profileSlug: slug }));
+                      }
+                      
+                      toast({
+                        title: "Success!",
+                        description: newIsPublic ? "Your profile is now public!" : "Your profile is now private.",
+                      });
+                    } else {
+                      setProfile({ ...profile, isPublic: !newIsPublic });
+                      toast({
+                        title: "Error",
+                        description: "Failed to update profile",
+                        variant: "destructive",
+                      });
+                    }
+                  } catch (error) {
+                    console.error('Error:', error);
+                    setProfile({ ...profile, isPublic: !newIsPublic });
+                    toast({
+                      title: "Error",
+                      description: "An error occurred while saving",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setSaving(false);
+                  }
                 }}
                 className="h-6 w-6"
               />
