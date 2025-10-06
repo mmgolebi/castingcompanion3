@@ -1,70 +1,57 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { calculateMatchScore } from '@/lib/matchScore';
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const session = await auth();
-    
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = (session.user as any).id;
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: { profile: true },
+    });
 
-    // Get user profile for match calculations
-    const userProfile = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        age: true,
-        playableAgeMin: true,
-        playableAgeMax: true,
-        gender: true,
-        state: true,
-        city: true,
-        unionStatus: true,
-        ethnicity: true,
+    if (!user?.profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    }
+
+    // Get total submissions
+    const totalSubmissions = await prisma.submission.count({
+      where: { profileId: user.profile.id },
+    });
+
+    // Get submissions this week
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    
+    const submissionsThisWeek = await prisma.submission.count({
+      where: {
+        profileId: user.profile.id,
+        createdAt: { gte: weekAgo },
       },
     });
 
-    const [totalSubmissions, pendingSubmissions, activeCalls] = await Promise.all([
-      prisma.submission.count({
-        where: { userId },
-      }),
-      prisma.submission.count({
-        where: {
-          userId,
-          status: 'SENT',
-        },
-      }),
-      prisma.castingCall.findMany({
-        where: {
-          submissionDeadline: {
-            gte: new Date(),
-          },
-        },
-      }),
-    ]);
-
-    // Calculate average match score from all active casting calls
-    let avgMatchScore = 0;
-    if (userProfile && activeCalls.length > 0) {
-      const matchScores = activeCalls.map(call => calculateMatchScore(userProfile, call));
-      avgMatchScore = Math.round(matchScores.reduce((sum, score) => sum + score, 0) / matchScores.length);
-    }
-
-    return NextResponse.json({
-      totalSubmissions,
-      pendingSubmissions,
-      activeCalls: activeCalls.length,
-      avgMatchScore,
+    // Get total matches (casting calls user is eligible for)
+    const totalMatches = await prisma.castingCall.count({
+      where: {
+        status: 'ACTIVE',
+        submissionDeadline: { gte: new Date() },
+      },
     });
-  } catch (error: any) {
-    console.error('Get stats error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch stats' },
-      { status: 500 }
-    );
+
+    const stats = {
+      totalSubmissions,
+      submissionsThisWeek,
+      totalMatches,
+      responseRate: totalSubmissions > 0 ? Math.round((submissionsThisWeek / totalSubmissions) * 100) : 0,
+    };
+
+    return NextResponse.json(stats);
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
   }
 }
