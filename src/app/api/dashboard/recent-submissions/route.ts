@@ -9,9 +9,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // @ts-ignore - Prisma type generation issue on Vercel
     const submissions = await prisma.submission.findMany({
       where: {
+        // @ts-expect-error - userId exists in schema but Prisma types don't reflect it
         userId: session.user.id,
       },
       include: {

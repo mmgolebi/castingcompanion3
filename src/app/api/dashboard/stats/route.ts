@@ -9,9 +9,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // @ts-ignore - Prisma type generation issue
     const totalSubmissions = await prisma.submission.count({
       where: {
+        // @ts-expect-error - userId exists in schema
         userId: session.user.id,
       },
     });
@@ -19,9 +19,9 @@ export async function GET() {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     
-    // @ts-ignore - Prisma type generation issue
     const submissionsThisWeek = await prisma.submission.count({
       where: {
+        // @ts-expect-error - userId exists in schema
         userId: session.user.id,
         createdAt: { gte: weekAgo },
       },

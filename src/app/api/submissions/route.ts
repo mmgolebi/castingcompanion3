@@ -24,9 +24,9 @@ export async function GET(req: Request) {
       where.status = status;
     }
 
-    // @ts-ignore - Prisma type generation issue
     const [submissions, total] = await Promise.all([
       prisma.submission.findMany({
+        // @ts-expect-error - where uses any type
         where,
         include: {
           castingCall: true,
@@ -35,7 +35,10 @@ export async function GET(req: Request) {
         skip,
         take: limit,
       }),
-      prisma.submission.count({ where }),
+      prisma.submission.count({ 
+        // @ts-expect-error - where uses any type
+        where 
+      }),
     ]);
 
     return NextResponse.json({
