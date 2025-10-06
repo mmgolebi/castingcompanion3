@@ -1,112 +1,155 @@
-import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+// src/app/api/profile/route.ts
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
+
+function cleanValue(value: any): any {
+  if (value === '' || value === undefined) {
+    return null;
+  }
+  return value;
+}
+
+function cleanNumber(value: any): number | null {
+  if (value === '' || value === null || value === undefined) {
+    return null;
+  }
+  const num = parseInt(value);
+  return isNaN(num) ? null : num;
+}
 
 export async function GET() {
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { profile: true },
+    
+    const profile = await prisma.profile.findUnique({
+      where: { userId: session.user.id },
     });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    // Flatten user and profile data
-    const profileData = {
-      email: user.email,
-      name: user.name,
-      ...user.profile,
-    };
-
-    return NextResponse.json(profileData);
+    
+    return NextResponse.json(profile);
   } catch (error) {
-    console.error('Profile fetch error:', error);
-    return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
+    console.error('Profile GET error:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch profile' }, 
+      { status: 500 }
+    );
   }
 }
 
 export async function PATCH(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
+    
     const data = await req.json();
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { profile: true },
+    console.log('Received profile update data:', data);
+    
+    // Clean all data - convert empty strings to null
+    const cleanData = {
+      userId: session.user.id,
+      
+      // Contact
+      phone: cleanValue(data.phone),
+      
+      // Basic info
+      age: cleanNumber(data.age),
+      playableAgeMin: cleanNumber(data.playableAgeMin),
+      playableAgeMax: cleanNumber(data.playableAgeMax),
+      gender: cleanValue(data.gender),
+      ethnicity: cleanValue(data.ethnicity),
+      
+      // Physical
+      height: cleanNumber(data.height),
+      weight: cleanNumber(data.weight),
+      hairColor: cleanValue(data.hairColor),
+      eyeColor: cleanValue(data.eyeColor),
+      visibleTattoos: Boolean(data.visibleTattoos),
+      
+      // Media
+      headshot: cleanValue(data.headshot),
+      fullBodyPhoto: cleanValue(data.fullBodyPhoto),
+      resume: cleanValue(data.resume),
+      
+      // Professional
+      unionStatus: cleanValue(data.unionStatus),
+      
+      // Location
+      city: cleanValue(data.city),
+      state: cleanValue(data.state),
+      zipCode: cleanValue(data.zipCode),
+      
+      // Availability
+      availability: cleanValue(data.availability),
+      reliableTransportation: Boolean(data.reliableTransportation),
+      travelWilling: Boolean(data.travelWilling),
+      
+      // Compensation
+      compensationPreference: cleanValue(data.compensationPreference),
+      compensationMin: cleanValue(data.compensationMin),
+      
+      // Arrays
+      skills: Array.isArray(data.skills) ? data.skills : [],
+      roleTypesInterested: Array.isArray(data.roleTypesInterested) ? data.roleTypesInterested : [],
+      
+      // Public profile
+      profileSlug: cleanValue(data.profileSlug),
+      isPublic: Boolean(data.isPublic),
+      
+      // Timestamp
+      updatedAt: new Date(),
+    };
+    
+    console.log('Cleaned data for Prisma:', cleanData);
+    
+    // Upsert - create if doesn't exist, update if it does
+    const profile = await prisma.profile.upsert({
+      where: { userId: session.user.id },
+      update: cleanData,
+      create: {
+        ...cleanData,
+        id: `profile_${session.user.id}_${Date.now()}`,
+      },
     });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    
+    console.log('Profile saved successfully:', profile.id);
+    
+    // Revalidate cache
+    revalidatePath('/dashboard/profile');
+    revalidatePath('/dashboard');
+    if (profile.profileSlug) {
+      revalidatePath(`/actors/${profile.profileSlug}`);
     }
-
-    // Update user name if provided
-    if (data.name) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { name: data.name },
-      });
-    }
-
-    // Prepare profile data (exclude user fields)
-    const profileData: any = {};
-    const profileFields = [
-      'phone', 'age', 'playableAgeMin', 'playableAgeMax', 'gender', 'ethnicity',
-      'height', 'weight', 'hairColor', 'eyeColor', 'visibleTattoos',
-      'headshot', 'fullBodyPhoto', 'resume', 'unionStatus',
-      'city', 'state', 'zipCode', 'availability', 'reliableTransportation',
-      'travelWilling', 'compensationPreference', 'compensationMin',
-      'skills', 'roleTypesInterested'
-    ];
-
-    profileFields.forEach(field => {
-      if (data[field] !== undefined) {
-        profileData[field] = data[field];
-      }
+    
+    return NextResponse.json({ 
+      success: true, 
+      profile 
     });
-
-    // Update or create profile
-    if (user.profile) {
-      await prisma.profile.update({
-        where: { id: user.profile.id },
-        data: profileData,
-      });
-    } else {
-      await prisma.profile.create({
-        data: {
-          userId: user.id,
-          ...profileData,
-        },
-      });
-    }
-
-    // Fetch updated user with profile
-    const updatedUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      include: { profile: true },
-    });
-
-    return NextResponse.json({
-      email: updatedUser?.email,
-      name: updatedUser?.name,
-      ...updatedUser?.profile,
-    });
-  } catch (error) {
+    
+  } catch (error: any) {
     console.error('Profile update error:', error);
-    return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack
+    });
+    
+    return NextResponse.json(
+      { 
+        error: 'Failed to update profile',
+        details: error.message 
+      }, 
+      { status: 500 }
+    );
   }
-}
-
-export async function PUT(req: Request) {
-  return PATCH(req);
 }
