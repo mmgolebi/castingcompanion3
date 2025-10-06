@@ -66,7 +66,8 @@ export async function GET() {
       compensationMin: user.profile?.compensationMin || '',
       skills: user.profile?.skills || [],
       roleTypesInterested: user.profile?.roleTypesInterested || [],
-    };
+      profileSlug: user.profile?.profileSlug || "",
+      isPublic: user.profile?.isPublic || false,    };
     
     return NextResponse.json(combinedData);
   } catch (error) {
