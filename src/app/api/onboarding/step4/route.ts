@@ -5,15 +5,23 @@ import { prisma } from '@/lib/db';
 export async function POST(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = (session.user as any).id;
     const data = await req.json();
 
-    await prisma.user.update({
-      where: { id: userId },
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: { profile: true },
+    });
+
+    if (!user?.profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    }
+
+    await prisma.profile.update({
+      where: { id: user.profile.id },
       data: {
         city: data.city,
         state: data.state,
@@ -27,11 +35,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error('Step 4 error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to save step 4' },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error('Error saving step 4:', error);
+    return NextResponse.json({ error: 'Failed to save' }, { status: 500 });
   }
 }
