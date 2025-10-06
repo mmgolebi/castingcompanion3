@@ -26,7 +26,6 @@ export async function GET(req: Request) {
 
     const [submissions, total] = await Promise.all([
       prisma.submission.findMany({
-        // @ts-expect-error - where uses any type
         where,
         include: {
           castingCall: true,
@@ -35,10 +34,7 @@ export async function GET(req: Request) {
         skip,
         take: limit,
       }),
-      prisma.submission.count({ 
-        // @ts-expect-error - where uses any type
-        where 
-      }),
+      prisma.submission.count({ where }),
     ]);
 
     return NextResponse.json({
