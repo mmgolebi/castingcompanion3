@@ -5,12 +5,12 @@ import { prisma } from '@/lib/db';
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: session.user.id },
       include: { 
         profile: {
           select: {
@@ -26,13 +26,12 @@ export async function GET() {
       },
     });
 
-    if (!user?.profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const castingCalls = await prisma.castingCall.findMany({
       where: {
-        status: 'ACTIVE',
         submissionDeadline: {
           gte: new Date(),
         },

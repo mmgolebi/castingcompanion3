@@ -5,22 +5,13 @@ import { prisma } from '@/lib/db';
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { profile: true },
-    });
-
-    if (!user?.profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
     const submissions = await prisma.submission.findMany({
       where: {
-        profileId: user.profile.id,
+        userId: session.user.id,
       },
       include: {
         castingCall: {

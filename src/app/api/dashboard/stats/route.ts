@@ -5,39 +5,26 @@ import { prisma } from '@/lib/db';
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { profile: true },
-    });
-
-    if (!user?.profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    // Get total submissions
     const totalSubmissions = await prisma.submission.count({
-      where: { profileId: user.profile.id },
+      where: { userId: session.user.id },
     });
 
-    // Get submissions this week
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     
     const submissionsThisWeek = await prisma.submission.count({
       where: {
-        profileId: user.profile.id,
+        userId: session.user.id,
         createdAt: { gte: weekAgo },
       },
     });
 
-    // Get total matches (casting calls user is eligible for)
     const totalMatches = await prisma.castingCall.count({
       where: {
-        status: 'ACTIVE',
         submissionDeadline: { gte: new Date() },
       },
     });
