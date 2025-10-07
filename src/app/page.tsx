@@ -51,7 +51,7 @@ export default function LandingPage() {
                 </Button>
               </div>
               <p className="text-sm text-gray-400 mt-4">
-                $1 trial for 30 days, then $39.97/month
+                $1 trial for 14 days, then $39.97/month
               </p>
             </div>
 
@@ -275,7 +275,7 @@ export default function LandingPage() {
               <div className="text-5xl font-bold text-primary mt-4">
                 $39.97<span className="text-xl text-gray-600">/month</span>
               </div>
-              <p className="text-gray-600 mt-2">First 30 days only $1</p>
+              <p className="text-gray-600 mt-2">First 14 days only $1</p>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3 mb-6">
