@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,8 +31,19 @@ export default function ApplyPage() {
       });
 
       if (res.ok) {
-        // Redirect to login then to dashboard
-        router.push('/auth/login?registered=true&redirect=/dashboard/profile');
+        // Automatically sign them in
+        const result = await signIn('credentials', {
+          email,
+          password,
+          redirect: false,
+        });
+
+        if (result?.ok) {
+          // Redirect to profile setup
+          router.push('/dashboard/profile');
+        } else {
+          setError('Account created, but login failed. Please log in manually.');
+        }
       } else {
         const data = await res.json();
         setError(data.error || 'Registration failed');
