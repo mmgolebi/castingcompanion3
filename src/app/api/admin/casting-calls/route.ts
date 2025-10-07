@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { processCastingCallAutoSubmissions } from '@/lib/autoSubmit';
 
 export async function GET() {
   try {
@@ -49,6 +50,12 @@ export async function POST(req: Request) {
 
     const castingCall = await prisma.castingCall.create({
       data: body,
+    });
+
+    // Process auto-submissions for all matching users
+    // Run in background to avoid blocking the response
+    processCastingCallAutoSubmissions(castingCall.id).catch(error => {
+      console.error('Error processing auto-submissions:', error);
     });
 
     return NextResponse.json(castingCall);
