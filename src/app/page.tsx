@@ -77,50 +77,45 @@ export default function LandingPage() {
             The latest from top networks
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-12 items-center max-w-5xl mx-auto">
-            {/* Disney+ */}
-            <div className="flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
+            {/* Disney */}
+            <div className="flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
               <img 
-                src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/disneyplus.svg" 
-                alt="Disney+"
-                className="h-12 w-auto"
-                style={{ filter: 'invert(25%) sepia(98%) saturate(2476%) hue-rotate(206deg) brightness(98%) contrast(101%)' }}
+                src="https://cdn.worldvectorlogo.com/logos/disney-2.svg" 
+                alt="Disney"
+                className="h-16 w-auto"
               />
             </div>
 
             {/* Netflix */}
-            <div className="flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
+            <div className="flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
               <img 
-                src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/netflix.svg" 
+                src="https://cdn.worldvectorlogo.com/logos/netflix-3.svg" 
                 alt="Netflix"
-                className="h-12 w-auto"
-                style={{ filter: 'invert(14%) sepia(97%) saturate(7426%) hue-rotate(356deg) brightness(91%) contrast(115%)' }}
+                className="h-16 w-auto"
               />
             </div>
 
             {/* Prime Video */}
-            <div className="flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
+            <div className="flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
               <img 
-                src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/primevideo.svg" 
+                src="https://cdn.worldvectorlogo.com/logos/amazon-prime-video-1.svg" 
                 alt="Prime Video"
-                className="h-10 w-auto"
-                style={{ filter: 'invert(60%) sepia(79%) saturate(2878%) hue-rotate(166deg) brightness(99%) contrast(101%)' }}
+                className="h-16 w-auto"
               />
             </div>
 
-            {/* HBO Max */}
-            <div className="flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
+            {/* HBO */}
+            <div className="flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
               <img 
-                src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/hbo.svg" 
+                src="https://cdn.worldvectorlogo.com/logos/hbo-4.svg" 
                 alt="HBO"
-                className="h-10 w-auto"
-                style={{ filter: 'invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)' }}
+                className="h-14 w-auto"
               />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Rest of the page remains the same... */}
       {/* How It Works */}
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
