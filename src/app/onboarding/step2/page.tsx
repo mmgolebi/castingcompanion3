@@ -148,7 +148,7 @@ export default function Step2Page() {
                   <img src={files.headshot} alt="Headshot" className="w-48 h-48 object-cover rounded-lg" />
                   <UploadButton
                     endpoint="imageUploader"
-                    onClientUploadComplete={(res) => {
+                    onClientUploadComplete={(res: any) => {
                       setFiles({ ...files, headshot: res[0].url });
                     }}
                     onUploadError={(error: Error) => {
@@ -159,7 +159,7 @@ export default function Step2Page() {
               ) : (
                 <UploadButton
                   endpoint="imageUploader"
-                  onClientUploadComplete={(res) => {
+                  onClientUploadComplete={(res: any) => {
                     setFiles({ ...files, headshot: res[0].url });
                   }}
                   onUploadError={(error: Error) => {
@@ -177,7 +177,7 @@ export default function Step2Page() {
                   <img src={files.fullBody} alt="Full body" className="w-48 h-64 object-cover rounded-lg" />
                   <UploadButton
                     endpoint="imageUploader"
-                    onClientUploadComplete={(res) => {
+                    onClientUploadComplete={(res: any) => {
                       setFiles({ ...files, fullBody: res[0].url });
                     }}
                     onUploadError={(error: Error) => {
@@ -188,7 +188,7 @@ export default function Step2Page() {
               ) : (
                 <UploadButton
                   endpoint="imageUploader"
-                  onClientUploadComplete={(res) => {
+                  onClientUploadComplete={(res: any) => {
                     setFiles({ ...files, fullBody: res[0].url });
                   }}
                   onUploadError={(error: Error) => {
@@ -208,7 +208,7 @@ export default function Step2Page() {
                   </a>
                   <UploadButton
                     endpoint="pdfUploader"
-                    onClientUploadComplete={(res) => {
+                    onClientUploadComplete={(res: any) => {
                       setFiles({ ...files, resume: res[0].url });
                     }}
                     onUploadError={(error: Error) => {
@@ -219,7 +219,7 @@ export default function Step2Page() {
               ) : (
                 <UploadButton
                   endpoint="pdfUploader"
-                  onClientUploadComplete={(res) => {
+                  onClientUploadComplete={(res: any) => {
                     setFiles({ ...files, resume: res[0].url });
                   }}
                   onUploadError={(error: Error) => {
