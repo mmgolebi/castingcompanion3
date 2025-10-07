@@ -440,11 +440,11 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <div className={`px-3 py-1.5 md:py-1 rounded-full text-sm font-medium w-fit ${
-                      submission.method === 'AUTO' 
+                      submission.submissionMethod === 'AUTO' 
                         ? 'bg-amber-100 text-amber-700 flex items-center gap-1' 
                         : 'bg-blue-100 text-blue-700'
                     }`}>
-                      {submission.method === 'AUTO' ? (
+                      {submission.submissionMethod === 'AUTO' ? (
                         <>
                           <Zap className="h-4 w-4" />
                           Automatic

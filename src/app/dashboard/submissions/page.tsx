@@ -59,7 +59,7 @@ export default function SubmissionsPage() {
       submission.castingCall?.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
       submission.castingCall?.production?.toLowerCase().includes(filters.search.toLowerCase());
     
-    const matchesMethod = filters.method === 'all' || submission.method === filters.method;
+    const matchesMethod = filters.method === 'all' || submission.submissionMethod === filters.method;
     const matchesStatus = filters.status === 'all' || submission.status === filters.status;
 
     return matchesSearch && matchesMethod && matchesStatus;
@@ -250,11 +250,11 @@ export default function SubmissionsPage() {
 
                         <div className="flex items-center justify-between pt-2 border-t">
                           <div className={`flex items-center gap-2 text-sm ${
-                            submission.method === 'AUTO' 
+                            submission.submissionMethod === 'AUTO' 
                               ? 'text-amber-700' 
                               : 'text-blue-700'
                           }`}>
-                            {submission.method === 'AUTO' ? (
+                            {submission.submissionMethod === 'AUTO' ? (
                               <>
                                 <Zap className="h-4 w-4" />
                                 <span className="font-medium">Automatic</span>
