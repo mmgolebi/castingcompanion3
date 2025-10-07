@@ -39,7 +39,8 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json({ castingCalls });
+    // Return array directly instead of wrapped object
+    return NextResponse.json(castingCalls);
   } catch (error) {
     console.error('Error fetching casting calls:', error);
     return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
