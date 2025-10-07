@@ -40,14 +40,23 @@ async function handleAutoSubmit() {
 
     const submittedIds = new Set(existingSubmissions.map(s => s.castingCallId));
     const autoSubmissions = [];
+    const debugInfo = []; // DEBUG: Track all calls and scores
 
     // Check each casting call for auto-submission
     for (const call of castingCalls) {
+      const matchScore = calculateMatchScore(user.profile, call);
+      
+      // DEBUG: Log all calls with their scores
+      debugInfo.push({
+        title: call.title,
+        location: `${call.location}, ${call.locationState}`,
+        matchScore,
+        alreadySubmitted: submittedIds.has(call.id),
+        willAutoSubmit: matchScore >= 85 && !submittedIds.has(call.id)
+      });
+
       // Skip if already submitted
       if (submittedIds.has(call.id)) continue;
-
-      // Calculate match score
-      const matchScore = calculateMatchScore(user.profile, call);
 
       // Auto-submit if match is 85% or higher
       if (matchScore >= 85) {
@@ -73,6 +82,15 @@ async function handleAutoSubmit() {
       success: true,
       autoSubmissions: autoSubmissions.length,
       details: autoSubmissions,
+      debug: debugInfo, // Show scores for all casting calls
+      profile: { // Show profile data being used
+        state: user.profile.state,
+        city: user.profile.city,
+        age: user.profile.currentAge,
+        playableAge: `${user.profile.playableAgeMin}-${user.profile.playableAgeMax}`,
+        gender: user.profile.gender,
+        unionStatus: user.profile.unionStatus,
+      }
     });
   } catch (error) {
     console.error('Error with auto-submission:', error);
