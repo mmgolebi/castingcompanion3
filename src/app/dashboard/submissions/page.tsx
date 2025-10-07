@@ -168,7 +168,7 @@ export default function SubmissionsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Methods</SelectItem>
-                    <SelectItem value="AUTO">Auto-Submitted</SelectItem>
+                    <SelectItem value="AUTO">Automatic</SelectItem>
                     <SelectItem value="MANUAL">Manual</SelectItem>
                   </SelectContent>
                 </Select>
@@ -257,7 +257,7 @@ export default function SubmissionsPage() {
                             {submission.method === 'AUTO' ? (
                               <>
                                 <Zap className="h-4 w-4" />
-                                <span className="font-medium">Auto-Submitted</span>
+                                <span className="font-medium">Automatic</span>
                               </>
                             ) : (
                               <span className="font-medium">Manual Submission</span>

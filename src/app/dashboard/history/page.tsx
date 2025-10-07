@@ -114,7 +114,7 @@ export default function HistoryPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All Methods</SelectItem>
-                  <SelectItem value="AUTO">Auto-Submit</SelectItem>
+                  <SelectItem value="AUTO">Automatic</SelectItem>
                   <SelectItem value="MANUAL">Manual</SelectItem>
                 </SelectContent>
               </Select>

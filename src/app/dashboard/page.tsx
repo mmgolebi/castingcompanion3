@@ -447,7 +447,7 @@ export default function DashboardPage() {
                       {submission.method === 'AUTO' ? (
                         <>
                           <Zap className="h-4 w-4" />
-                          Auto
+                          Automatic
                         </>
                       ) : (
                         'Manual'
