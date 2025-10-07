@@ -21,9 +21,13 @@ function cleanNumber(value: any): number | null {
 
 export async function GET() {
   try {
+    console.log('=== PROFILE GET START ===');
     const session = await auth();
+    console.log('Session user ID:', session?.user?.id);
+    console.log('Session user email:', session?.user?.email);
     
     if (!session?.user?.id) {
+      console.log('No session - unauthorized');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
@@ -34,7 +38,12 @@ export async function GET() {
       },
     });
     
+    console.log('User found:', !!user);
+    console.log('Profile found:', !!user?.profile);
+    console.log('Profile data:', JSON.stringify(user?.profile, null, 2));
+    
     if (!user) {
+      console.log('User not found in database');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
     
@@ -67,7 +76,11 @@ export async function GET() {
       skills: user.profile?.skills || [],
       roleTypesInterested: user.profile?.roleTypesInterested || [],
       profileSlug: user.profile?.profileSlug || "",
-      isPublic: user.profile?.isPublic || false,    };
+      isPublic: user.profile?.isPublic || false,
+    };
+    
+    console.log('Returning combined data');
+    console.log('=== PROFILE GET END ===');
     
     return NextResponse.json(combinedData);
   } catch (error) {
