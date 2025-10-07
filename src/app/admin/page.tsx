@@ -86,12 +86,20 @@ export default function AdminPage() {
       const url = editingId ? `/api/admin/casting-calls/${editingId}` : '/api/admin/casting-calls';
       const method = editingId ? 'PUT' : 'POST';
 
+      // Convert date string to ISO DateTime
+      const submissionDeadline = formData.submissionDeadline 
+        ? new Date(formData.submissionDeadline + 'T00:00:00.000Z').toISOString()
+        : new Date().toISOString();
+
       const submitData = {
         ...formData,
+        submissionDeadline,
         ageRangeMin: formData.ageRangeMin ? parseInt(formData.ageRangeMin) : null,
         ageRangeMax: formData.ageRangeMax ? parseInt(formData.ageRangeMax) : null,
         gender: formData.gender === 'ANY' ? null : formData.gender,
         ethnicity: formData.ethnicity === 'ANY' ? null : formData.ethnicity,
+        shootingDates: formData.shootingDates || null,
+        featuredImage: formData.featuredImage || null,
       };
 
       const res = await fetch(url, {
@@ -105,7 +113,8 @@ export default function AdminPage() {
         resetForm();
         await fetchCastingCalls();
       } else {
-        alert('Failed to save casting call');
+        const error = await res.json();
+        alert(`Failed to save casting call: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -270,6 +279,7 @@ export default function AdminPage() {
                       id="location"
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      placeholder="City, ST (e.g., Detroit, MI)"
                       required
                     />
                   </div>
@@ -345,9 +355,9 @@ export default function AdminPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ANY">Any</SelectItem>
-                        <SelectItem value="MALE">Male</SelectItem>
-                        <SelectItem value="FEMALE">Female</SelectItem>
-                        <SelectItem value="NON_BINARY">Non-Binary</SelectItem>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Non-Binary">Non-Binary</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -363,15 +373,15 @@ export default function AdminPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ANY">Any</SelectItem>
-                        <SelectItem value="WHITE">White/Caucasian</SelectItem>
-                        <SelectItem value="BLACK">Black/African American</SelectItem>
-                        <SelectItem value="HISPANIC">Hispanic/Latino</SelectItem>
-                        <SelectItem value="ASIAN">Asian</SelectItem>
-                        <SelectItem value="NATIVE_AMERICAN">Native American</SelectItem>
-                        <SelectItem value="MIDDLE_EASTERN">Middle Eastern</SelectItem>
-                        <SelectItem value="PACIFIC_ISLANDER">Pacific Islander</SelectItem>
-                        <SelectItem value="MIXED">Mixed/Multiracial</SelectItem>
-                        <SelectItem value="OTHER">Other</SelectItem>
+                        <SelectItem value="Caucasian">White/Caucasian</SelectItem>
+                        <SelectItem value="African American">Black/African American</SelectItem>
+                        <SelectItem value="Hispanic">Hispanic/Latino</SelectItem>
+                        <SelectItem value="Asian">Asian</SelectItem>
+                        <SelectItem value="Native American">Native American</SelectItem>
+                        <SelectItem value="Middle Eastern">Middle Eastern</SelectItem>
+                        <SelectItem value="Pacific Islander">Pacific Islander</SelectItem>
+                        <SelectItem value="Mixed">Mixed/Multiracial</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
