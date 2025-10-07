@@ -79,7 +79,7 @@ async function handleAutoSubmit() {
       profile: {
         state: user.profile.state,
         city: user.profile.city,
-        age: user.profile.currentAge,
+        age: user.profile.age,
         playableAge: `${user.profile.playableAgeMin}-${user.profile.playableAgeMax}`,
         gender: user.profile.gender,
         unionStatus: user.profile.unionStatus,
