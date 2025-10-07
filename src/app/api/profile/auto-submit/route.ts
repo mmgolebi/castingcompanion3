@@ -3,7 +3,8 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { calculateMatchScore } from '@/lib/matchScore';
 
-export async function POST() {
+// Allow both GET and POST for testing
+async function handleAutoSubmit() {
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -77,4 +78,12 @@ export async function POST() {
     console.error('Error with auto-submission:', error);
     return NextResponse.json({ error: 'Failed to auto-submit' }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return handleAutoSubmit();
+}
+
+export async function POST() {
+  return handleAutoSubmit();
 }
