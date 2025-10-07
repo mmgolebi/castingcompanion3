@@ -4,31 +4,43 @@ import { prisma } from '@/lib/db';
 
 export async function POST(req: Request) {
   try {
+    console.log('Step 1: Starting');
+    
     const session = await auth();
+    console.log('Step 1: Session user email:', session?.user?.email);
+    
     if (!session?.user?.email) {
+      console.log('Step 1: No session');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const data = await req.json();
+    console.log('Step 1: Received data:', JSON.stringify(data));
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: { profile: true },
     });
+    
+    console.log('Step 1: Found user:', user?.id, 'Has profile:', !!user?.profile);
 
     if (!user) {
+      console.log('Step 1: User not found');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Update user name
-    await prisma.user.update({
+    console.log('Step 1: Updating user name to:', data.name);
+    const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: { name: data.name },
     });
+    console.log('Step 1: User updated, new name:', updatedUser.name);
 
     // Update or create profile
     if (user.profile) {
-      await prisma.profile.update({
+      console.log('Step 1: Updating existing profile:', user.profile.id);
+      const updatedProfile = await prisma.profile.update({
         where: { id: user.profile.id },
         data: {
           phone: data.phone,
@@ -45,8 +57,10 @@ export async function POST(req: Request) {
           unionStatus: data.unionStatus,
         },
       });
+      console.log('Step 1: Profile updated:', updatedProfile.id);
     } else {
-      await prisma.profile.create({
+      console.log('Step 1: Creating new profile');
+      const newProfile = await prisma.profile.create({
         data: {
           userId: user.id,
           phone: data.phone,
@@ -63,11 +77,13 @@ export async function POST(req: Request) {
           unionStatus: data.unionStatus,
         },
       });
+      console.log('Step 1: Profile created:', newProfile.id);
     }
 
+    console.log('Step 1: Success!');
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error saving step 1:', error);
+    console.error('Step 1: ERROR:', error);
     return NextResponse.json({ error: 'Failed to save' }, { status: 500 });
   }
 }
