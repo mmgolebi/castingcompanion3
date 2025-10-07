@@ -89,6 +89,23 @@ export default function DashboardPage() {
     }
   }, [status, filters.roleType, filters.location, filters.unionStatus]);
 
+  // Trigger auto-submissions when user logs in
+  useEffect(() => {
+    if (status === 'authenticated') {
+      // Run auto-submit silently in background
+      fetch('/api/profile/auto-submit', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+          if (data.submitted > 0) {
+            console.log(`Auto-submitted to ${data.submitted} casting calls`);
+            // Optionally refresh dashboard to show new submissions
+            fetchDashboardData();
+          }
+        })
+        .catch(err => console.error('Auto-submit failed:', err));
+    }
+  }, [status]); // Only runs when auth status changes
+
   const handleSubmit = async (callId: string) => {
     setSubmitting(callId);
     try {
