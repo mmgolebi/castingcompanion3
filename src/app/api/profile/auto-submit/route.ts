@@ -3,7 +3,6 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { calculateMatchScore } from '@/lib/matchScore';
 
-// Allow both GET and POST for testing
 async function handleAutoSubmit() {
   try {
     const session = await auth();
@@ -20,7 +19,6 @@ async function handleAutoSubmit() {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    // Get all active casting calls
     const castingCalls = await prisma.castingCall.findMany({
       where: {
         status: 'ACTIVE',
@@ -28,7 +26,6 @@ async function handleAutoSubmit() {
       },
     });
 
-    // Get existing submissions to avoid duplicates
     const existingSubmissions = await prisma.submission.findMany({
       where: {
         profileId: user.profile.id,
@@ -40,25 +37,21 @@ async function handleAutoSubmit() {
 
     const submittedIds = new Set(existingSubmissions.map(s => s.castingCallId));
     const autoSubmissions = [];
-    const debugInfo = []; // DEBUG: Track all calls and scores
+    const debugInfo = [];
 
-    // Check each casting call for auto-submission
     for (const call of castingCalls) {
       const matchScore = calculateMatchScore(user.profile, call);
       
-      // DEBUG: Log all calls with their scores
       debugInfo.push({
         title: call.title,
-        location: `${call.location}, ${call.locationState}`,
+        location: call.location,
         matchScore,
         alreadySubmitted: submittedIds.has(call.id),
         willAutoSubmit: matchScore >= 85 && !submittedIds.has(call.id)
       });
 
-      // Skip if already submitted
       if (submittedIds.has(call.id)) continue;
 
-      // Auto-submit if match is 85% or higher
       if (matchScore >= 85) {
         const submission = await prisma.submission.create({
           data: {
@@ -82,8 +75,8 @@ async function handleAutoSubmit() {
       success: true,
       autoSubmissions: autoSubmissions.length,
       details: autoSubmissions,
-      debug: debugInfo, // Show scores for all casting calls
-      profile: { // Show profile data being used
+      debug: debugInfo,
+      profile: {
         state: user.profile.state,
         city: user.profile.city,
         age: user.profile.currentAge,
