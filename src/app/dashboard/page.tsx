@@ -415,8 +415,8 @@ export default function DashboardPage() {
                 {recentSubmissions.slice(0, 5).map((submission) => (
                   <div key={submission.id} className="flex flex-col md:flex-row md:items-center md:justify-between p-4 border rounded-lg gap-3">
                     <div className="flex-1">
-                      <h4 className="font-semibold text-base">{submission.call.title}</h4>
-                      <p className="text-sm text-gray-600">{submission.call.production}</p>
+                      <h4 className="font-semibold text-base">{submission.castingCall.title}</h4>
+                      <p className="text-sm text-gray-600">{submission.castingCall.production}</p>
                       <p className="text-xs text-gray-500 mt-1">
                         {new Date(submission.createdAt).toLocaleDateString()} • 
                         Match: {submission.matchScore}%
