@@ -73,7 +73,7 @@ export default function DashboardPage() {
 
       if (submissionsRes.ok) {
         const submissionsData = await submissionsRes.json();
-        setRecentSubmissions(Array.isArray(submissionsData) ? submissionsData : []);
+        setRecentSubmissions(Array.isArray(submissionsData.submissions) ? submissionsData.submissions : []);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
