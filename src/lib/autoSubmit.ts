@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { calculateMatchScore } from '@/lib/matchScore';
+import { sendSubmissionEmail, sendSubmissionConfirmationEmail } from '@/lib/email';
 
 /**
  * Process auto-submissions for a single user against all active casting calls
@@ -36,7 +37,7 @@ export async function processUserAutoSubmissions(userId: string) {
     const matchScore = calculateMatchScore(user.profile, call);
 
     if (matchScore >= 85) {
-      await prisma.submission.create({
+      const submission = await prisma.submission.create({
         data: {
           profileId: user.profile.id,
           castingCallId: call.id,
@@ -45,6 +46,38 @@ export async function processUserAutoSubmissions(userId: string) {
           status: 'PENDING',
         },
       });
+
+      // Send emails (don't await to avoid blocking)
+      Promise.all([
+        sendSubmissionEmail({
+          castingEmail: call.castingEmail,
+          userProfile: {
+            name: user.name,
+            email: user.email,
+            phone: user.profile.phone,
+            age: user.profile.age,
+            playableAgeMin: user.profile.playableAgeMin,
+            playableAgeMax: user.profile.playableAgeMax,
+            gender: user.profile.gender,
+            city: user.profile.city,
+            state: user.profile.state,
+            unionStatus: user.profile.unionStatus,
+            ethnicity: user.profile.ethnicity,
+            skills: user.profile.skills,
+            headshot: user.profile.headshot,
+            fullBody: user.profile.fullBodyPhoto,
+            resume: user.profile.resume,
+          },
+          castingCall: call,
+          submissionId: submission.id,
+        }),
+        sendSubmissionConfirmationEmail(
+          user.email,
+          user.name || 'Actor',
+          call
+        ),
+      ]).catch(err => console.error('Email sending failed:', err));
+
       submitted++;
     }
   }
@@ -92,7 +125,7 @@ export async function processCastingCallAutoSubmissions(castingCallId: string) {
     const matchScore = calculateMatchScore(user.profile, castingCall);
 
     if (matchScore >= 85) {
-      await prisma.submission.create({
+      const submission = await prisma.submission.create({
         data: {
           profileId: user.profile.id,
           castingCallId: castingCall.id,
@@ -101,6 +134,38 @@ export async function processCastingCallAutoSubmissions(castingCallId: string) {
           status: 'PENDING',
         },
       });
+
+      // Send emails (don't await to avoid blocking)
+      Promise.all([
+        sendSubmissionEmail({
+          castingEmail: castingCall.castingEmail,
+          userProfile: {
+            name: user.name,
+            email: user.email,
+            phone: user.profile.phone,
+            age: user.profile.age,
+            playableAgeMin: user.profile.playableAgeMin,
+            playableAgeMax: user.profile.playableAgeMax,
+            gender: user.profile.gender,
+            city: user.profile.city,
+            state: user.profile.state,
+            unionStatus: user.profile.unionStatus,
+            ethnicity: user.profile.ethnicity,
+            skills: user.profile.skills,
+            headshot: user.profile.headshot,
+            fullBody: user.profile.fullBodyPhoto,
+            resume: user.profile.resume,
+          },
+          castingCall,
+          submissionId: submission.id,
+        }),
+        sendSubmissionConfirmationEmail(
+          user.email,
+          user.name || 'Actor',
+          castingCall
+        ),
+      ]).catch(err => console.error('Email sending failed:', err));
+
       submitted++;
     }
   }

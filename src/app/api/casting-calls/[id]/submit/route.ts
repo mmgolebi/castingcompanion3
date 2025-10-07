@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { calculateMatchScore } from '@/lib/matchScore';
+import { sendSubmissionEmail, sendSubmissionConfirmationEmail } from '@/lib/email';
 
 export async function POST(
   req: Request,
@@ -60,6 +61,37 @@ export async function POST(
         status: 'PENDING',
       },
     });
+
+    // Send emails (async, don't block response)
+    Promise.all([
+      sendSubmissionEmail({
+        castingEmail: castingCall.castingEmail,
+        userProfile: {
+          name: user.name,
+          email: user.email,
+          phone: user.profile.phone,
+          age: user.profile.age,
+          playableAgeMin: user.profile.playableAgeMin,
+          playableAgeMax: user.profile.playableAgeMax,
+          gender: user.profile.gender,
+          city: user.profile.city,
+          state: user.profile.state,
+          unionStatus: user.profile.unionStatus,
+          ethnicity: user.profile.ethnicity,
+          skills: user.profile.skills,
+          headshot: user.profile.headshot,
+          fullBody: user.profile.fullBodyPhoto,
+          resume: user.profile.resume,
+        },
+        castingCall,
+        submissionId: submission.id,
+      }),
+      sendSubmissionConfirmationEmail(
+        user.email,
+        user.name || 'Actor',
+        castingCall
+      ),
+    ]).catch(err => console.error('Email sending failed:', err));
 
     return NextResponse.json(submission);
   } catch (error) {
