@@ -24,6 +24,18 @@ function normalizeState(state: string): string {
   return STATE_ABBREVIATIONS[state] || state;
 }
 
+function parseLocation(location: string): { city: string; state: string } | null {
+  // Location format is "City, ST" or "City, State"
+  const parts = location.split(',').map(p => p.trim());
+  if (parts.length >= 2) {
+    return {
+      city: parts[0],
+      state: parts[1]
+    };
+  }
+  return null;
+}
+
 export function calculateMatchScore(userProfile: any, castingCall: any): number {
   let score = 0;
   let maxScore = 0;
@@ -50,13 +62,16 @@ export function calculateMatchScore(userProfile: any, castingCall: any): number 
 
   // Location match (25% weight)
   maxScore += 25;
-  if (userProfile.state && castingCall.locationState) {
-    // Normalize both states to abbreviations for comparison
-    const userState = normalizeState(userProfile.state);
-    const callState = normalizeState(castingCall.locationState);
-    
-    if (userState === callState) {
-      score += 25;
+  if (userProfile.state && castingCall.location) {
+    const callLocation = parseLocation(castingCall.location);
+    if (callLocation) {
+      // Normalize both states to abbreviations for comparison
+      const userState = normalizeState(userProfile.state);
+      const callState = normalizeState(callLocation.state);
+      
+      if (userState === callState) {
+        score += 25;
+      }
     }
   }
 
@@ -64,7 +79,7 @@ export function calculateMatchScore(userProfile: any, castingCall: any): number 
   maxScore += 15;
   if (castingCall.unionStatus === 'EITHER' || castingCall.unionStatus === 'ANY') {
     score += 15;
-  } else if (castingCall.unionStatus === 'UNION' && userProfile.unionStatus === 'SAG_AFTRA') {
+  } else if (castingCall.unionStatus === 'UNION' && (userProfile.unionStatus === 'SAG_AFTRA' || userProfile.unionStatus === 'AEA')) {
     score += 15;
   } else if (castingCall.unionStatus === 'NON_UNION' && userProfile.unionStatus === 'NON_UNION') {
     score += 15;
