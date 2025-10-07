@@ -152,7 +152,7 @@ export default function ApplyPage() {
                   Start Your Free Trial
                 </h2>
                 <p className="text-gray-600">
-                  $1 for 30 days, then $39.97/month • Cancel anytime
+                  $1 for 14 days, then $39.97/month • Cancel anytime
                 </p>
               </div>
 
