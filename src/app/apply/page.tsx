@@ -39,8 +39,8 @@ export default function ApplyPage() {
         });
 
         if (result?.ok) {
-          // Redirect to profile setup
-          router.push('/dashboard/profile');
+          // Redirect to onboarding step 1
+          router.push('/onboarding/step1');
         } else {
           setError('Account created, but login failed. Please log in manually.');
         }
