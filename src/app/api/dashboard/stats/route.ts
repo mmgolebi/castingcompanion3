@@ -17,7 +17,7 @@ export async function GET() {
     if (!user?.profile) {
       return NextResponse.json({
         totalSubmissions: 0,
-        pendingSubmissions: 0,
+        autoSubmissions: 0,
         activeCalls: 0,
         avgMatchScore: 0,
       });
@@ -30,12 +30,12 @@ export async function GET() {
       },
       select: {
         matchScore: true,
-        status: true,
+        submissionMethod: true,
       },
     });
 
     const totalSubmissions = submissions.length;
-    const pendingSubmissions = submissions.filter(s => s.status === 'PENDING').length;
+    const autoSubmissions = submissions.filter(s => s.submissionMethod === 'AUTO').length;
 
     // Calculate average match score
     const avgMatchScore = totalSubmissions > 0
@@ -52,7 +52,7 @@ export async function GET() {
 
     const stats = {
       totalSubmissions,
-      pendingSubmissions,
+      autoSubmissions,
       activeCalls,
       avgMatchScore,
     };
