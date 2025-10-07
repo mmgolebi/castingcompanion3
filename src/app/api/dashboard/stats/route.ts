@@ -17,39 +17,44 @@ export async function GET() {
     if (!user?.profile) {
       return NextResponse.json({
         totalSubmissions: 0,
-        submissionsThisWeek: 0,
-        totalMatches: 0,
-        responseRate: 0,
+        pendingSubmissions: 0,
+        activeCalls: 0,
+        avgMatchScore: 0,
       });
     }
 
-    const totalSubmissions = await prisma.submission.count({
+    // Get all submissions for this user
+    const submissions = await prisma.submission.findMany({
       where: {
         profileId: user.profile.id,
-      } as any,
+      },
+      select: {
+        matchScore: true,
+        status: true,
+      },
     });
 
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    
-    const submissionsThisWeek = await prisma.submission.count({
-      where: {
-        profileId: user.profile.id,
-        createdAt: { gte: weekAgo },
-      } as any,
-    });
+    const totalSubmissions = submissions.length;
+    const pendingSubmissions = submissions.filter(s => s.status === 'PENDING').length;
 
-    const totalMatches = await prisma.castingCall.count({
+    // Calculate average match score
+    const avgMatchScore = totalSubmissions > 0
+      ? Math.round(submissions.reduce((sum, s) => sum + s.matchScore, 0) / totalSubmissions)
+      : 0;
+
+    // Count active casting calls
+    const activeCalls = await prisma.castingCall.count({
       where: {
+        status: 'ACTIVE',
         submissionDeadline: { gte: new Date() },
       },
     });
 
     const stats = {
       totalSubmissions,
-      submissionsThisWeek,
-      totalMatches,
-      responseRate: totalSubmissions > 0 ? Math.round((submissionsThisWeek / totalSubmissions) * 100) : 0,
+      pendingSubmissions,
+      activeCalls,
+      avgMatchScore,
     };
 
     return NextResponse.json(stats);
