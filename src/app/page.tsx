@@ -69,6 +69,53 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Network Logos Section */}
+      <section className="py-16 bg-white border-b">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-semibold text-center text-gray-700 mb-12">
+            The latest from top networks
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center max-w-4xl mx-auto">
+            {/* Disney */}
+            <div className="flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
+              <svg viewBox="0 0 200 60" className="h-12 w-auto">
+                <text x="10" y="45" fontFamily="Arial, sans-serif" fontSize="42" fontWeight="bold" fill="#113CCF">
+                  Disney+
+                </text>
+              </svg>
+            </div>
+
+            {/* Netflix */}
+            <div className="flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
+              <svg viewBox="0 0 200 60" className="h-12 w-auto">
+                <text x="10" y="45" fontFamily="Arial, sans-serif" fontSize="42" fontWeight="bold" fill="#E50914">
+                  NETFLIX
+                </text>
+              </svg>
+            </div>
+
+            {/* Prime Video */}
+            <div className="flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
+              <svg viewBox="0 0 200 60" className="h-14 w-auto">
+                <text x="10" y="35" fontFamily="Arial, sans-serif" fontSize="24" fontWeight="bold" fill="#00A8E1">
+                  prime video
+                </text>
+              </svg>
+            </div>
+
+            {/* HBO */}
+            <div className="flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
+              <svg viewBox="0 0 200 60" className="h-12 w-auto">
+                <circle cx="40" cy="30" r="25" fill="#000" />
+                <text x="40" y="40" fontFamily="Arial, sans-serif" fontSize="32" fontWeight="bold" fill="#fff" textAnchor="middle">
+                  HBO
+                </text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* How It Works */}
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
