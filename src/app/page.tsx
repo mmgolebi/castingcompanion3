@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Zap, Target, Mail, Clock, TrendingUp } from 'lucide-react';
@@ -75,47 +76,51 @@ export default function LandingPage() {
           <h2 className="text-2xl font-semibold text-center text-gray-700 mb-12">
             The latest from top networks
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center max-w-4xl mx-auto">
-            {/* Disney */}
-            <div className="flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-              <svg viewBox="0 0 200 60" className="h-12 w-auto">
-                <text x="10" y="45" fontFamily="Arial, sans-serif" fontSize="42" fontWeight="bold" fill="#113CCF">
-                  Disney+
-                </text>
-              </svg>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 items-center max-w-5xl mx-auto">
+            {/* Disney+ */}
+            <div className="flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
+              <img 
+                src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/disneyplus.svg" 
+                alt="Disney+"
+                className="h-12 w-auto"
+                style={{ filter: 'invert(25%) sepia(98%) saturate(2476%) hue-rotate(206deg) brightness(98%) contrast(101%)' }}
+              />
             </div>
 
             {/* Netflix */}
-            <div className="flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-              <svg viewBox="0 0 200 60" className="h-12 w-auto">
-                <text x="10" y="45" fontFamily="Arial, sans-serif" fontSize="42" fontWeight="bold" fill="#E50914">
-                  NETFLIX
-                </text>
-              </svg>
+            <div className="flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
+              <img 
+                src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/netflix.svg" 
+                alt="Netflix"
+                className="h-12 w-auto"
+                style={{ filter: 'invert(14%) sepia(97%) saturate(7426%) hue-rotate(356deg) brightness(91%) contrast(115%)' }}
+              />
             </div>
 
             {/* Prime Video */}
-            <div className="flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-              <svg viewBox="0 0 200 60" className="h-14 w-auto">
-                <text x="10" y="35" fontFamily="Arial, sans-serif" fontSize="24" fontWeight="bold" fill="#00A8E1">
-                  prime video
-                </text>
-              </svg>
+            <div className="flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
+              <img 
+                src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/primevideo.svg" 
+                alt="Prime Video"
+                className="h-10 w-auto"
+                style={{ filter: 'invert(60%) sepia(79%) saturate(2878%) hue-rotate(166deg) brightness(99%) contrast(101%)' }}
+              />
             </div>
 
-            {/* HBO */}
-            <div className="flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-              <svg viewBox="0 0 200 60" className="h-12 w-auto">
-                <circle cx="40" cy="30" r="25" fill="#000" />
-                <text x="40" y="40" fontFamily="Arial, sans-serif" fontSize="32" fontWeight="bold" fill="#fff" textAnchor="middle">
-                  HBO
-                </text>
-              </svg>
+            {/* HBO Max */}
+            <div className="flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
+              <img 
+                src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/hbo.svg" 
+                alt="HBO"
+                className="h-10 w-auto"
+                style={{ filter: 'invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)' }}
+              />
             </div>
           </div>
         </div>
       </section>
 
+      {/* Rest of the page remains the same... */}
       {/* How It Works */}
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
