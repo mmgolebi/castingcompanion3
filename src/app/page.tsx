@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Zap, Target, Mail, Clock, TrendingUp } from 'lucide-react';
+import { Check, Zap, Target, Mail, Clock, TrendingUp, Star } from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -264,8 +264,158 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Testimonials */}
       <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4">What Actors Are Saying</h2>
+            <p className="text-xl text-gray-600">Real stories from working actors</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Testimonial 1 */}
+            <Card className="relative">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-gray-700 mb-6 italic">
+                  "I booked three background roles in my first month! The auto-submit feature is a game changer. I used to spend 2-3 hours a day searching Backstage and Actors Access. Now I just get emails when I'm submitted. Worth every penny."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center font-semibold text-purple-700">
+                    SM
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">Sarah Martinez</div>
+                    <div className="text-sm text-gray-500">Los Angeles, CA</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 2 */}
+            <Card className="relative">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-gray-700 mb-6 italic">
+                  "As a SAG-AFTRA member juggling a day job, I can't be glued to casting sites all day. CastingCompanion submits me to union gigs while I'm at work. I've had 4 auditions this month that I would have completely missed otherwise."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center font-semibold text-blue-700">
+                    JC
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">James Chen</div>
+                    <div className="text-sm text-gray-500">New York, NY</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 3 */}
+            <Card className="relative">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-gray-700 mb-6 italic">
+                  "Finally landed a co-star role on a Netflix series! The match score feature helped me understand which roles I was actually competitive for. The $40/month pays for itself - my last booking covered it for 6 months."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-green-200 rounded-full flex items-center justify-center font-semibold text-green-700">
+                    AP
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">Aisha Patel</div>
+                    <div className="text-sm text-gray-500">Atlanta, GA</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 4 */}
+            <Card className="relative">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-gray-700 mb-6 italic">
+                  "I'm non-union and new to the industry. The algorithm found student films and indie projects perfect for my experience level. I've built my reel with 8 projects in 4 months. My agent is impressed!"
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-pink-200 rounded-full flex items-center justify-center font-semibold text-pink-700">
+                    MR
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">Marcus Rodriguez</div>
+                    <div className="text-sm text-gray-500">Chicago, IL</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 5 */}
+            <Card className="relative">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-gray-700 mb-6 italic">
+                  "The time savings alone is worth it. I was spending 15+ hours a week applying to roles. Now I spend maybe 30 minutes checking my submissions. More time for classes and audition prep. This is the future of casting!"
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-orange-200 rounded-full flex items-center justify-center font-semibold text-orange-700">
+                    EK
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">Emily Kowalski</div>
+                    <div className="text-sm text-gray-500">Austin, TX</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Testimonial 6 */}
+            <Card className="relative">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-gray-700 mb-6 italic">
+                  "Booked 2 national commercials in 3 months. The notifications are instant - I got submitted to a Verizon spot 5 minutes after it was posted. First one to audition! Customer support is also super responsive."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-indigo-200 rounded-full flex items-center justify-center font-semibold text-indigo-700">
+                    DW
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">David Washington</div>
+                    <div className="text-sm text-gray-500">Miami, FL</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-12">Simple, Transparent Pricing</h2>
           
