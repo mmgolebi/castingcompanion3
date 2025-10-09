@@ -3,45 +3,50 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { trackPurchase } from '@/lib/analytics';
 
 export default function SuccessPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      router.push('/dashboard');
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [router]);
+    // Track successful purchase
+    trackPurchase(1.00, 'USD');
+  }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
-        <div className="flex justify-center mb-6">
-          <CheckCircle className="h-20 w-20 text-green-500" />
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8 text-center">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <CheckCircle className="w-10 h-10 text-green-600" />
         </div>
         
         <h1 className="text-3xl font-bold text-gray-900 mb-4">
           Welcome to Casting Companion!
         </h1>
         
-        <p className="text-gray-600 mb-6">
-          Your profile is complete and you're ready to start finding casting opportunities.
+        <p className="text-gray-600 mb-8">
+          Your payment was successful. Your profile is now active and we'll start matching you with casting calls immediately.
         </p>
-        
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-blue-800">
-            Redirecting to your dashboard in 3 seconds...
-          </p>
+
+        <div className="space-y-4">
+          <Link href="/dashboard">
+            <Button className="w-full h-12 text-base">
+              Go to Dashboard
+            </Button>
+          </Link>
+          
+          <Link href="/dashboard/profile">
+            <Button variant="outline" className="w-full h-12 text-base">
+              Complete Your Profile
+            </Button>
+          </Link>
         </div>
-        
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="text-primary hover:underline text-sm"
-        >
-          Go to Dashboard Now
-        </button>
+
+        <p className="text-sm text-gray-500 mt-6">
+          You'll receive an email confirmation shortly.
+        </p>
       </div>
     </div>
   );
