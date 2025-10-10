@@ -178,10 +178,10 @@ export default function ApplyPage() {
             <div className="max-w-md mx-auto">
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  Start Your Free Trial
+                  Complete Your Application
                 </h2>
-                <p className="text-gray-600">
-                  $1 for 14 days, then $39.97/month • Cancel anytime
+                <p className="text-gray-600 text-lg">
+                  Create your actor profile and get matched to roles instantly
                 </p>
               </div>
 
@@ -241,7 +241,7 @@ export default function ApplyPage() {
                   disabled={loading}
                   className="w-full h-12 text-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                 >
-                  {loading ? 'Creating Account...' : 'Start My $1 Trial'}
+                  {loading ? 'Creating Profile...' : 'Create My Profile'}
                 </Button>
 
                 <p className="text-xs text-center text-gray-500">
