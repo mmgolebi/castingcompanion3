@@ -1,49 +1,24 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
-import { CheckCircle2, Search } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { AlertCircle, Upload, X } from 'lucide-react';
 
 export default function Step4Page() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [selectedState, setSelectedState] = useState('');
-  const [availableCities, setAvailableCities] = useState<string[]>([]);
-  const [stateSearch, setStateSearch] = useState('');
-  const [showStateDropdown, setShowStateDropdown] = useState(false);
-  const stateDropdownRef = useRef<HTMLDivElement>(null);
-  const [formData, setFormData] = useState({
-    city: '',
-    state: '',
-    zipCode: '',
-    availability: '',
-    reliableTransportation: false,
-    travelWilling: false,
-    compensationPreference: '',
-    compensationMin: '',
-  });
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (stateDropdownRef.current && !stateDropdownRef.current.contains(event.target as Node)) {
-        setShowStateDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [resume, setResume] = useState<File | null>(null);
+  const [resumeUrl, setResumeUrl] = useState('');
+  const [reelUrl, setReelUrl] = useState('');
+  const [bio, setBio] = useState('');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -51,329 +26,200 @@ export default function Step4Page() {
     }
   }, [status, router]);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch('/api/profile');
-        if (res.ok) {
-          const data = await res.json();
-          setFormData({
-            city: data.city || '',
-            state: data.state || '',
-            zipCode: data.zipCode || '',
-            availability: data.availability || '',
-            reliableTransportation: data.reliableTransportation || false,
-            travelWilling: data.travelWilling || false,
-            compensationPreference: data.compensationPreference || '',
-            compensationMin: data.compensationMin || '',
-          });
-          if (data.state) {
-            setSelectedState(data.state);
-            const stateName = US_STATES.find(s => s.value === data.state)?.label || '';
-            setStateSearch(stateName);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    if (status === 'authenticated') {
-      fetchProfile();
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Resume must be less than 5MB');
+      return;
     }
-  }, [status]);
 
-  useEffect(() => {
-    if (selectedState) {
-      const cities = MAJOR_CITIES_BY_STATE[selectedState] || [];
-      setAvailableCities(cities);
-      setFormData({ ...formData, state: selectedState });
-    }
-  }, [selectedState]);
-
-  const filteredStates = US_STATES.filter(state =>
-    state.label.toLowerCase().includes(stateSearch.toLowerCase())
-  );
-
-  const handleStateSelect = (stateValue: string, stateLabel: string) => {
-    setSelectedState(stateValue);
-    setStateSearch(stateLabel);
-    setShowStateDropdown(false);
+    setResume(file);
+    setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!selectedState) {
-      alert('Please select a state');
-      return;
-    }
-    
-    setSubmitting(true);
+    setLoading(true);
+    setError('');
 
     try {
-      const res = await fetch('/api/onboarding/step4', {
-        method: 'POST',
+      let uploadedResumeUrl = resumeUrl;
+
+      // Upload resume if provided
+      if (resume) {
+        const formData = new FormData();
+        formData.append('file', resume);
+
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error('Failed to upload resume');
+        }
+
+        const uploadData = await uploadRes.json();
+        uploadedResumeUrl = uploadData.url;
+      }
+
+      // Save profile data
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          resumeUrl: uploadedResumeUrl,
+          reelUrl,
+          bio,
+        }),
       });
 
-      if (!res.ok) {
-        alert('Failed to save step 4');
-        setSubmitting(false);
-        return;
-      }
-
-      const checkoutRes = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-      });
-
-      if (checkoutRes.ok) {
-        const { url } = await checkoutRes.json();
-        window.location.href = url;
+      if (res.ok) {
+        // Redirect to payment/subscription setup
+        router.push('/onboarding/payment');
       } else {
-        alert('Failed to create checkout session');
-        setSubmitting(false);
+        const data = await res.json();
+        setError(data.error || 'Failed to save profile');
       }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred');
-      setSubmitting(false);
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (status === 'loading' || loading) {
+  const handleSkip = () => {
+    router.push('/onboarding/payment');
+  };
+
+  if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 to-indigo-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 py-6 md:py-12 px-4">
-      <div className="container mx-auto max-w-4xl">
-        <h1 className="text-2xl md:text-4xl font-bold text-white mb-6 md:mb-8 text-center">Complete Your Profile</h1>
-        
-        {/* Step Indicator */}
-        <div className="flex items-center justify-center mb-8 md:mb-12">
-          <div className="flex items-center max-w-3xl w-full">
-            <div className="flex flex-col items-center flex-1">
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-1 md:mb-2">
-                <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6" />
-              </div>
-              <span className="text-white text-xs md:text-sm font-medium text-center">Basic Info</span>
-            </div>
-            <div className="flex-1 h-1 bg-green-500 mx-1 md:mx-2"></div>
-            <div className="flex flex-col items-center flex-1">
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-1 md:mb-2">
-                <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6" />
-              </div>
-              <span className="text-white text-xs md:text-sm font-medium text-center hidden sm:inline">Media Assets</span>
-              <span className="text-white text-xs font-medium text-center sm:hidden">Media</span>
-            </div>
-            <div className="flex-1 h-1 bg-green-500 mx-1 md:mx-2"></div>
-            <div className="flex flex-col items-center flex-1">
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-1 md:mb-2">
-                <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6" />
-              </div>
-              <span className="text-white text-xs md:text-sm font-medium text-center hidden sm:inline">Preferences</span>
-              <span className="text-white text-xs font-medium text-center sm:hidden">Prefs</span>
-            </div>
-            <div className="flex-1 h-1 bg-green-500 mx-1 md:mx-2"></div>
-            <div className="flex flex-col items-center flex-1">
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white flex items-center justify-center text-purple-900 mb-1 md:mb-2 font-bold text-sm md:text-base">
-                4
-              </div>
-              <span className="text-white text-xs md:text-sm font-medium text-center">Logistics</span>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 flex items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-2xl">
+        <CardHeader>
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-sm text-gray-500">Step 4 of 4</div>
           </div>
-        </div>
+          <CardTitle className="text-3xl">Materials</CardTitle>
+          <CardDescription className="text-base">
+            Upload your resume and add your demo reel
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Info Banner */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-blue-900">
+              <strong>You're almost there!</strong> Once you complete this step, you'll be redirected to activate your $1 full-access trial of Casting Companion. This gives you automatic submissions to roles that match your selections, plus instant access to hundreds of new casting calls you can apply to anytime.
+            </p>
+          </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg md:text-xl">Location & Logistics</CardTitle>
-            <CardDescription className="text-sm md:text-base">Where are you based and what's your availability?</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
-              <div>
-                <Label htmlFor="state" className="text-base">State *</Label>
-                <div ref={stateDropdownRef} className="relative mt-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input
-                      type="text"
-                      placeholder="Search for your state..."
-                      value={stateSearch}
-                      onChange={(e) => {
-                        setStateSearch(e.target.value);
-                        setShowStateDropdown(true);
-                      }}
-                      onFocus={() => setShowStateDropdown(true)}
-                      className="h-12 text-base pl-10"
-                      required
-                    />
-                  </div>
-                  {showStateDropdown && filteredStates.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {filteredStates.map((state) => (
-                        <button
-                          key={state.value}
-                          type="button"
-                          onClick={() => handleStateSelect(state.value, state.label)}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-100 text-base border-b last:border-b-0"
-                        >
-                          {state.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                <span className="text-sm">{error}</span>
               </div>
+            )}
 
-              <div>
-                <Label htmlFor="city" className="text-base">City *</Label>
-                {availableCities.length > 0 ? (
-                  <Select
-                    value={formData.city}
-                    onValueChange={(value) => setFormData({ ...formData, city: value })}
-                    disabled={!selectedState}
-                    required
-                  >
-                    <SelectTrigger className="h-12 text-base mt-2">
-                      <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      {availableCities.map((city) => (
-                        <SelectItem key={city} value={city}>
-                          {city}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+            {/* Resume Upload */}
+            <div>
+              <Label htmlFor="resume">Resume (PDF, DOC, DOCX - Max 5MB)</Label>
+              <div className="mt-2">
+                {resume ? (
+                  <div className="flex items-center gap-3 p-3 border border-gray-300 rounded-lg bg-gray-50">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{resume.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {(resume.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setResume(null)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ) : (
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    placeholder="Enter city"
-                    disabled={!selectedState}
-                    required
-                    className="h-12 text-base mt-2"
-                  />
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors">
+                    <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <label
+                      htmlFor="resume"
+                      className="text-sm text-primary font-medium cursor-pointer hover:underline"
+                    >
+                      Click to upload resume
+                    </label>
+                    <input
+                      id="resume"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleResumeUpload}
+                      className="hidden"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">PDF, DOC, or DOCX (Max 5MB)</p>
+                  </div>
                 )}
               </div>
+            </div>
 
-              <div>
-                <Label htmlFor="zipCode" className="text-base">ZIP Code *</Label>
-                <Input
-                  id="zipCode"
-                  type="text"
-                  inputMode="numeric"
-                  value={formData.zipCode}
-                  onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                  maxLength={5}
-                  required
-                  className="h-12 text-base mt-2"
-                />
-              </div>
+            {/* Demo Reel URL */}
+            <div>
+              <Label htmlFor="reelUrl">Demo Reel URL (Optional)</Label>
+              <Input
+                id="reelUrl"
+                type="url"
+                placeholder="https://vimeo.com/your-reel or https://youtube.com/watch?v=..."
+                value={reelUrl}
+                onChange={(e) => setReelUrl(e.target.value)}
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Link to your demo reel on Vimeo, YouTube, or other platform
+              </p>
+            </div>
 
-              <div>
-                <Label htmlFor="availability" className="text-base">Availability *</Label>
-                <Select
-                  value={formData.availability}
-                  onValueChange={(value) => setFormData({ ...formData, availability: value })}
-                  required
-                >
-                  <SelectTrigger className="h-12 text-base mt-2">
-                    <SelectValue placeholder="Select availability" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="FULL_TIME">Full-time (available immediately)</SelectItem>
-                    <SelectItem value="PART_TIME">Part-time (flexible schedule)</SelectItem>
-                    <SelectItem value="WEEKENDS">Weekends only</SelectItem>
-                    <SelectItem value="EVENINGS">Evenings only</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Bio */}
+            <div>
+              <Label htmlFor="bio">Bio (Optional)</Label>
+              <Textarea
+                id="bio"
+                placeholder="Tell casting directors about yourself, your training, and experience..."
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                rows={5}
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                This will appear on your public profile
+              </p>
+            </div>
 
-              <div className="flex items-center space-x-3 p-3 border rounded-lg">
-                <Checkbox
-                  id="reliableTransportation"
-                  checked={formData.reliableTransportation}
-                  onCheckedChange={(checked) => setFormData({ ...formData, reliableTransportation: checked as boolean })}
-                  className="h-5 w-5"
-                />
-                <Label htmlFor="reliableTransportation" className="text-base cursor-pointer flex-1">I have reliable transportation</Label>
-              </div>
-
-              <div className="flex items-center space-x-3 p-3 border rounded-lg">
-                <Checkbox
-                  id="travelWilling"
-                  checked={formData.travelWilling}
-                  onCheckedChange={(checked) => setFormData({ ...formData, travelWilling: checked as boolean })}
-                  className="h-5 w-5"
-                />
-                <Label htmlFor="travelWilling" className="text-base cursor-pointer flex-1">Willing to travel for roles</Label>
-              </div>
-
-              <div>
-                <Label htmlFor="compensationPreference" className="text-base">Compensation Preferences *</Label>
-                <Select
-                  value={formData.compensationPreference}
-                  onValueChange={(value) => setFormData({ ...formData, compensationPreference: value })}
-                  required
-                >
-                  <SelectTrigger className="h-12 text-base mt-2">
-                    <SelectValue placeholder="Select preference" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PAID_ONLY">Paid roles only</SelectItem>
-                    <SelectItem value="OPEN_TO_UNPAID">Open to unpaid/student films</SelectItem>
-                    <SelectItem value="NEGOTIABLE">Negotiable</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="compensationMin" className="text-base">Minimum Day Rate (optional)</Label>
-                <Input
-                  id="compensationMin"
-                  value={formData.compensationMin}
-                  onChange={(e) => setFormData({ ...formData, compensationMin: e.target.value })}
-                  placeholder="e.g., $200/day"
-                  className="h-12 text-base mt-2"
-                />
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm md:text-base text-blue-900">
-                  <strong>Almost there!</strong> After completing this step, you'll be redirected to set up your $1 trial subscription.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.push('/onboarding/step3')}
-                  className="w-full h-12 text-base"
-                  disabled={submitting}
-                >
-                  Back
-                </Button>
-                <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={submitting || !selectedState}>
-                  {submitting ? 'Processing...' : 'Complete & Continue to Payment'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+            {/* Buttons */}
+            <div className="flex gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSkip}
+                className="flex-1"
+              >
+                Skip for Now
+              </Button>
+              <Button type="submit" disabled={loading} className="flex-1">
+                {loading ? 'Saving...' : 'Continue to Payment'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
