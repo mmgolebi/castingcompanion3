@@ -46,9 +46,6 @@ export default function LandingPage() {
                     Start Free Trial
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="text-lg bg-transparent text-white border-white hover:bg-white/10">
-                  Watch Demo
-                </Button>
               </div>
               <p className="text-sm text-gray-400 mt-4">
                 $1 trial for 14 days, then $39.97/month
@@ -56,14 +53,20 @@ export default function LandingPage() {
             </div>
 
             <div className="relative">
-              {/* Video placeholder - replace with actual video embed */}
-              <div className="aspect-video bg-gray-800 rounded-lg flex items-center justify-center border-2 border-purple-500">
-                <div className="text-center">
-                  <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <div className="w-0 h-0 border-l-[20px] border-l-white border-y-[12px] border-y-transparent ml-1"></div>
-                  </div>
-                  <p className="text-gray-400">Video: How Casting Companion Works</p>
-                </div>
+              {/* Actual Video */}
+              <div className="aspect-video bg-gray-800 rounded-lg overflow-hidden border-2 border-purple-500 shadow-2xl">
+                <video 
+                  className="w-full h-full object-cover"
+                  controls
+                  preload="metadata"
+                  poster="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800"
+                >
+                  <source 
+                    src="https://storage.googleapis.com/msgsndr/e9HzxNWnJSWGniDtfueu/media/68e9184635e869cb9b194fd2.mp4" 
+                    type="video/mp4" 
+                  />
+                  Your browser does not support the video tag.
+                </video>
               </div>
             </div>
           </div>
