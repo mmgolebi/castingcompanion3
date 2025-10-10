@@ -97,14 +97,19 @@ export default function ApplyPage() {
 
           {/* Video */}
           <div className="mb-8">
-            <div className="aspect-video bg-gray-800 rounded-xl flex items-center justify-center border-4 border-purple-500 shadow-2xl">
-              <div className="text-center">
-                <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4 hover:bg-white/20 transition-all cursor-pointer">
-                  <div className="w-0 h-0 border-l-[28px] border-l-white border-y-[16px] border-y-transparent ml-2"></div>
-                </div>
-                <p className="text-gray-300 text-lg">Watch: How CastingCompanion Works</p>
-                <p className="text-gray-500 text-sm mt-2">(2 minutes)</p>
-              </div>
+            <div className="aspect-video bg-gray-800 rounded-xl overflow-hidden border-4 border-purple-500 shadow-2xl">
+              <video 
+                className="w-full h-full object-cover"
+                controls
+                preload="metadata"
+                poster="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800"
+              >
+                <source 
+                  src="https://storage.googleapis.com/msgsndr/e9HzxNWnJSWGniDtfueu/media/68e9184635e869cb9b194fd2.mp4" 
+                  type="video/mp4" 
+                />
+                Your browser does not support the video tag.
+              </video>
             </div>
           </div>
 
