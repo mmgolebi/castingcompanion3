@@ -100,8 +100,11 @@ export default function ApplyPage() {
             <div className="aspect-video bg-gray-800 rounded-xl overflow-hidden border-4 border-purple-500 shadow-2xl">
               <video 
                 className="w-full h-full object-cover"
+                autoPlay
+                loop
+                playsInline
                 controls
-                preload="metadata"
+                preload="auto"
                 poster="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800"
               >
                 <source 
