@@ -43,13 +43,10 @@ export default function LandingPage() {
               <div className="flex gap-4">
                 <Link href="/auth/register">
                   <Button size="lg" className="text-lg bg-white text-purple-600 hover:bg-gray-100">
-                    Start Free Trial
+                    Get Started Today
                   </Button>
                 </Link>
               </div>
-              <p className="text-sm text-gray-400 mt-4">
-                $1 trial for 14 days, then $39.97/month
-              </p>
             </div>
 
             <div className="relative">
@@ -322,7 +319,7 @@ export default function LandingPage() {
               </CardContent>
             </Card>
 
-            {/* Testimonial 3 - UPDATED */}
+            {/* Testimonial 3 */}
             <Card className="relative">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-1 mb-4">
@@ -426,7 +423,7 @@ export default function LandingPage() {
           </p>
           <Link href="/auth/register">
             <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 text-lg">
-              Get Started for $1
+              Get Started Today
             </Button>
           </Link>
         </div>
