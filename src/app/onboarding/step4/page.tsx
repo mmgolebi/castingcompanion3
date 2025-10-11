@@ -352,7 +352,7 @@ export default function Step4Page() {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm md:text-base text-blue-900">
-                  <strong>Almost there!</strong> After completing this step, you'll be redirected to set up your $1 trial subscription.
+                  <strong>You're almost there!</strong> Once you complete this step, you'll be redirected to activate your $1 full-access trial of Casting Companion. This gives you automatic submissions to roles that match your selections, plus instant access to hundreds of new casting calls you can apply to anytime.
                 </p>
               </div>
 
