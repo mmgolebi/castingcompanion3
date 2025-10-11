@@ -322,7 +322,7 @@ export default function LandingPage() {
               </CardContent>
             </Card>
 
-            {/* Testimonial 3 */}
+            {/* Testimonial 3 - UPDATED */}
             <Card className="relative">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-1 mb-4">
@@ -331,7 +331,7 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <p className="text-gray-700 mb-6 italic">
-                  "Finally landed a co-star role on a Netflix series! The match score feature helped me understand which roles I was actually competitive for. The $40/month pays for itself - my last booking covered it for 6 months."
+                  "Finally landed a co-star role on a Netflix series! The match score feature helped me understand which roles I was actually competitive for. The algorithm is incredibly accurate and has completely changed how I approach auditioning."
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-green-200 rounded-full flex items-center justify-center font-semibold text-green-700">
@@ -414,52 +414,6 @@ export default function LandingPage() {
               </CardContent>
             </Card>
           </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12">Simple, Transparent Pricing</h2>
-          
-          <Card className="max-w-md mx-auto">
-            <CardHeader className="text-center">
-              <CardTitle className="text-3xl">Pro Plan</CardTitle>
-              <div className="text-5xl font-bold text-primary mt-4">
-                $39.97<span className="text-xl text-gray-600">/month</span>
-              </div>
-              <p className="text-gray-600 mt-2">First 14 days only $1</p>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-green-600" />
-                  <span>Unlimited auto-submissions</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-green-600" />
-                  <span>Smart matching algorithm</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-green-600" />
-                  <span>Email notifications</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-green-600" />
-                  <span>Professional dashboard</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-green-600" />
-                  <span>Cancel anytime</span>
-                </li>
-              </ul>
-              <Link href="/auth/register" className="block">
-                <Button size="lg" className="w-full">
-                  Start Your $1 Trial
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
         </div>
       </section>
 
