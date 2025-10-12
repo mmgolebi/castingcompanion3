@@ -1,14 +1,20 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { EmbeddedCheckoutComponent } from '@/components/embedded-checkout';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { trackLead } from '@/lib/analytics';
 
 export default function PaymentPage() {
   const router = useRouter();
   const [checkoutError, setCheckoutError] = useState('');
+
+  // Track page view
+  useEffect(() => {
+    trackLead(); // Tracks payment page view
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 py-6 md:py-12 px-4">

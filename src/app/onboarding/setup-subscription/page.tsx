@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle2 } from 'lucide-react';
+import { trackPurchase } from '@/lib/analytics';
 
 function SetupSubscriptionContent() {
   const router = useRouter();
@@ -27,6 +28,10 @@ function SetupSubscriptionContent() {
 
         if (res.ok) {
           setStatus('success');
+          
+          // Track purchase conversion
+          trackPurchase(1.00, 'USD');
+          
           // Redirect to dashboard after 2 seconds
           setTimeout(() => {
             router.push('/dashboard?trial=started');
