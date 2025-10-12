@@ -5,15 +5,25 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { EmbeddedCheckoutComponent } from '@/components/embedded-checkout';
 import { useRouter } from 'next/navigation';
-import { trackLead } from '@/lib/analytics';
+
+// Track InitiateCheckout event
+const trackInitiateCheckout = () => {
+  if (typeof window !== 'undefined' && (window as any).fbq) {
+    (window as any).fbq('track', 'InitiateCheckout', {
+      content_name: 'Casting Companion Trial',
+      value: 1.00,
+      currency: 'USD'
+    });
+  }
+};
 
 export default function PaymentPage() {
   const router = useRouter();
   const [checkoutError, setCheckoutError] = useState('');
 
-  // Track page view
+  // Track InitiateCheckout when payment page loads
   useEffect(() => {
-    trackLead(); // Tracks payment page view
+    trackInitiateCheckout();
   }, []);
 
   return (
