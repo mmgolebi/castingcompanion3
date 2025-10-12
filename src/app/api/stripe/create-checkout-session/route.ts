@@ -23,19 +23,12 @@ export async function POST(req: Request) {
 
     // Create checkout for $1 one-time payment with EMBEDDED mode
     const checkoutSession = await stripe.checkout.sessions.create({
-      ui_mode: 'embedded', // EMBEDDED MODE
+      ui_mode: 'embedded',
       customer_email: user.email,
       payment_method_types: ['card'],
       line_items: [
         {
-          price_data: {
-            currency: 'usd',
-            unit_amount: 100, // $1 in cents
-            product_data: {
-              name: 'Casting Companion Pro - Trial Access',
-              description: '$1 trial, then $39.97/month after 14 days',
-            },
-          },
+          price: process.env.STRIPE_TRIAL_PRICE_ID, // Use the env variable
           quantity: 1,
         },
       ],
@@ -47,7 +40,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Return clientSecret instead of url for embedded checkout
     return NextResponse.json({ clientSecret: checkoutSession.client_secret });
   } catch (error) {
     console.error('Checkout session error:', error);
