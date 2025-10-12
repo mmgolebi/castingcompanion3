@@ -1,107 +1,72 @@
 'use client';
 
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { EmbeddedCheckoutComponent } from '@/components/embedded-checkout';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function PaymentPage() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handlePayment = async () => {
-    try {
-      setLoading(true);
-      setError('');
-
-      const response = await fetch('/api/stripe/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create checkout session');
-      }
-
-      const { url } = await response.json();
-
-      if (!url) {
-        throw new Error('No checkout URL returned');
-      }
-
-      // Redirect to Stripe Checkout
-      window.location.href = url;
-    } catch (err: any) {
-      console.error('Payment error:', err);
-      setError(err.message || 'Failed to create checkout session');
-      setLoading(false);
-    }
-  };
+  const router = useRouter();
+  const [checkoutError, setCheckoutError] = useState('');
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <Check className="h-8 w-8 text-green-600" />
-          </div>
-          <CardTitle className="text-2xl">Almost There!</CardTitle>
-          <CardDescription>Start your 14-day trial for just $1</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 py-6 md:py-12 px-4">
+      <div className="container mx-auto max-w-3xl">
+        {/* Progress Indicator */}
+        <div className="flex items-center justify-center mb-8">
+          <div className="flex items-center max-w-2xl w-full">
+            <div className="flex flex-col items-center flex-1">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-500 flex items-center justify-center text-white mb-2">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <span className="text-white text-xs md:text-sm font-medium">Profile</span>
             </div>
-          )}
-
-          <div className="bg-gray-50 rounded-lg p-6 mb-6">
-            <div className="text-center mb-4">
-              <p className="text-sm text-gray-600">14-Day Trial</p>
-              <p className="text-4xl font-bold text-primary">$1</p>
-              <p className="text-sm text-gray-600">then $39.97/month after trial</p>
+            <div className="flex-1 h-1 bg-green-500 mx-2"></div>
+            <div className="flex flex-col items-center flex-1">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white flex items-center justify-center text-purple-900 mb-2 font-bold">
+                2
+              </div>
+              <span className="text-white text-xs md:text-sm font-medium">Payment</span>
             </div>
-
-            <ul className="space-y-3">
-              <li className="flex items-center gap-2">
-                <Check className="h-5 w-5 text-green-600" />
-                <span>Access to all casting calls</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="h-5 w-5 text-green-600" />
-                <span>AI-powered role matching</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="h-5 w-5 text-green-600" />
-                <span>Unlimited submissions</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="h-5 w-5 text-green-600" />
-                <span>Professional profile showcase</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="h-5 w-5 text-green-600" />
-                <span>Cancel anytime</span>
-              </li>
-            </ul>
           </div>
+        </div>
 
-          <Button
-            onClick={handlePayment}
-            disabled={loading}
-            className="w-full"
-            size="lg"
+        <h1 className="text-2xl md:text-4xl font-bold text-white mb-4 text-center">
+          Activate Your Trial
+        </h1>
+        <p className="text-center text-gray-300 mb-8">
+          Complete your payment to start your 14-day trial for just $1
+        </p>
+        
+        {checkoutError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
+            <AlertCircle className="h-5 w-5" />
+            <span>{checkoutError}</span>
+          </div>
+        )}
+
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle>14-Day Trial - Just $1</CardTitle>
+            <CardDescription>
+              Then $39.97/month after trial • Cancel anytime
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <EmbeddedCheckoutComponent onError={setCheckoutError} />
+          </CardContent>
+        </Card>
+
+        <div className="text-center mt-6">
+          <button
+            onClick={() => router.push('/onboarding/step4')}
+            className="text-white hover:text-gray-300 underline text-sm"
           >
-            {loading ? 'Loading...' : 'Start $1 Trial'}
-          </Button>
-
-          <p className="text-xs text-center text-gray-500 mt-4">
-            Secure payment powered by Stripe. You'll be charged $1 today to start your 14-day trial,
-            then $39.97/month after the trial ends. Cancel anytime.
-          </p>
-        </CardContent>
-      </Card>
+            ← Back to previous step
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
