@@ -10,13 +10,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { US_STATES, MAJOR_CITIES_BY_STATE } from '@/lib/locations';
-import { CheckCircle2, Search } from 'lucide-react';
+import { CheckCircle2, Search, AlertCircle } from 'lucide-react';
+import { EmbeddedCheckoutComponent } from '@/components/embedded-checkout';
 
 export default function Step4Page() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
   const [selectedState, setSelectedState] = useState('');
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [stateSearch, setStateSearch] = useState('');
@@ -126,17 +129,9 @@ export default function Step4Page() {
         return;
       }
 
-      const checkoutRes = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-      });
-
-      if (checkoutRes.ok) {
-        const { url } = await checkoutRes.json();
-        window.location.href = url;
-      } else {
-        alert('Failed to create checkout session');
-        setSubmitting(false);
-      }
+      // Instead of redirecting, show embedded checkout
+      setShowCheckout(true);
+      setSubmitting(false);
     } catch (error) {
       console.error('Error:', error);
       alert('An error occurred');
@@ -148,6 +143,41 @@ export default function Step4Page() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 to-indigo-900">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
+  // Show embedded checkout after form submission
+  if (showCheckout) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 py-6 md:py-12 px-4">
+        <div className="container mx-auto max-w-3xl">
+          <h1 className="text-2xl md:text-4xl font-bold text-white mb-6 md:mb-8 text-center">
+            Complete Your Payment
+          </h1>
+          
+          {checkoutError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              <span>{checkoutError}</span>
+            </div>
+          )}
+
+          <Card>
+            <CardContent className="p-6">
+              <EmbeddedCheckoutComponent onError={setCheckoutError} />
+            </CardContent>
+          </Card>
+
+          <div className="text-center mt-6">
+            <button
+              onClick={() => setShowCheckout(false)}
+              className="text-white hover:text-gray-300 underline text-sm"
+            >
+              ← Back to form
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -352,7 +382,7 @@ export default function Step4Page() {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm md:text-base text-blue-900">
-                  <strong>You're almost there!</strong> Once you complete this step, you'll be redirected to activate your $1 full-access trial of Casting Companion. This gives you automatic submissions to roles that match your selections, plus instant access to hundreds of new casting calls you can apply to anytime.
+                  <strong>You're almost there!</strong> Once you complete this step, you'll activate your $1 full-access trial of Casting Companion. This gives you automatic submissions to roles that match your selections, plus instant access to hundreds of new casting calls you can apply to anytime.
                 </p>
               </div>
 

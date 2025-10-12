@@ -21,8 +21,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Create checkout for $1 one-time payment
+    // Create checkout for $1 one-time payment with EMBEDDED mode
     const checkoutSession = await stripe.checkout.sessions.create({
+      ui_mode: 'embedded', // EMBEDDED MODE
       customer_email: user.email,
       payment_method_types: ['card'],
       line_items: [
@@ -39,15 +40,15 @@ export async function POST(req: Request) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXTAUTH_URL}/onboarding/setup-subscription?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/onboarding/step4?canceled=true`,
+      return_url: `${process.env.NEXTAUTH_URL}/onboarding/setup-subscription?session_id={CHECKOUT_SESSION_ID}`,
       metadata: {
         userId: user.id,
         isTrial: 'true',
       },
     });
 
-    return NextResponse.json({ url: checkoutSession.url });
+    // Return clientSecret instead of url for embedded checkout
+    return NextResponse.json({ clientSecret: checkoutSession.client_secret });
   } catch (error) {
     console.error('Checkout session error:', error);
     return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 });
