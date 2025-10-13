@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { AlertCircle, Check, Zap, Mail } from 'lucide-react';
 import { trackLead, trackCompleteRegistration } from '@/lib/analytics';
 
-export default function ApplyPage() {
+function ApplyPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const castingEmail = searchParams.get('email') || 'casting@example.com';
@@ -341,5 +341,13 @@ export default function ApplyPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function ApplyPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+      <ApplyPageContent />
+    </Suspense>
   );
 }
