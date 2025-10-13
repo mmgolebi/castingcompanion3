@@ -44,15 +44,10 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      const params = new URLSearchParams();
-      if (filters.roleType !== 'all') params.append('roleType', filters.roleType);
-      if (filters.location) params.append('location', filters.location);
-      if (filters.unionStatus !== 'all') params.append('unionStatus', filters.unionStatus);
-
       const [profileRes, statsRes, callsRes, submissionsRes] = await Promise.all([
         fetch('/api/profile'),
         fetch('/api/dashboard/stats'),
-        fetch(`/api/casting-calls?${params}`),
+        fetch('/api/casting-calls'),
         fetch('/api/dashboard/recent-submissions'),
       ]);
 
@@ -85,9 +80,13 @@ export default function DashboardPage() {
   useEffect(() => {
     if (status === 'authenticated') {
       fetchDashboardData();
-      setCurrentPage(1);
     }
-  }, [status, filters.roleType, filters.location, filters.unionStatus]);
+  }, [status]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   // Trigger auto-submissions when user logs in
   useEffect(() => {
@@ -139,10 +138,27 @@ export default function DashboardPage() {
     }
   };
 
-  const filteredCalls = (calls || []).filter(call =>
-    call.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-    call.production.toLowerCase().includes(filters.search.toLowerCase())
-  );
+  // Client-side filtering with all filter options
+  const filteredCalls = (calls || []).filter(call => {
+    // Search filter
+    const matchesSearch = filters.search === '' || 
+      call.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+      call.production.toLowerCase().includes(filters.search.toLowerCase());
+
+    // Role type filter
+    const matchesRoleType = filters.roleType === 'all' || call.roleType === filters.roleType;
+
+    // Location filter
+    const matchesLocation = filters.location === '' ||
+      call.location.toLowerCase().includes(filters.location.toLowerCase());
+
+    // Union status filter
+    const matchesUnionStatus = filters.unionStatus === 'all' || 
+      call.unionStatus === filters.unionStatus ||
+      call.unionStatus === 'EITHER';
+
+    return matchesSearch && matchesRoleType && matchesLocation && matchesUnionStatus;
+  });
 
   const totalPages = Math.ceil(filteredCalls.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
