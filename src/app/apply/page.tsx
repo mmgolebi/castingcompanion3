@@ -272,7 +272,7 @@ function ApplyPageContent() {
             <div className="flex justify-center items-center gap-8 opacity-60">
               <img src="https://cdn.worldvectorlogo.com/logos/netflix-3.svg" alt="Netflix" className="h-8 w-auto" />
               <img src="https://cdn.worldvectorlogo.com/logos/hbo-4.svg" alt="HBO" className="h-7 w-auto" />
-              <img src="https://cdn.worldvectorlogo.com/logos/disney-2.svg" alt="Disney" className="h-10 w-auto" />
+              <img src="https://cdn.worldvectorlogo.com/logos/disney--1.svg" alt="Disney" className="h-10 w-auto" />
             </div>
           </div>
         </div>
