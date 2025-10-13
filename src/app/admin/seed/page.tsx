@@ -7,7 +7,7 @@ import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 
 export default function SeedPage() {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ success: boolean; message: string; count?: number } | null>(null);
+  const [result, setResult] = useState<{ success: boolean; message: string; count?: number; details?: string } | null>(null);
 
   const handleSeed = async () => {
     setLoading(true);
@@ -29,13 +29,15 @@ export default function SeedPage() {
       } else {
         setResult({
           success: false,
-          message: data.error || 'Failed to seed casting calls'
+          message: data.error || 'Failed to seed casting calls',
+          details: data.details || JSON.stringify(data)
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       setResult({
         success: false,
-        message: 'An error occurred while seeding'
+        message: 'An error occurred while seeding',
+        details: error.message
       });
     } finally {
       setLoading(false);
@@ -73,11 +75,11 @@ export default function SeedPage() {
                   : 'bg-red-50 border border-red-200'
               }`}>
                 {result.success ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+                  <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                 ) : (
-                  <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                  <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
                 )}
-                <div>
+                <div className="flex-1">
                   <p className={`font-semibold ${
                     result.success ? 'text-green-900' : 'text-red-900'
                   }`}>
@@ -92,6 +94,11 @@ export default function SeedPage() {
                     <p className="text-sm text-green-800 mt-1">
                       {result.count} casting calls added to database
                     </p>
+                  )}
+                  {result.details && (
+                    <pre className="text-xs mt-2 p-2 bg-red-100 rounded overflow-x-auto">
+                      {result.details}
+                    </pre>
                   )}
                 </div>
               </div>
