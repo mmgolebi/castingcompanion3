@@ -2,21 +2,27 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Check, Zap } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertCircle, Check, Zap, Mail } from 'lucide-react';
 import { trackLead, trackCompleteRegistration } from '@/lib/analytics';
 
 export default function ApplyPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const castingEmail = searchParams.get('email') || 'casting@example.com';
+  const castingTitle = searchParams.get('title') || 'this casting call';
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showManualModal, setShowManualModal] = useState(false);
 
   // Track page view for apply page
   useEffect(() => {
@@ -128,12 +134,12 @@ export default function ApplyPage() {
             </Button>
             
             <div>
-              <Link 
-                href="/auth/login" 
+              <button
+                onClick={() => setShowManualModal(true)}
                 className="text-gray-400 hover:text-gray-300 text-sm underline"
               >
                 No thanks, I want to submit myself manually
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -278,6 +284,62 @@ export default function ApplyPage() {
           <p>&copy; 2025 Casting Companion. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* Manual Submission Modal */}
+      <Dialog open={showManualModal} onOpenChange={setShowManualModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Submit Manually</DialogTitle>
+            <DialogDescription>
+              You can email the casting director directly
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Mail className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-semibold text-blue-900 mb-1">Casting Director Email:</p>
+                  <a 
+                    href={`mailto:${castingEmail}?subject=Application for ${castingTitle}`}
+                    className="text-blue-600 hover:text-blue-800 underline break-all text-sm"
+                  >
+                    {castingEmail}
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4">
+              <p className="text-sm font-semibold text-gray-900 mb-2">
+                Want this done professionally?
+              </p>
+              <p className="text-sm text-gray-600 mb-4">
+                With Casting Companion, your submissions are formatted professionally and sent automatically to roles that match your profile - dramatically increasing your chances of getting callbacks.
+              </p>
+              <Button 
+                onClick={() => {
+                  setShowManualModal(false);
+                  scrollToRegister();
+                }}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                size="sm"
+              >
+                Sign Up for Professional Submissions
+              </Button>
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={() => setShowManualModal(false)}
+              className="w-full"
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
