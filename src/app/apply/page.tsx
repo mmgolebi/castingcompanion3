@@ -14,7 +14,7 @@ import { trackLead, trackCompleteRegistration } from '@/lib/analytics';
 function ApplyPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const castingEmail = searchParams.get('email') || 'casting@example.com';
+  const castingEmail = searchParams.get('email') || 'info@alessihartigancasting.com';
   const castingTitle = searchParams.get('title') || 'this casting call';
   
   const [email, setEmail] = useState('');
