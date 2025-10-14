@@ -94,7 +94,7 @@ function ApplyPageContent() {
               🔴 NOW CASTING
             </div>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-              Stranger Things Season 5
+              EUPHORIA SEASON 3 CASTING CALLS
             </h1>
             <p className="text-xl md:text-2xl text-gray-300">
               New roles available • Apply in seconds
