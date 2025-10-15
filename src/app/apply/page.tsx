@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertCircle, Check, Zap, Mail } from 'lucide-react';
-import { trackLead, trackCompleteRegistration } from '@/lib/analytics';
+import { trackCompleteRegistration } from '@/lib/analytics';
 
 function ApplyPageContent() {
   const router = useRouter();
@@ -26,7 +26,6 @@ function ApplyPageContent() {
 
   // Track page view for apply page
   useEffect(() => {
-    trackLead();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
