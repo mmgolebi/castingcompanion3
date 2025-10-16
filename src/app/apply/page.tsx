@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertCircle, Check, Zap, Mail } from 'lucide-react';
+import { AlertCircle, Check, Zap, Mail, Users, TrendingUp, Award } from 'lucide-react';
 import { trackCompleteRegistration } from '@/lib/analytics';
 
 function ApplyPageContent() {
@@ -143,7 +143,7 @@ function ApplyPageContent() {
           </div>
 
           {/* Benefits */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 mb-16">
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 mb-8">
             <h2 className="text-2xl font-bold text-white text-center mb-6">
               Why actors choose CastingCompanion
             </h2>
@@ -173,6 +173,39 @@ function ApplyPageContent() {
                 <h3 className="text-white font-semibold mb-2">Never Miss</h3>
                 <p className="text-gray-300 text-sm">
                   Get instant notifications for new opportunities
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats Section - NEW */}
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl p-8 mb-16 shadow-2xl">
+            <div className="grid md:grid-cols-3 gap-8 text-center">
+              <div>
+                <div className="flex items-center justify-center mb-3">
+                  <Users className="h-8 w-8 text-white" />
+                </div>
+                <div className="text-4xl font-bold text-white mb-2">1,247+</div>
+                <p className="text-purple-100 text-sm">
+                  Actors booked through Casting Companion
+                </p>
+              </div>
+              <div>
+                <div className="flex items-center justify-center mb-3">
+                  <TrendingUp className="h-8 w-8 text-white" />
+                </div>
+                <div className="text-4xl font-bold text-white mb-2">3x</div>
+                <p className="text-purple-100 text-sm">
+                  More auditions than manually submitting
+                </p>
+              </div>
+              <div>
+                <div className="flex items-center justify-center mb-3">
+                  <Award className="h-8 w-8 text-white" />
+                </div>
+                <div className="text-4xl font-bold text-white mb-2">92%</div>
+                <p className="text-purple-100 text-sm">
+                  Member satisfaction rate
                 </p>
               </div>
             </div>
