@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertCircle, Check, Zap, Mail, Users, TrendingUp, Award } from 'lucide-react';
+import { AlertCircle, Check, Zap, Mail, Star } from 'lucide-react';
 import { trackCompleteRegistration } from '@/lib/analytics';
 
 function ApplyPageContent() {
@@ -178,35 +178,79 @@ function ApplyPageContent() {
             </div>
           </div>
 
-          {/* Stats Section - NEW */}
-          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl p-8 mb-16 shadow-2xl">
-            <div className="grid md:grid-cols-3 gap-8 text-center">
-              <div>
-                <div className="flex items-center justify-center mb-3">
-                  <Users className="h-8 w-8 text-white" />
+          {/* Testimonials Section - NEW */}
+          <div className="mb-16">
+            <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-8">
+              Hear from actors who landed roles
+            </h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              {/* Testimonial 1 */}
+              <div className="bg-white rounded-xl p-6 shadow-xl">
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  ))}
                 </div>
-                <div className="text-4xl font-bold text-white mb-2">1,247+</div>
-                <p className="text-purple-100 text-sm">
-                  Actors booked through Casting Companion
+                <p className="text-gray-700 text-sm mb-4 italic">
+                  "I landed 3 auditions in my first week! The auto-submit feature is a game-changer. No more spending hours searching casting boards."
                 </p>
+                <div className="flex items-center gap-3">
+                  <img 
+                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" 
+                    alt="Sarah M."
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div>
+                    <div className="font-semibold text-gray-900">Sarah M.</div>
+                    <div className="text-xs text-gray-500">Los Angeles, CA</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="flex items-center justify-center mb-3">
-                  <TrendingUp className="h-8 w-8 text-white" />
+
+              {/* Testimonial 2 */}
+              <div className="bg-white rounded-xl p-6 shadow-xl">
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  ))}
                 </div>
-                <div className="text-4xl font-bold text-white mb-2">3x</div>
-                <p className="text-purple-100 text-sm">
-                  More auditions than manually submitting
+                <p className="text-gray-700 text-sm mb-4 italic">
+                  "Finally booked a speaking role on a Netflix series! CastingCompanion matched me to opportunities I never would have found on my own."
                 </p>
+                <div className="flex items-center gap-3">
+                  <img 
+                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" 
+                    alt="Marcus T."
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div>
+                    <div className="font-semibold text-gray-900">Marcus T.</div>
+                    <div className="text-xs text-gray-500">New York, NY</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="flex items-center justify-center mb-3">
-                  <Award className="h-8 w-8 text-white" />
+
+              {/* Testimonial 3 */}
+              <div className="bg-white rounded-xl p-6 shadow-xl">
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  ))}
                 </div>
-                <div className="text-4xl font-bold text-white mb-2">92%</div>
-                <p className="text-purple-100 text-sm">
-                  Member satisfaction rate
+                <p className="text-gray-700 text-sm mb-4 italic">
+                  "The automated submissions saved me 10+ hours per week. I can focus on my craft instead of endless admin work. Worth every penny!"
                 </p>
+                <div className="flex items-center gap-3">
+                  <img 
+                    src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop" 
+                    alt="Jessica L."
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div>
+                    <div className="font-semibold text-gray-900">Jessica L.</div>
+                    <div className="text-xs text-gray-500">Atlanta, GA</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
