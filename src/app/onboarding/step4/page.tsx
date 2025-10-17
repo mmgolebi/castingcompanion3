@@ -343,7 +343,7 @@ export default function Step4Page() {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm md:text-base text-blue-900">
-                  <strong>⏰ Limited Offer: Only 47 spots left at $1!</strong><br/><br/>You're one step away from unlocking 14-day full access for just $1 (regular price $39.97/month). Get automatic submissions to matching roles + instant access to hundreds of casting calls. <strong>This promotional rate won't last long!</strong>
+                  <strong>🎯 Only 7 Spots Remaining at $1</strong><br/><br/>Lock in your 14-day full access trial for just $1 (regular price $39.97/month). We limit this offer to 200 new actors per month - once they're gone, new members pay $39.97. <strong>Finish your profile and lock in both your rate and your casting opportunity!</strong>
                 </p>
               </div>
 
