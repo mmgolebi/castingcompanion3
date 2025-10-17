@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertCircle, Check, Zap, Mail, Star } from 'lucide-react';
+import { AlertCircle, Check, Zap, Mail, Star, TrendingUp } from 'lucide-react';
 import { trackCompleteRegistration } from '@/lib/analytics';
 
 function ApplyPageContent() {
@@ -178,8 +178,15 @@ function ApplyPageContent() {
             </div>
           </div>
 
-          {/* Testimonials Section - NEW */}
-          <div className="mb-16">
+          {/* Social Proof Above Testimonials */}
+          <div className="text-center mb-8">
+            <p className="text-2xl md:text-3xl font-bold text-white">
+              Join <span className="text-purple-400">1,247 actors</span> already booked through Casting Companion
+            </p>
+          </div>
+
+          {/* Testimonials Section */}
+          <div className="mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-8">
               Hear from actors who landed roles
             </h2>
@@ -251,6 +258,18 @@ function ApplyPageContent() {
                     <div className="text-xs text-gray-500">Atlanta, GA</div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stat Below Testimonials */}
+          <div className="text-center mb-16">
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 inline-block">
+              <div className="flex items-center gap-3 justify-center">
+                <TrendingUp className="h-8 w-8 text-green-400" />
+                <p className="text-2xl md:text-3xl font-bold text-white">
+                  Actors using our service get <span className="text-green-400">3x more auditions</span>
+                </p>
               </div>
             </div>
           </div>
