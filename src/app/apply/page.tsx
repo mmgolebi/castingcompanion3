@@ -238,7 +238,7 @@ function ApplyPageContent() {
                   ))}
                 </div>
                 <p className="text-gray-700 text-sm mb-4 italic">
-                  "The automated submissions saved me 10+ hours per week. I can focus on my craft instead of endless admin work. Worth every penny!"
+                  "Got my first co-star role within 2 weeks of signing up. Way better than scrolling through Backstage for hours every day!"
                 </p>
                 <div className="flex items-center gap-3">
                   <img 
