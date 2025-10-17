@@ -30,8 +30,8 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section with Video */}
-      <section className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white py-20">
+      {/* Hero Section with Casting Cards */}
+      <section className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white py-20 overflow-hidden">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -56,299 +56,107 @@ export default function LandingPage() {
             </div>
 
             <div className="relative">
-              {/* Actual Video */}
-              <div className="aspect-video bg-gray-800 rounded-lg overflow-hidden border-2 border-purple-500 shadow-2xl">
-                <video 
-                  className="w-full h-full object-cover"
-                  controls
-                  preload="metadata"
-                  poster="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800"
-                >
-                  <source 
-                    src="https://storage.googleapis.com/msgsndr/e9HzxNWnJSWGniDtfueu/media/68e9184635e869cb9b194fd2.mp4" 
-                    type="video/mp4" 
-                  />
-                  Your browser does not support the video tag.
-                </video>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Real Casting Call Examples */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">See Real Casting Calls We Auto-Submit To</h2>
-            <p className="text-xl text-gray-600">These are the types of opportunities our system finds for you</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-            {/* Casting Call 1 */}
-            <Card className="border-2 border-purple-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
-                    LEAD
-                  </span>
-                  <div className="flex items-center gap-2 bg-amber-50 px-3 py-1 rounded-full">
-                    <Zap className="h-4 w-4 text-amber-600" />
-                    <span className="text-sm font-semibold text-amber-700">Auto-Submitted</span>
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold mb-2">Lead Role - Netflix Series</h3>
-                <p className="text-gray-600 mb-4 text-sm">Drama series seeking diverse cast for principal photography</p>
-                <div className="space-y-2 text-sm text-gray-600 mb-4">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>Los Angeles, CA</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
-                    <span>$5,000/week</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>Shoots: March 2025</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <span className="text-sm text-gray-500">Match Score</span>
-                  <span className="text-2xl font-bold text-green-600">92%</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Casting Call 2 */}
-            <Card className="border-2 border-purple-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-                    COMMERCIAL
-                  </span>
-                  <div className="flex items-center gap-2 bg-amber-50 px-3 py-1 rounded-full">
-                    <Zap className="h-4 w-4 text-amber-600" />
-                    <span className="text-sm font-semibold text-amber-700">Auto-Submitted</span>
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold mb-2">National Commercial - Major Brand</h3>
-                <p className="text-gray-600 mb-4 text-sm">Lifestyle commercial for major consumer brand</p>
-                <div className="space-y-2 text-sm text-gray-600 mb-4">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>New York, NY</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
-                    <span>$2,500 + residuals</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>Shoots: February 2025</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <span className="text-sm text-gray-500">Match Score</span>
-                  <span className="text-2xl font-bold text-green-600">88%</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Casting Call 3 */}
-            <Card className="border-2 border-purple-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-                    SUPPORTING
-                  </span>
-                  <div className="flex items-center gap-2 bg-amber-50 px-3 py-1 rounded-full">
-                    <Zap className="h-4 w-4 text-amber-600" />
-                    <span className="text-sm font-semibold text-amber-700">Auto-Submitted</span>
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold mb-2">Supporting Role - HBO Series</h3>
-                <p className="text-gray-600 mb-4 text-sm">Recurring character for award-winning drama series</p>
-                <div className="space-y-2 text-sm text-gray-600 mb-4">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>Atlanta, GA</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
-                    <span>$3,000/episode</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>Shoots: April 2025</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <span className="text-sm text-gray-500">Match Score</span>
-                  <span className="text-2xl font-bold text-green-600">95%</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Casting Call 4 */}
-            <Card className="border-2 border-purple-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold">
-                    BACKGROUND
-                  </span>
-                  <div className="flex items-center gap-2 bg-amber-50 px-3 py-1 rounded-full">
-                    <Zap className="h-4 w-4 text-amber-600" />
-                    <span className="text-sm font-semibold text-amber-700">Auto-Submitted</span>
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold mb-2">Featured Background - Feature Film</h3>
-                <p className="text-gray-600 mb-4 text-sm">Multiple days of work for major studio production</p>
-                <div className="space-y-2 text-sm text-gray-600 mb-4">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>Chicago, IL</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
-                    <span>$200/day</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>Shoots: January 2025</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <span className="text-sm text-gray-500">Match Score</span>
-                  <span className="text-2xl font-bold text-green-600">87%</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Success Story Timeline */}
-      <section className="py-20 bg-gradient-to-br from-purple-50 to-blue-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">How Sarah Landed Her Netflix Role</h2>
-            <p className="text-xl text-gray-600">From auto-submission to booking in 8 days</p>
-          </div>
-
-          <div className="max-w-4xl mx-auto">
-            <div className="relative">
-              {/* Timeline Line */}
-              <div className="absolute left-8 top-0 bottom-0 w-1 bg-purple-200"></div>
-
-              {/* Timeline Item 1 */}
-              <div className="relative flex gap-6 mb-12">
-                <div className="flex-shrink-0">
-                  <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold z-10 relative">
-                    Day 1
-                  </div>
-                </div>
-                <Card className="flex-1">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-3">
-                      <Zap className="h-6 w-6 text-amber-500 flex-shrink-0 mt-1" />
-                      <div>
-                        <h3 className="font-bold text-lg mb-2">Auto-Submitted at 2:00 AM</h3>
-                        <p className="text-gray-600 mb-3">
-                          While Sarah was sleeping, our system found a Netflix series casting call that matched her profile at 92%. 
-                          We automatically submitted her headshot, resume, and reel.
-                        </p>
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                          <p className="text-sm text-green-800 font-semibold">
-                            ✓ Match Score: 92% • Lead Role • $5,000/week
-                          </p>
-                        </div>
+              {/* Visual representation of auto-submissions */}
+              <div className="relative h-[500px]">
+                {/* Card 3 - Background */}
+                <div className="absolute top-0 right-0 w-80 transform rotate-6 opacity-40">
+                  <div className="bg-white rounded-xl shadow-2xl p-6 border-2 border-purple-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                        COMMERCIAL
+                      </span>
+                      <div className="flex items-center gap-2 bg-amber-50 px-3 py-1 rounded-full">
+                        <Zap className="h-4 w-4 text-amber-600" />
+                        <span className="text-sm font-semibold text-amber-700">Auto</span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Timeline Item 2 */}
-              <div className="relative flex gap-6 mb-12">
-                <div className="flex-shrink-0">
-                  <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold z-10 relative">
-                    Day 3
-                  </div>
-                </div>
-                <Card className="flex-1">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-3">
-                      <Mail className="h-6 w-6 text-blue-500 flex-shrink-0 mt-1" />
-                      <div>
-                        <h3 className="font-bold text-lg mb-2">Callback Request</h3>
-                        <p className="text-gray-600 mb-3">
-                          Sarah received an email from the casting director requesting a self-tape audition. 
-                          She had 48 hours to submit her audition video.
-                        </p>
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                          <p className="text-sm text-blue-800">
-                            "Your profile stood out among hundreds of submissions. We'd love to see your take on this character."
-                          </p>
-                        </div>
+                    <h3 className="text-lg font-bold mb-2 text-gray-900">National Commercial</h3>
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        <span>New York, NY</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        <span>$2,500</span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Timeline Item 3 */}
-              <div className="relative flex gap-6 mb-12">
-                <div className="flex-shrink-0">
-                  <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold z-10 relative">
-                    Day 5
                   </div>
                 </div>
-                <Card className="flex-1">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-3">
-                      <Target className="h-6 w-6 text-purple-500 flex-shrink-0 mt-1" />
-                      <div>
-                        <h3 className="font-bold text-lg mb-2">In-Person Audition</h3>
-                        <p className="text-gray-600 mb-3">
-                          Her self-tape was well-received. Sarah was invited for an in-person chemistry read with the series lead 
-                          at the Netflix production office.
-                        </p>
+
+                {/* Card 2 - Middle */}
+                <div className="absolute top-12 right-8 w-80 transform rotate-3 opacity-70">
+                  <div className="bg-white rounded-xl shadow-2xl p-6 border-2 border-purple-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                        SUPPORTING
+                      </span>
+                      <div className="flex items-center gap-2 bg-amber-50 px-3 py-1 rounded-full">
+                        <Zap className="h-4 w-4 text-amber-600" />
+                        <span className="text-sm font-semibold text-amber-700">Auto</span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Timeline Item 4 */}
-              <div className="relative flex gap-6">
-                <div className="flex-shrink-0">
-                  <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center text-white z-10 relative">
-                    <Check className="h-8 w-8" />
+                    <h3 className="text-lg font-bold mb-2 text-gray-900">HBO Series</h3>
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        <span>Atlanta, GA</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        <span>$3,000/episode</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <Card className="flex-1 border-2 border-green-200">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-3">
-                      <Star className="h-6 w-6 text-yellow-500 flex-shrink-0 mt-1" />
-                      <div>
-                        <h3 className="font-bold text-lg mb-2 text-green-700">Booked the Role!</h3>
-                        <p className="text-gray-600 mb-3">
-                          Sarah received the offer on Day 8. She's now filming her first Netflix series as a recurring character 
-                          with a contract for 6 episodes.
-                        </p>
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                          <p className="text-sm text-green-800 font-semibold mb-2">
-                            💰 Total Earnings: $30,000
-                          </p>
-                          <p className="text-sm text-gray-700 italic">
-                            "I never would have seen this casting call on my own. CastingCompanion literally changed my career."
-                          </p>
-                        </div>
+
+                {/* Card 1 - Front */}
+                <div className="absolute top-24 right-16 w-80 transform hover:scale-105 transition-transform">
+                  <div className="bg-white rounded-xl shadow-2xl p-6 border-2 border-purple-500">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
+                        LEAD ROLE
+                      </span>
+                      <div className="flex items-center gap-2 bg-amber-50 px-3 py-1 rounded-full animate-pulse">
+                        <Zap className="h-4 w-4 text-amber-600" />
+                        <span className="text-sm font-semibold text-amber-700">Auto-Submitted</span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    <h3 className="text-xl font-bold mb-2 text-gray-900">Netflix Series</h3>
+                    <p className="text-gray-600 mb-4 text-sm">Drama series seeking diverse cast</p>
+                    <div className="space-y-2 text-sm text-gray-600 mb-4">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        <span>Los Angeles, CA</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        <span>$5,000/week</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <span>Shoots: March 2025</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <span className="text-sm text-gray-500">Match Score</span>
+                      <span className="text-2xl font-bold text-green-600">92%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating badge */}
+                <div className="absolute bottom-0 left-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl shadow-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                      <Zap className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold">3 submissions</div>
+                      <div className="text-sm text-purple-100">in the last 24 hours</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
