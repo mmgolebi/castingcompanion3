@@ -343,7 +343,7 @@ export default function Step4Page() {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm md:text-base text-blue-900">
-                  <strong>You're almost there!</strong> Once you complete this step, you'll activate your $1 full-access trial of Casting Companion. This gives you automatic submissions to roles that match your selections, plus instant access to hundreds of new casting calls you can apply to anytime.
+                  <strong>⏰ Limited Offer: Only 47 spots left at $1!</strong><br/><br/>You're one step away from unlocking 14-day full access for just $1 (regular price $39.97/month). Get automatic submissions to matching roles + instant access to hundreds of casting calls. <strong>This promotional rate won't last long!</strong>
                 </p>
               </div>
 
