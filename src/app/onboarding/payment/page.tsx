@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { AlertCircle, CheckCircle2, Star, Zap } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Star, Zap, Shield, Lock, RotateCcw } from 'lucide-react';
 import { EmbeddedCheckoutComponent } from '@/components/embedded-checkout';
 import { useRouter } from 'next/navigation';
 
@@ -71,7 +71,7 @@ export default function PaymentPage() {
           </div>
         )}
 
-        <Card className="mb-8">
+        <Card className="mb-6">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">14-Day Full Access - Just $1</CardTitle>
             <CardDescription className="text-base">
@@ -82,6 +82,39 @@ export default function PaymentPage() {
             <EmbeddedCheckoutComponent onError={setCheckoutError} />
           </CardContent>
         </Card>
+
+        {/* Trust Badges */}
+        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mb-3">
+                <Lock className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-white font-semibold mb-1">Secure Payment</h3>
+              <p className="text-gray-300 text-sm">
+                256-bit SSL encryption via Stripe
+              </p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-3">
+                <RotateCcw className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-white font-semibold mb-1">Money-Back Guarantee</h3>
+              <p className="text-gray-300 text-sm">
+                Not satisfied? Full refund within 14 days
+              </p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mb-3">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-white font-semibold mb-1">Cancel Anytime</h3>
+              <p className="text-gray-300 text-sm">
+                No contracts, no hassle - cancel in 1 click
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Testimonials Section */}
         <div className="mb-8">
