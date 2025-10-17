@@ -30,134 +30,27 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section with Casting Cards */}
-      <section className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white py-20 overflow-hidden">
+      {/* Hero Section - Clean and Centered */}
+      <section className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white py-32">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h1 className="text-5xl font-bold mb-6">
-                Never Miss a{' '}
-                <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                  Perfect Casting Call
-                </span>{' '}
-                Again
-              </h1>
-              <p className="text-xl mb-8 text-gray-300">
-                We automatically submit your profile to casting calls that match your criteria. 
-                Stop manually searching and applying. Let opportunities find you.
-              </p>
-              <div className="flex gap-4">
-                <Link href="/auth/register">
-                  <Button size="lg" className="text-lg bg-white text-purple-600 hover:bg-gray-100">
-                    Get Started Today
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            <div className="relative">
-              {/* Visual representation of auto-submissions */}
-              <div className="relative h-[500px]">
-                {/* Card 3 - Background */}
-                <div className="absolute top-0 right-0 w-80 transform rotate-6 opacity-40">
-                  <div className="bg-white rounded-xl shadow-2xl p-6 border-2 border-purple-200">
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-                        COMMERCIAL
-                      </span>
-                      <div className="flex items-center gap-2 bg-amber-50 px-3 py-1 rounded-full">
-                        <Zap className="h-4 w-4 text-amber-600" />
-                        <span className="text-sm font-semibold text-amber-700">Auto</span>
-                      </div>
-                    </div>
-                    <h3 className="text-lg font-bold mb-2 text-gray-900">National Commercial</h3>
-                    <div className="space-y-2 text-sm text-gray-600">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>New York, NY</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4" />
-                        <span>$2,500</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card 2 - Middle */}
-                <div className="absolute top-12 right-8 w-80 transform rotate-3 opacity-70">
-                  <div className="bg-white rounded-xl shadow-2xl p-6 border-2 border-purple-200">
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-                        SUPPORTING
-                      </span>
-                      <div className="flex items-center gap-2 bg-amber-50 px-3 py-1 rounded-full">
-                        <Zap className="h-4 w-4 text-amber-600" />
-                        <span className="text-sm font-semibold text-amber-700">Auto</span>
-                      </div>
-                    </div>
-                    <h3 className="text-lg font-bold mb-2 text-gray-900">HBO Series</h3>
-                    <div className="space-y-2 text-sm text-gray-600">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>Atlanta, GA</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4" />
-                        <span>$3,000/episode</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card 1 - Front */}
-                <div className="absolute top-24 right-16 w-80 transform hover:scale-105 transition-transform">
-                  <div className="bg-white rounded-xl shadow-2xl p-6 border-2 border-purple-500">
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
-                        LEAD ROLE
-                      </span>
-                      <div className="flex items-center gap-2 bg-amber-50 px-3 py-1 rounded-full animate-pulse">
-                        <Zap className="h-4 w-4 text-amber-600" />
-                        <span className="text-sm font-semibold text-amber-700">Auto-Submitted</span>
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-bold mb-2 text-gray-900">Netflix Series</h3>
-                    <p className="text-gray-600 mb-4 text-sm">Drama series seeking diverse cast</p>
-                    <div className="space-y-2 text-sm text-gray-600 mb-4">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>Los Angeles, CA</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4" />
-                        <span>$5,000/week</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>Shoots: March 2025</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pt-4 border-t">
-                      <span className="text-sm text-gray-500">Match Score</span>
-                      <span className="text-2xl font-bold text-green-600">92%</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Floating badge */}
-                <div className="absolute bottom-0 left-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl shadow-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                      <Zap className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold">3 submissions</div>
-                      <div className="text-sm text-purple-100">in the last 24 hours</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+              Never Miss a{' '}
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                Perfect Casting Call
+              </span>{' '}
+              Again
+            </h1>
+            <p className="text-xl md:text-2xl mb-10 text-gray-300 max-w-3xl mx-auto">
+              We automatically submit your profile to casting calls that match your criteria. 
+              Stop manually searching and applying. Let opportunities find you.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/auth/register">
+                <Button size="lg" className="text-lg bg-white text-purple-600 hover:bg-gray-100 px-8 py-6">
+                  Get Started Today
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
