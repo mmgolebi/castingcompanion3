@@ -279,10 +279,10 @@ function ApplyPageContent() {
             <div className="max-w-md mx-auto">
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  Complete Your Application
+                  Complete Your Euphoria Application
                 </h2>
                 <p className="text-gray-600 text-lg">
-                  Create your actor profile and get matched to roles instantly
+                  Create your actor profile and get submitted to the Euphoria casting call PLUS dozens of other matching roles automatically
                 </p>
               </div>
 
