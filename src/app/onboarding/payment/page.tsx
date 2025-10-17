@@ -60,7 +60,7 @@ export default function PaymentPage() {
             <span className="text-purple-300 font-semibold"> plus hundreds of other matching roles</span> - all on autopilot.
           </p>
           <p className="text-base md:text-lg text-gray-300">
-            Complete payment to activate your 14-day trial for just $1
+            Complete payment to activate your 14-day full access for just $1
           </p>
         </div>
         
@@ -73,9 +73,9 @@ export default function PaymentPage() {
 
         <Card className="mb-8">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">14-Day Trial - Just $1</CardTitle>
+            <CardTitle className="text-2xl">14-Day Full Access - Just $1</CardTitle>
             <CardDescription className="text-base">
-              Then $39.97/month after trial • Cancel anytime
+              Then $39.97/month • Cancel anytime
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
