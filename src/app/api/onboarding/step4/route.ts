@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { addGHLTag } from '@/lib/ghl';
 
 export async function POST(req: Request) {
   try {
@@ -32,6 +33,11 @@ export async function POST(req: Request) {
         compensationPreference: data.compensationPreference,
         compensationMin: data.compensationMin,
       },
+    });
+
+    // Add GHL tag (non-blocking)
+    addGHLTag(session.user.email, 'step4-complete').catch(error => {
+      console.error('GHL tag failed (non-blocking):', error);
     });
 
     return NextResponse.json({ success: true });

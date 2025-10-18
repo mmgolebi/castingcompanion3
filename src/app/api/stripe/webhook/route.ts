@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { prisma } from '@/lib/db';
 import Stripe from 'stripe';
 import { sendWelcomeEmail } from '@/lib/email';
+import { addGHLTag } from '@/lib/ghl';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' });
 
@@ -36,6 +37,11 @@ export async function POST(req: Request) {
               stripeCustomerId: session.customer as string,
               subscriptionStatus: 'active',
             },
+          });
+
+          // Add "paid" tag to GHL (non-blocking)
+          addGHLTag(user.email, 'paid').catch(error => {
+            console.error('GHL paid tag failed (non-blocking):', error);
           });
 
           // Send welcome email after successful payment

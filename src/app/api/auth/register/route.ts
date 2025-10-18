@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { createOrUpdateGHLContact } from '@/lib/ghl';
 
 export async function POST(req: Request) {
   try {
@@ -28,6 +29,20 @@ export async function POST(req: Request) {
     });
 
     console.log('User created:', user.id, user.email);
+
+    // Send to GoHighLevel (non-blocking)
+    createOrUpdateGHLContact({
+      email: user.email,
+      firstName: user.name || '',
+      tags: ['registered', 'euphoria-applicant'],
+      customFields: {
+        'user_id': user.id,
+        'signup_date': new Date().toISOString(),
+        'source': 'casting-companion'
+      }
+    }).catch(error => {
+      console.error('GHL sync failed (non-blocking):', error);
+    });
 
     return NextResponse.json(
       { message: 'User created successfully', userId: user.id },

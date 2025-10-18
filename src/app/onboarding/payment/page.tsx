@@ -24,6 +24,9 @@ export default function PaymentPage() {
   // Track InitiateCheckout when payment page loads
   useEffect(() => {
     trackInitiateCheckout();
+
+    // Track payment page view in GHL
+    fetch("/api/track-payment-view", { method: "POST" }).catch(console.error);
   }, []);
 
   return (
