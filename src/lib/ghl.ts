@@ -22,34 +22,37 @@ export async function createOrUpdateGHLContact(contact: GHLContact) {
     const [firstName, ...lastNameParts] = (contact.firstName || '').split(' ');
     const lastName = lastNameParts.join(' ') || contact.lastName || '';
 
+    console.log('Sending to GHL:', { email: contact.email, firstName, tags: contact.tags });
+
     const response = await fetch(
-      `https://services.leadconnectorhq.com/contacts/`,
+      `https://rest.gohighlevel.com/v1/contacts/`,
       {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${GHL_API_KEY}`,
           'Content-Type': 'application/json',
-          'Version': '2021-07-28',
         },
         body: JSON.stringify({
-          locationId: GHL_LOCATION_ID,
           email: contact.email,
           firstName: firstName || 'Unknown',
           lastName: lastName || '',
           phone: contact.phone || '',
           tags: contact.tags || [],
-          customFields: contact.customFields || {},
+          customField: contact.customFields || {},
         }),
       }
     );
 
+    const responseText = await response.text();
+    console.log('GHL Response status:', response.status);
+    console.log('GHL Response body:', responseText);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('GHL API error:', errorText);
+      console.error('GHL API error:', responseText);
       return null;
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
     console.log('GHL contact created/updated:', data);
     return data;
   } catch (error) {
@@ -60,77 +63,39 @@ export async function createOrUpdateGHLContact(contact: GHLContact) {
 
 export async function addGHLTag(email: string, tag: string) {
   const GHL_API_KEY = process.env.GHL_API_KEY;
-  const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID;
 
-  if (!GHL_API_KEY || !GHL_LOCATION_ID) {
+  if (!GHL_API_KEY) {
     return null;
   }
 
   try {
-    // First, find the contact by email
-    const searchResponse = await fetch(
-      `https://services.leadconnectorhq.com/contacts/search/duplicate?locationId=${GHL_LOCATION_ID}&email=${encodeURIComponent(email)}`,
+    console.log('Adding GHL tag:', tag, 'to', email);
+
+    // Try to add contact with tag (will update if exists)
+    const response = await fetch(
+      `https://rest.gohighlevel.com/v1/contacts/`,
       {
-        headers: {
-          'Authorization': `Bearer ${GHL_API_KEY}`,
-          'Version': '2021-07-28',
-        },
-      }
-    );
-
-    if (!searchResponse.ok) {
-      console.error('GHL search error:', await searchResponse.text());
-      return null;
-    }
-
-    const searchData = await searchResponse.json();
-    const contactId = searchData.contact?.id;
-
-    if (!contactId) {
-      console.warn('Contact not found in GHL:', email);
-      return null;
-    }
-
-    // Get existing tags
-    const contactResponse = await fetch(
-      `https://services.leadconnectorhq.com/contacts/${contactId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${GHL_API_KEY}`,
-          'Version': '2021-07-28',
-        },
-      }
-    );
-
-    const contactData = await contactResponse.json();
-    const existingTags = contactData.contact?.tags || [];
-
-    // Add new tag to existing tags
-    const updatedTags = [...new Set([...existingTags, tag])];
-
-    // Update contact with new tags
-    const updateResponse = await fetch(
-      `https://services.leadconnectorhq.com/contacts/${contactId}`,
-      {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${GHL_API_KEY}`,
           'Content-Type': 'application/json',
-          'Version': '2021-07-28',
         },
         body: JSON.stringify({
-          tags: updatedTags,
+          email: email,
+          tags: [tag],
         }),
       }
     );
 
-    if (!updateResponse.ok) {
-      console.error('GHL update error:', await updateResponse.text());
+    const responseText = await response.text();
+    console.log('GHL tag response:', response.status, responseText);
+
+    if (!response.ok) {
+      console.error('GHL tag error:', responseText);
       return null;
     }
 
-    console.log('GHL tag added:', tag, 'to', email);
-    return await updateResponse.json();
+    return JSON.parse(responseText);
   } catch (error) {
     console.error('Error adding GHL tag:', error);
     return null;
