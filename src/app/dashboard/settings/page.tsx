@@ -22,8 +22,18 @@ export default async function SettingsPage() {
     },
   });
 
-  // Check if user has an active or trialing subscription
-  const isActive = user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing';
+  // Determine status display
+  const getStatusDisplay = () => {
+    if (user?.subscriptionStatus === 'active') {
+      return { label: '✓ Active', color: 'bg-green-100 text-green-800' };
+    } else if (user?.subscriptionStatus === 'trialing') {
+      return { label: '✓ Trialing', color: 'bg-blue-100 text-blue-800' };
+    } else {
+      return { label: 'Inactive', color: 'bg-gray-100 text-gray-800' };
+    }
+  };
+
+  const status = getStatusDisplay();
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -67,12 +77,8 @@ export default async function SettingsPage() {
             <div>
               <label className="text-sm font-medium text-gray-700">Status</label>
               <div className="flex items-center gap-2 mt-1">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  isActive 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {isActive ? '✓ Active' : 'Inactive'}
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
+                  {status.label}
                 </span>
               </div>
             </div>
