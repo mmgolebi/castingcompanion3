@@ -7,10 +7,18 @@ import { addGHLTag } from '@/lib/ghl';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' });
 
+// CRITICAL: Tell Next.js not to parse the body
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
-  const body = await req.text();
+  const body = await req.text(); // Get raw text body
   const headersList = await headers();
-  const signature = headersList.get('stripe-signature')!;
+  const signature = headersList.get('stripe-signature');
+
+  if (!signature) {
+    console.error('No stripe-signature header found');
+    return NextResponse.json({ error: 'No signature' }, { status: 400 });
+  }
 
   let event: Stripe.Event;
 
