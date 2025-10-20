@@ -2,9 +2,9 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { redirect } from 'next/navigation';
+import { UserNav } from '@/components/user-nav';
 
 async function signOutAction() {
   'use server';
@@ -57,12 +57,11 @@ export default async function DashboardLayout({
             <Link href="/dashboard/profile">
               <Button variant="ghost">Profile</Button>
             </Link>
-            <form action={signOutAction}>
-              <Button variant="ghost" type="submit">
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </form>
+            <UserNav 
+              userName={session.user.name || 'User'} 
+              userEmail={session.user.email || ''} 
+              signOutAction={signOutAction}
+            />
           </div>
         </div>
       </nav>
