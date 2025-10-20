@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { createOrUpdateGHLContact } from '@/lib/ghl';
 
 export async function POST(req: Request) {
   try {
@@ -78,6 +79,17 @@ export async function POST(req: Request) {
         },
       });
       console.log('Step 1: Profile created:', newProfile.id);
+    }
+
+    // Update GHL contact with phone number (non-blocking)
+    if (data.phone) {
+      createOrUpdateGHLContact({
+        email: session.user.email,
+        firstName: data.name || updatedUser.name || '',
+        phone: data.phone,
+      }).catch(error => {
+        console.error('GHL phone update failed (non-blocking):', error);
+      });
     }
 
     console.log('Step 1: Success!');
