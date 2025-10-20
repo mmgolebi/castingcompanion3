@@ -22,6 +22,9 @@ export default async function SettingsPage() {
     },
   });
 
+  // Check if user has an active or trialing subscription
+  const isActive = user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing';
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
@@ -65,11 +68,11 @@ export default async function SettingsPage() {
               <label className="text-sm font-medium text-gray-700">Status</label>
               <div className="flex items-center gap-2 mt-1">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  user?.subscriptionStatus === 'active' 
+                  isActive 
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-gray-100 text-gray-800'
                 }`}>
-                  {user?.subscriptionStatus === 'active' ? '✓ Active' : 'Inactive'}
+                  {isActive ? '✓ Active' : 'Inactive'}
                 </span>
               </div>
             </div>
