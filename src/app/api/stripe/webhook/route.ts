@@ -25,10 +25,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
+  console.log('Stripe webhook received:', event.type);
+
   try {
     switch (event.type) {
       case 'checkout.session.completed':
         const session = event.data.object as Stripe.Checkout.Session;
+        
+        console.log('Checkout completed for user:', session.metadata?.userId);
         
         if (session.metadata?.userId) {
           const user = await prisma.user.update({
@@ -39,10 +43,16 @@ export async function POST(req: Request) {
             },
           });
 
+          console.log('User updated, adding GHL paid tag to:', user.email);
+
           // Add "paid" tag to GHL (non-blocking)
-          addGHLTag(user.email, 'paid').catch(error => {
-            console.error('GHL paid tag failed (non-blocking):', error);
-          });
+          addGHLTag(user.email, 'paid')
+            .then(() => {
+              console.log('GHL paid tag added successfully for:', user.email);
+            })
+            .catch(error => {
+              console.error('GHL paid tag failed for', user.email, ':', error);
+            });
 
           // Send welcome email after successful payment
           try {
@@ -51,12 +61,16 @@ export async function POST(req: Request) {
           } catch (emailError) {
             console.error('Failed to send welcome email:', emailError);
           }
+        } else {
+          console.error('No userId in session metadata');
         }
         break;
 
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted':
         const subscription = event.data.object as Stripe.Subscription;
+        
+        console.log('Subscription event:', event.type, 'for customer:', subscription.customer);
         
         await prisma.user.updateMany({
           where: { stripeCustomerId: subscription.customer as string },
