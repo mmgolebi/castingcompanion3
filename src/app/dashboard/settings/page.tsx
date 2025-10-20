@@ -2,8 +2,8 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { CreditCard, User, Bell } from 'lucide-react';
+import { CreditCard, User } from 'lucide-react';
+import { ManageMembershipButton } from '@/components/manage-membership-button';
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -75,12 +75,7 @@ export default async function SettingsPage() {
             </div>
 
             {user?.stripeCustomerId && (
-              <form action="/api/stripe/customer-portal" method="POST">
-                <Button type="submit" variant="outline" className="w-full sm:w-auto">
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Manage Membership
-                </Button>
-              </form>
+              <ManageMembershipButton />
             )}
           </CardContent>
         </Card>

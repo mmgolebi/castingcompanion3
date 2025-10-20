@@ -28,7 +28,8 @@ export async function POST(req: Request) {
       return_url: `${process.env.NEXTAUTH_URL}/dashboard/settings`,
     });
 
-    return NextResponse.redirect(portalSession.url);
+    // Return the URL so the frontend can redirect
+    return NextResponse.json({ url: portalSession.url });
   } catch (error) {
     console.error('Error creating portal session:', error);
     return NextResponse.json({ error: 'Failed to create portal session' }, { status: 500 });
