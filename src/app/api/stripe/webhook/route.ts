@@ -16,7 +16,6 @@ export async function POST(req: Request) {
   try {
     body = await req.text();
     console.log('[WEBHOOK] Body length:', body.length);
-    console.log('[WEBHOOK] Body first 100 chars:', body.substring(0, 100));
   } catch (error) {
     console.error('[WEBHOOK] Failed to read body:', error);
     return NextResponse.json({ error: 'Failed to read body' }, { status: 400 });
@@ -26,8 +25,6 @@ export async function POST(req: Request) {
   const signature = headersList.get('stripe-signature');
 
   console.log('[WEBHOOK] Signature present:', !!signature);
-  console.log('[WEBHOOK] Webhook secret present:', !!process.env.STRIPE_WEBHOOK_SECRET);
-  console.log('[WEBHOOK] Webhook secret length:', process.env.STRIPE_WEBHOOK_SECRET?.length);
 
   if (!signature) {
     console.error('[WEBHOOK] No stripe-signature header found');
@@ -46,8 +43,6 @@ export async function POST(req: Request) {
     console.log('[WEBHOOK] Signature verified! Event type:', event.type);
   } catch (err: any) {
     console.error('[WEBHOOK] Signature verification failed:', err.message);
-    console.error('[WEBHOOK] Error type:', err.type);
-    console.error('[WEBHOOK] Full error:', err);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
@@ -71,7 +66,12 @@ export async function POST(req: Request) {
 
           console.log('[WEBHOOK] User updated, adding GHL paid tag to:', user.email);
 
-          addGHLTag(user.email, 'paid')
+          // Add paid tag with all cumulative tags
+          addGHLTag(
+            user.email, 
+            'paid',
+            ['registered', 'euphoria-applicant', 'step4-complete', 'payment-page-viewed', 'paid'] // All tags
+          )
             .then(() => {
               console.log('[WEBHOOK] GHL paid tag added successfully for:', user.email);
             })
