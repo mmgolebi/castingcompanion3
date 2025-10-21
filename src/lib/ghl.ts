@@ -22,7 +22,25 @@ export async function createOrUpdateGHLContact(contact: GHLContact) {
     const [firstName, ...lastNameParts] = (contact.firstName || '').split(' ');
     const lastName = lastNameParts.join(' ') || contact.lastName || '';
 
-    console.log('Sending to GHL:', { email: contact.email, firstName, tags: contact.tags });
+    // Format phone with +1 if it doesn't have it
+    let formattedPhone = contact.phone || '';
+    if (formattedPhone && !formattedPhone.startsWith('+')) {
+      // Remove all non-digits
+      const digitsOnly = formattedPhone.replace(/\D/g, '');
+      // Add +1 for US/Canada numbers
+      if (digitsOnly.length === 10) {
+        formattedPhone = `+1${digitsOnly}`;
+      } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+        formattedPhone = `+${digitsOnly}`;
+      }
+    }
+
+    console.log('Sending to GHL:', { 
+      email: contact.email, 
+      firstName, 
+      phone: formattedPhone,
+      tags: contact.tags 
+    });
 
     const response = await fetch(
       `https://rest.gohighlevel.com/v1/contacts/`,
@@ -36,7 +54,7 @@ export async function createOrUpdateGHLContact(contact: GHLContact) {
           email: contact.email,
           firstName: firstName || 'Unknown',
           lastName: lastName || '',
-          phone: contact.phone || '',
+          phone: formattedPhone,
           tags: contact.tags || [],
           customField: contact.customFields || {},
         }),
