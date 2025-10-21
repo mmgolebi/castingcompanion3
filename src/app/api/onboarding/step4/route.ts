@@ -35,8 +35,12 @@ export async function POST(req: Request) {
       },
     });
 
-    // Add GHL tag (non-blocking)
-    addGHLTag(session.user.email, 'step4-complete').catch(error => {
+    // Add GHL tag with all cumulative tags (non-blocking)
+    addGHLTag(
+      session.user.email, 
+      'step4-complete',
+      ['registered', 'euphoria-applicant', 'step4-complete'] // Send all tags
+    ).catch(error => {
       console.error('GHL tag failed (non-blocking):', error);
     });
 

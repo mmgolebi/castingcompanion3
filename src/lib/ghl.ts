@@ -9,36 +9,6 @@ interface GHLContact {
   customFields?: Record<string, string>;
 }
 
-// Helper function to get existing contact
-async function getExistingContact(email: string, apiKey: string) {
-  try {
-    console.log('[GHL] Looking up existing contact:', email);
-    const response = await fetch(
-      `https://rest.gohighlevel.com/v1/contacts/lookup?email=${encodeURIComponent(email)}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-        },
-      }
-    );
-
-    console.log('[GHL] Lookup response status:', response.status);
-    const responseText = await response.text();
-    console.log('[GHL] Lookup response body:', responseText);
-
-    if (response.ok) {
-      const data = JSON.parse(responseText);
-      console.log('[GHL] Found existing contact with tags:', data.contact?.tags);
-      return data.contact;
-    }
-    console.log('[GHL] Lookup failed or contact not found');
-    return null;
-  } catch (error) {
-    console.error('[GHL] Error looking up contact:', error);
-    return null;
-  }
-}
-
 export async function createOrUpdateGHLContact(contact: GHLContact) {
   const GHL_API_KEY = process.env.GHL_API_KEY;
   const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID;
@@ -63,20 +33,11 @@ export async function createOrUpdateGHLContact(contact: GHLContact) {
       }
     }
 
-    // Get existing contact to preserve tags
-    const existingContact = await getExistingContact(contact.email, GHL_API_KEY);
-    const existingTags = existingContact?.tags || [];
-    
-    // Merge new tags with existing tags (remove duplicates)
-    const mergedTags = [...new Set([...existingTags, ...(contact.tags || [])])];
-
     console.log('Sending to GHL:', { 
       email: contact.email, 
       firstName, 
       phone: formattedPhone,
-      existingTags,
-      newTags: contact.tags,
-      mergedTags
+      tags: contact.tags
     });
 
     const response = await fetch(
@@ -92,7 +53,7 @@ export async function createOrUpdateGHLContact(contact: GHLContact) {
           firstName: firstName || 'Unknown',
           lastName: lastName || '',
           phone: formattedPhone,
-          tags: mergedTags,
+          tags: contact.tags || [],
           customField: contact.customFields || {},
         }),
       }
@@ -116,7 +77,7 @@ export async function createOrUpdateGHLContact(contact: GHLContact) {
   }
 }
 
-export async function addGHLTag(email: string, tag: string) {
+export async function addGHLTag(email: string, tag: string, allTags?: string[]) {
   const GHL_API_KEY = process.env.GHL_API_KEY;
 
   if (!GHL_API_KEY) {
@@ -125,17 +86,11 @@ export async function addGHLTag(email: string, tag: string) {
 
   try {
     console.log('[GHL] Adding tag:', tag, 'to', email);
-
-    // Get existing contact to preserve tags
-    const existingContact = await getExistingContact(email, GHL_API_KEY);
-    const existingTags = existingContact?.tags || [];
     
-    console.log('[GHL] Existing tags before adding:', existingTags);
-    
-    // Add new tag to existing tags
-    const updatedTags = [...new Set([...existingTags, tag])];
+    // If allTags provided, use them; otherwise just send the new tag
+    const tagsToSend = allTags || [tag];
 
-    console.log('[GHL] Updated tags to send:', updatedTags);
+    console.log('[GHL] Sending tags:', tagsToSend);
 
     const response = await fetch(
       `https://rest.gohighlevel.com/v1/contacts/`,
@@ -147,7 +102,7 @@ export async function addGHLTag(email: string, tag: string) {
         },
         body: JSON.stringify({
           email: email,
-          tags: updatedTags,
+          tags: tagsToSend,
         }),
       }
     );

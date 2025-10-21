@@ -9,10 +9,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Add GHL tag (non-blocking)
-    addGHLTag(session.user.email, 'payment-page-viewed').catch(error => {
-      console.error('GHL tag failed (non-blocking):', error);
-    });
+    // Add GHL tag with all cumulative tags (non-blocking)
+    addGHLTag(
+      session.user.email, 
+      'payment-page-viewed',
+      ['registered', 'euphoria-applicant', 'step4-complete', 'payment-page-viewed'] // Send all tags
+    ).catch(console.error);
 
     return NextResponse.json({ success: true });
   } catch (error) {
