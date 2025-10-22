@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import Stripe from 'stripe';
 import { sendWelcomeEmail } from '@/lib/email';
 import { addGHLTag } from '@/lib/ghl';
+import { trackPaymentFunnel } from '@/lib/metrics';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' });
 
@@ -66,11 +67,14 @@ export async function POST(req: Request) {
 
           console.log('[WEBHOOK] User updated, adding GHL paid tag to:', user.email);
 
+          // Track successful payment
+          trackPaymentFunnel('success', user.id);
+
           // Add paid tag with all cumulative tags
           addGHLTag(
             user.email, 
             'paid',
-            ['registered', 'euphoria-applicant', 'step4-complete', 'payment-page-viewed', 'paid'] // All tags
+            ['registered', 'euphoria-applicant', 'step4-complete', 'payment-page-viewed', 'paid']
           )
             .then(() => {
               console.log('[WEBHOOK] GHL paid tag added successfully for:', user.email);

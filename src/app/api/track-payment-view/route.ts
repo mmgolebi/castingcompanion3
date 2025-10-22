@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { addGHLTag } from '@/lib/ghl';
+import { trackPaymentFunnel } from '@/lib/metrics';
 
 export async function POST(req: Request) {
   try {
@@ -9,11 +10,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Track payment page view
+    trackPaymentFunnel('page_view', session.user.id || session.user.email);
+
     // Add GHL tag with all cumulative tags (non-blocking)
     addGHLTag(
       session.user.email, 
       'payment-page-viewed',
-      ['registered', 'euphoria-applicant', 'step4-complete', 'payment-page-viewed'] // Send all tags
+      ['registered', 'euphoria-applicant', 'step4-complete', 'payment-page-viewed']
     ).catch(console.error);
 
     return NextResponse.json({ success: true });
