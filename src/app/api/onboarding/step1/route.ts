@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     // Update or create profile
     if (user.profile) {
       console.log('Step 1: Updating existing profile:', user.profile.id);
-      const updatedProfile = await prisma.profile.update({
+      await prisma.profile.update({
         where: { id: user.profile.id },
         data: {
           phone: data.phone,
@@ -58,10 +58,10 @@ export async function POST(req: Request) {
           unionStatus: data.unionStatus,
         },
       });
-      console.log('Step 1: Profile updated:', updatedProfile.id);
+      console.log('Step 1: Profile updated:', user.profile.id);
     } else {
       console.log('Step 1: Creating new profile');
-      const newProfile = await prisma.profile.create({
+      await prisma.profile.create({
         data: {
           userId: user.id,
           phone: data.phone,
@@ -78,24 +78,24 @@ export async function POST(req: Request) {
           unionStatus: data.unionStatus,
         },
       });
-      console.log('Step 1: Profile created:', newProfile.id);
+      console.log('Step 1: Profile created');
     }
 
-    // Update GHL contact with phone number AND preserve existing tags (non-blocking)
+    // Update GHL contact with phone - AWAIT to ensure it completes
     console.log('Step 1: Syncing to GHL - Phone:', data.phone, 'Email:', session.user.email);
     if (data.phone) {
-      createOrUpdateGHLContact({
-        email: session.user.email,
-        firstName: data.name || updatedUser.name || '',
-        phone: data.phone,
-        tags: ['registered', 'euphoria-applicant'], // Include tags
-      })
-        .then((result) => {
-          console.log('Step 1: GHL sync successful:', result);
-        })
-        .catch(error => {
-          console.error('Step 1: GHL phone update failed (non-blocking):', error);
+      try {
+        const result = await createOrUpdateGHLContact({
+          email: session.user.email,
+          firstName: data.name || updatedUser.name || '',
+          phone: data.phone,
+          tags: ['registered', 'euphoria-applicant'],
         });
+        console.log('Step 1: GHL sync successful:', result);
+      } catch (error) {
+        console.error('Step 1: GHL phone update failed:', error);
+        // Don't fail the whole request if GHL fails
+      }
     } else {
       console.log('Step 1: No phone provided, skipping GHL sync');
     }
