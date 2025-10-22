@@ -3,51 +3,83 @@ import * as Sentry from '@sentry/nextjs';
 // Track registration attempts and success
 export function trackRegistration(success: boolean, error?: string) {
   if (success) {
-    Sentry.metrics.increment('registration.success', 1);
+    Sentry.captureMessage('Registration Success', {
+      level: 'info',
+      tags: { event_type: 'registration', status: 'success' }
+    });
   } else {
-    Sentry.metrics.increment('registration.failure', 1);
-    if (error) {
-      Sentry.captureMessage(`Registration failed: ${error}`, 'warning');
-    }
+    Sentry.captureMessage(`Registration Failed: ${error || 'Unknown error'}`, {
+      level: 'warning',
+      tags: { event_type: 'registration', status: 'failure' }
+    });
   }
 }
 
 // Track GHL sync attempts and success
 export function trackGHLSync(type: 'registration' | 'phone' | 'tag', success: boolean, email: string, error?: string) {
-  const metricName = `ghl.${type}.${success ? 'success' : 'failure'}`;
-  
-  Sentry.metrics.increment(metricName, 1);
-  
-  if (!success && error) {
-    Sentry.captureException(new Error(`GHL ${type} sync failed for ${email}: ${error}`), {
+  if (success) {
+    Sentry.captureMessage(`GHL ${type} sync success`, {
+      level: 'info',
+      tags: { 
+        event_type: 'ghl_sync', 
+        sync_type: type, 
+        status: 'success' 
+      },
+      extra: { email }
+    });
+  } else {
+    Sentry.captureException(new Error(`GHL ${type} sync failed: ${error}`), {
       tags: {
+        event_type: 'ghl_sync',
         sync_type: type,
-        email: email,
-      }
+        status: 'failure'
+      },
+      extra: { email }
     });
   }
 }
 
 // Track payment conversion funnel
 export function trackPaymentFunnel(step: 'page_view' | 'initiated' | 'success' | 'failed', userId: string, error?: string) {
-  Sentry.metrics.increment(`payment.${step}`, 1);
-  
   if (step === 'failed' && error) {
-    Sentry.captureMessage(`Payment failed for user ${userId}: ${error}`, 'error');
+    Sentry.captureMessage(`Payment failed for user ${userId}: ${error}`, {
+      level: 'error',
+      tags: { event_type: 'payment', step, status: 'failed' },
+      extra: { userId }
+    });
+  } else {
+    Sentry.captureMessage(`Payment ${step}`, {
+      level: 'info',
+      tags: { event_type: 'payment', step },
+      extra: { userId }
+    });
   }
 }
 
 // Track API response times
 export function trackAPITiming(endpoint: string, durationMs: number, success: boolean) {
-  Sentry.metrics.distribution(`api.${endpoint}.duration`, durationMs, {
-    unit: 'millisecond',
-    tags: {
-      success: success.toString(),
-    }
-  });
+  // Only log if slow (over 2 seconds)
+  if (durationMs > 2000) {
+    Sentry.captureMessage(`Slow API: ${endpoint} took ${durationMs}ms`, {
+      level: 'warning',
+      tags: {
+        event_type: 'api_timing',
+        endpoint,
+        success: success.toString()
+      },
+      extra: { durationMs }
+    });
+  }
   
-  // Alert if API is slow
-  if (durationMs > 3000) {
-    Sentry.captureMessage(`Slow API response: ${endpoint} took ${durationMs}ms`, 'warning');
+  // For very slow responses, capture as error
+  if (durationMs > 5000) {
+    Sentry.captureException(new Error(`Very slow API response: ${endpoint}`), {
+      tags: {
+        event_type: 'api_timing',
+        endpoint,
+        success: success.toString()
+      },
+      extra: { durationMs }
+    });
   }
 }
