@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "create-test-users": "ts-node scripts/create-test-users.ts"
+  }
+}
