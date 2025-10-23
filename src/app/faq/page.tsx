@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import Footer from '@/components/Footer';
 
 export default function FAQPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -15,60 +16,32 @@ export default function FAQPage() {
       answer: "Once you create your profile with your photos, resume, and preferences, our algorithm continuously scans for new casting calls. When we find roles that match your criteria with 85% or higher compatibility, we automatically submit your materials to the casting director and notify you via email."
     },
     {
-      question: "What types of roles do you submit to?",
-      answer: "We submit to all types of roles including lead, supporting, background, extra, commercial, voiceover, theater, and more. Our system works with union (SAG-AFTRA) and non-union opportunities across film, TV, commercials, and new media."
-    },
-    {
-      question: "How is my match score calculated?",
-      answer: "Our algorithm considers multiple factors including your age, location, gender, ethnicity, union status, special skills, physical attributes, and role preferences. A 85%+ match means you meet most of the casting requirements and have a strong chance of being considered."
-    },
-    {
-      question: "Can I still manually apply to roles?",
-      answer: "Absolutely! Your dashboard shows all available casting calls, and you can manually submit to any role at any time. Auto-submissions are just an added bonus to ensure you never miss opportunities."
-    },
-    {
       question: "How much does it cost?",
-      answer: "We offer a 14-day trial for $1, then $39.97/month after that. You can cancel anytime with no long-term commitment. There are no hidden fees or per-submission charges."
+      answer: "We offer a 14-day trial for just $1, then $39/month after that. You can cancel anytime during the trial period for a full refund."
     },
     {
-      question: "Will casting directors know I used an automated service?",
-      answer: "No. Your submissions appear exactly as if you submitted them manually. Casting directors see your professional headshot, resume, and reel with a personalized cover letter. They have no way of knowing the submission was automated."
+      question: "What types of roles do you submit for?",
+      answer: "We submit to TV shows, films, commercials, web series, and theater productions. You can customize which types of roles you're interested in through your profile settings."
     },
     {
-      question: "What if I want to stop auto-submissions temporarily?",
-      answer: "You can pause auto-submissions at any time from your dashboard settings. This is useful if you're booked on a project or taking a break from auditioning."
+      question: "Do I need professional photos?",
+      answer: "While professional headshots are recommended for the best results, we accept all quality photos. Your profile strength will be indicated, and we can provide guidance on improving your materials."
     },
     {
-      question: "Do you submit to scams or low-quality productions?",
-      answer: "Never. We manually vet all casting calls before adding them to our system. We filter out anything suspicious, unprofessional, or that asks for money upfront. Your safety and career are our priority."
+      question: "Can I see what roles I've been submitted to?",
+      answer: "Yes! Every time we submit you to a role, you'll receive an email notification with details about the casting call, the production, and why we matched you."
     },
     {
-      question: "What locations do you cover?",
-      answer: "We currently serve actors across the United States, with the most opportunities in major markets like Los Angeles, New York, Atlanta, Chicago, Miami, and Austin. We're constantly expanding to new cities."
+      question: "What if I book a role?",
+      answer: "Congratulations! We love hearing success stories. There are no additional fees - your subscription covers unlimited submissions. We just ask that you let us know so we can celebrate with you!"
     },
     {
-      question: "Can I update my profile after signing up?",
-      answer: "Yes! You can update your photos, resume, reel links, preferences, and availability anytime. Changes take effect immediately and improve your match scores for future submissions."
+      question: "Can I pause my subscription?",
+      answer: "Yes, you can pause your subscription for up to 3 months if you're unavailable for auditions. Contact support to arrange a pause."
     },
     {
-      question: "What happens if I book a role?",
-      answer: "Congratulations! You can update your availability status in your profile settings so we don't submit you to conflicting shoot dates. You can also pause auto-submissions temporarily."
-    },
-    {
-      question: "Is there a limit to how many submissions you make?",
-      answer: "No limits! We'll submit you to every casting call that matches your profile at 85% or higher. Some actors get submitted to 2-3 roles per week, others get 10+, depending on their location and how in-demand their look is."
-    },
-    {
-      question: "What if I'm not getting many auto-submissions?",
-      answer: "This usually means your profile needs optimization. Make sure all your information is complete and accurate. Consider expanding your acceptable role types or locations. Our support team can review your profile and suggest improvements."
-    },
-    {
-      question: "Can I cancel anytime?",
-      answer: "Yes! You can cancel your subscription anytime from your account settings. There are no cancellation fees or penalties. If you cancel, you'll have access until the end of your billing period."
-    },
-    {
-      question: "Do you offer refunds?",
-      answer: "Yes, we offer a full refund within 14 days if you're not satisfied. Just email support@castingcompanion.com and we'll process your refund immediately."
+      question: "How do you match me with roles?",
+      answer: "Our algorithm considers your age range, gender, ethnicity, location, union status, special skills, and availability. We only submit when there's an 85% or higher match to ensure quality over quantity."
     }
   ];
 
@@ -83,6 +56,9 @@ export default function FAQPage() {
           <div className="flex gap-4">
             <Link href="/about">
               <Button variant="ghost" className="text-white hover:bg-white/10">About</Button>
+            </Link>
+            <Link href="/faq">
+              <Button variant="ghost" className="text-white hover:bg-white/10">FAQ</Button>
             </Link>
             <Link href="/auth/login">
               <Button variant="ghost" className="text-white hover:bg-white/10">Login</Button>
@@ -107,24 +83,28 @@ export default function FAQPage() {
       {/* FAQ Content */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto space-y-4">
+          <div className="max-w-3xl mx-auto space-y-4">
             {faqs.map((faq, index) => (
-              <Card key={index} className="border-2 border-gray-200">
+              <Card key={index} className="border-2 hover:border-purple-300 transition-colors">
                 <CardContent className="p-0">
                   <button
                     onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                    className="w-full text-left p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                    className="w-full text-left p-6 flex items-center justify-between"
                   >
-                    <h3 className="text-lg font-semibold pr-8">{faq.question}</h3>
-                    <ChevronDown 
-                      className={`h-5 w-5 flex-shrink-0 transition-transform ${
+                    <h3 className="text-lg font-semibold text-gray-900 pr-8">
+                      {faq.question}
+                    </h3>
+                    <ChevronDown
+                      className={`h-5 w-5 text-purple-600 transition-transform flex-shrink-0 ${
                         openIndex === index ? 'transform rotate-180' : ''
                       }`}
                     />
                   </button>
                   {openIndex === index && (
                     <div className="px-6 pb-6">
-                      <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
+                      <p className="text-gray-600 leading-relaxed">
+                        {faq.answer}
+                      </p>
                     </div>
                   )}
                 </CardContent>
@@ -134,61 +114,22 @@ export default function FAQPage() {
         </div>
       </section>
 
-      {/* Still Have Questions */}
-      <section className="py-20 bg-gray-50">
+      {/* CTA */}
+      <section className="py-20 bg-gradient-to-br from-purple-600 to-purple-800 text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Still have questions?</h2>
-          <p className="text-xl text-gray-600 mb-8">
-            We're here to help! Email us at{' '}
-            <a href="mailto:support@castingcompanion.com" className="text-purple-600 hover:underline">
-              support@castingcompanion.com
-            </a>
+          <h2 className="text-4xl font-bold mb-4">Still Have Questions?</h2>
+          <p className="text-xl mb-8 text-purple-100">
+            Contact us at info@castingcompanion.com or sign up to see how it works
           </p>
           <Link href="/auth/register">
-            <Button size="lg" className="bg-purple-600 text-white hover:bg-purple-700">
+            <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 text-lg">
               Get Started Today
             </Button>
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="text-white font-bold text-xl mb-4">Casting Companion</div>
-              <p className="text-sm">
-                Automated casting call submissions for actors.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link href="/about" className="hover:text-white">About Us</Link></li>
-                <li><Link href="/faq" className="hover:text-white">FAQ</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold mb-4">Account</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link href="/auth/login" className="hover:text-white">Login</Link></li>
-                <li><Link href="/auth/register" className="hover:text-white">Sign Up</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link href="/terms" className="hover:text-white">Terms of Service</Link></li>
-                <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
-            <p>&copy; 2025 Casting Companion. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
