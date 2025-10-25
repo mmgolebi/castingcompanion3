@@ -20,6 +20,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [castingCalls, setCastingCalls] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('manage');
   const [formData, setFormData] = useState({
     title: '',
     production: '',
@@ -112,6 +113,7 @@ export default function AdminPage() {
         alert(editingId ? 'Casting call updated!' : 'Casting call created!');
         resetForm();
         await fetchCastingCalls();
+        setActiveTab('manage');
       } else {
         const error = await res.json();
         alert(`Failed to save casting call: ${error.error || 'Unknown error'}`);
@@ -141,6 +143,7 @@ export default function AdminPage() {
       castingEmail: call.castingEmail,
       featuredImage: call.featuredImage || '',
     });
+    setActiveTab('create');
   };
 
   const handleDelete = async (id: string) => {
@@ -206,7 +209,7 @@ export default function AdminPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="create" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
           <TabsTrigger value="create">Create/Edit Casting Call</TabsTrigger>
           <TabsTrigger value="manage">Manage Casting Calls</TabsTrigger>
@@ -217,7 +220,7 @@ export default function AdminPage() {
             <CardHeader>
               <CardTitle>{editingId ? 'Edit' : 'Create'} Casting Call</CardTitle>
               <CardDescription>
-                {editingId ? 'Update the casting call details' : 'Add a new casting opportunity'}
+                {editingId ? 'Update the casting call details below' : 'Fill in the details for your new casting opportunity'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -228,6 +231,7 @@ export default function AdminPage() {
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="e.g., Leading Role - Sarah"
                     required
                   />
                 </div>
@@ -238,6 +242,7 @@ export default function AdminPage() {
                     id="production"
                     value={formData.production}
                     onChange={(e) => setFormData({ ...formData, production: e.target.value })}
+                    placeholder="e.g., Netflix Series 'The Crown'"
                     required
                   />
                 </div>
@@ -248,52 +253,53 @@ export default function AdminPage() {
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Detailed role description..."
                     rows={4}
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="roleType">Role Type *</Label>
-                    <Select
-                      value={formData.roleType}
-                      onValueChange={(value) => setFormData({ ...formData, roleType: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="LEAD">Lead</SelectItem>
-                        <SelectItem value="SUPPORTING">Supporting</SelectItem>
-                        <SelectItem value="BACKGROUND">Background</SelectItem>
-                        <SelectItem value="EXTRA">Extra</SelectItem>
-                        <SelectItem value="COMMERCIAL">Commercial</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div>
+                  <Label htmlFor="roleType">Role Type *</Label>
+                  <Select
+                    value={formData.roleType}
+                    onValueChange={(value) => setFormData({ ...formData, roleType: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="LEAD">Lead</SelectItem>
+                      <SelectItem value="SUPPORTING">Supporting</SelectItem>
+                      <SelectItem value="GUEST_STAR">Guest Star</SelectItem>
+                      <SelectItem value="CO_STAR">Co-Star</SelectItem>
+                      <SelectItem value="BACKGROUND">Background</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="location">Location *</Label>
                     <Input
                       id="location"
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      placeholder="City, ST (e.g., Detroit, MI)"
+                      placeholder="e.g., Los Angeles, CA"
                       required
                     />
                   </div>
-                </div>
 
-                <div>
-                  <Label htmlFor="compensation">Compensation *</Label>
-                  <Input
-                    id="compensation"
-                    value={formData.compensation}
-                    onChange={(e) => setFormData({ ...formData, compensation: e.target.value })}
-                    placeholder="e.g., $200/day or Unpaid (college film)"
-                    required
-                  />
+                  <div>
+                    <Label htmlFor="compensation">Compensation *</Label>
+                    <Input
+                      id="compensation"
+                      value={formData.compensation}
+                      onChange={(e) => setFormData({ ...formData, compensation: e.target.value })}
+                      placeholder="e.g., $500/day"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
