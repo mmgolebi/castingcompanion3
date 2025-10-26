@@ -47,9 +47,9 @@ export async function POST(req: Request) {
 
     console.log('Calling Anthropic API...');
 
-    // Analyze with Claude Vision
+    // Analyze with Claude Vision - using latest Sonnet model
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-3-5-sonnet-20240620',
       max_tokens: 2000,
       messages: [
         {
