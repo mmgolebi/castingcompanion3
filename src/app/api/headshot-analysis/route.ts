@@ -49,7 +49,7 @@ export async function POST(req: Request) {
 
     // Analyze with Claude Vision - using latest Sonnet model
     const message = await anthropic.messages.create({
-      model: 'claude-3-opus-20240229',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 2000,
       messages: [
         {
