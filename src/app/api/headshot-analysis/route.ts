@@ -40,14 +40,27 @@ export async function POST(req: Request) {
     const imageBuffer = await imageResponse.arrayBuffer();
     const base64Image = Buffer.from(imageBuffer).toString('base64');
     
-    // Determine media type from URL
-    const mediaType = imageUrl.toLowerCase().endsWith('.png') 
-      ? 'image/png' 
-      : 'image/jpeg';
+    // Determine media type from Content-Type header or URL
+    let mediaType: 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif' = 'image/jpeg';
+    const contentType = imageResponse.headers.get('content-type');
+    
+    if (contentType) {
+      if (contentType.includes('png')) mediaType = 'image/png';
+      else if (contentType.includes('webp')) mediaType = 'image/webp';
+      else if (contentType.includes('gif')) mediaType = 'image/gif';
+      else if (contentType.includes('jpeg') || contentType.includes('jpg')) mediaType = 'image/jpeg';
+    } else {
+      // Fallback to URL extension
+      const url = imageUrl.toLowerCase();
+      if (url.includes('.png')) mediaType = 'image/png';
+      else if (url.includes('.webp')) mediaType = 'image/webp';
+      else if (url.includes('.gif')) mediaType = 'image/gif';
+    }
 
+    console.log('Detected media type:', mediaType);
     console.log('Calling Anthropic API...');
 
-    // Analyze with Claude Vision - using latest Sonnet model
+    // Analyze with Claude Vision
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5-20250929',
       max_tokens: 2000,
