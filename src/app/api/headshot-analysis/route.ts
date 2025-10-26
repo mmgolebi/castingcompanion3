@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/db';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 import Anthropic from '@anthropic-ai/sdk';
 
 const anthropic = new Anthropic({
@@ -10,7 +9,7 @@ const anthropic = new Anthropic({
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -121,7 +120,7 @@ Be encouraging but honest. Focus on actionable improvements.`
 // Get user's analysis history
 export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
