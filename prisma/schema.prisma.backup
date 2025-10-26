@@ -25,7 +25,6 @@ model User {
   stripeCustomerId    String?
   resetToken          String?   @unique
   resetTokenExpiry    DateTime?
-  headshotAnalyses    HeadshotAnalysis[]
   
   @@map("User")
 }
@@ -119,28 +118,4 @@ model Submission {
   
   @@unique([profileId, castingCallId])
   @@map("Submission")
-}
-
-model HeadshotAnalysis {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  imageUrl  String
-  
-  overallScore      Int
-  lightingScore     Int
-  compositionScore  Int
-  expressionScore   Int
-  professionalScore Int
-  backgroundScore   Int
-  
-  strengths         String[]
-  improvements      String[]
-  detailedFeedback  String   @db.Text
-  
-  createdAt DateTime @default(now())
-  
-  @@index([userId])
-  @@map("HeadshotAnalysis")
 }

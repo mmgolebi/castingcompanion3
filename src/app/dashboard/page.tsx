@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bell, Send, Target, TrendingUp, MapPin, DollarSign, Calendar, TrendingUpIcon, Check, ChevronLeft, ChevronRight, Search, ArrowRight, Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bell, Send, Target, TrendingUp, MapPin, DollarSign, Calendar, TrendingUpIcon, Check, ChevronLeft, ChevronRight, Search, ArrowRight, Zap, ChevronDown, ChevronUp, Camera } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const ITEMS_PER_PAGE = 10;
@@ -247,68 +247,95 @@ export default function DashboardPage() {
           </Card>
         </div>
 
+        {/* Quick Actions */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg md:text-xl">Quick Actions</CardTitle>
+            <CardDescription>Professional tools to level up your career</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <Button
+                onClick={() => router.push("/dashboard/headshot-analyzer")}
+                variant="outline"
+                className="h-auto py-4 flex flex-col items-start gap-2 hover:bg-purple-50 hover:border-purple-300 transition-all"
+              >
+                <div className="flex items-center gap-2 w-full">
+                  <Camera className="h-5 w-5 text-purple-600" />
+                  <span className="font-semibold">AI Headshot Analyzer</span>
+                </div>
+                <p className="text-xs text-left text-gray-600">
+                  Get professional feedback on lighting, composition, and more
+                </p>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Casting Calls Section */}
         <Card className="mb-6 md:mb-8">
           <CardHeader className="p-4 md:p-6">
-            <CardTitle className="text-lg md:text-xl">Available Casting Calls</CardTitle>
-            <CardDescription className="text-sm">Browse and submit to open opportunities</CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 md:p-6 pt-0">
-            {/* Search bar - always visible */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by title or production..."
-                value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                className="pl-10 h-12 text-base"
-              />
-            </div>
-
-            {/* Collapsible filters on mobile */}
-            <div className="mb-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <CardTitle className="text-lg md:text-xl">Active Casting Calls</CardTitle>
+                <CardDescription className="text-sm">Browse and submit to available opportunities</CardDescription>
+              </div>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setShowFilters(!showFilters)}
-                className="w-full md:hidden h-12 text-base justify-between"
+                className="w-full md:w-auto h-10 md:h-9"
               >
-                <span>Filters</span>
-                {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                <Search className="h-4 w-4 mr-2" />
+                Filters
+                {showFilters ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
               </Button>
-
-              <div className={`${showFilters ? 'block' : 'hidden'} md:block mt-4 space-y-3 md:space-y-0 md:grid md:grid-cols-3 md:gap-4`}>
-                <Select value={filters.roleType} onValueChange={(value) => setFilters({ ...filters, roleType: value })}>
-                  <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="All Role Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Role Types</SelectItem>
-                    <SelectItem value="LEAD">Lead</SelectItem>
-                    <SelectItem value="SUPPORTING">Supporting</SelectItem>
-                    <SelectItem value="BACKGROUND">Background</SelectItem>
-                    <SelectItem value="EXTRA">Extra</SelectItem>
-                    <SelectItem value="COMMERCIAL">Commercial</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input
-                  placeholder="Filter by location..."
-                  value={filters.location}
-                  onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-                  className="h-12 text-base"
-                />
-                <Select value={filters.unionStatus} onValueChange={(value) => setFilters({ ...filters, unionStatus: value })}>
-                  <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="All Union Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Union Status</SelectItem>
-                    <SelectItem value="UNION">Union</SelectItem>
-                    <SelectItem value="NON_UNION">Non-Union</SelectItem>
-                    <SelectItem value="EITHER">Either</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
+          </CardHeader>
+          <CardContent className="p-4 md:p-6 pt-0">
+            {showFilters && (
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    placeholder="Search by title or production..."
+                    value={filters.search}
+                    onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                    className="h-12 text-base"
+                  />
+                  <Select value={filters.roleType} onValueChange={(value) => setFilters({ ...filters, roleType: value })}>
+                    <SelectTrigger className="h-12 text-base">
+                      <SelectValue placeholder="All Role Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Role Types</SelectItem>
+                      <SelectItem value="LEAD">Lead</SelectItem>
+                      <SelectItem value="SUPPORTING">Supporting</SelectItem>
+                      <SelectItem value="GUEST_STAR">Guest Star</SelectItem>
+                      <SelectItem value="CO_STAR">Co-Star</SelectItem>
+                      <SelectItem value="BACKGROUND">Background</SelectItem>
+                      <SelectItem value="COMMERCIAL">Commercial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    placeholder="Filter by location..."
+                    value={filters.location}
+                    onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+                    className="h-12 text-base"
+                  />
+                  <Select value={filters.unionStatus} onValueChange={(value) => setFilters({ ...filters, unionStatus: value })}>
+                    <SelectTrigger className="h-12 text-base">
+                      <SelectValue placeholder="All Union Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Union Status</SelectItem>
+                      <SelectItem value="UNION">Union</SelectItem>
+                      <SelectItem value="NON_UNION">Non-Union</SelectItem>
+                      <SelectItem value="EITHER">Either</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
 
             {filteredCalls.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
