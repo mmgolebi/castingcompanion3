@@ -3,25 +3,40 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
 export async function POST(req: Request) {
   try {
+    // Check API key first
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error('ANTHROPIC_API_KEY is not set');
+      return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
+    }
+
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+
     const session = await auth();
     if (!session?.user?.id) {
+      console.error('Unauthorized: No session');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { imageUrl } = await req.json();
 
     if (!imageUrl) {
+      console.error('No image URL provided');
       return NextResponse.json({ error: 'Image URL required' }, { status: 400 });
     }
 
+    console.log('Fetching image from:', imageUrl);
+
     // Fetch the image and convert to base64
     const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      console.error('Failed to fetch image:', imageResponse.status);
+      return NextResponse.json({ error: 'Failed to fetch image' }, { status: 500 });
+    }
+
     const imageBuffer = await imageResponse.arrayBuffer();
     const base64Image = Buffer.from(imageBuffer).toString('base64');
     
@@ -29,6 +44,8 @@ export async function POST(req: Request) {
     const mediaType = imageUrl.toLowerCase().endsWith('.png') 
       ? 'image/png' 
       : 'image/jpeg';
+
+    console.log('Calling Anthropic API...');
 
     // Analyze with Claude Vision
     const message = await anthropic.messages.create({
@@ -77,18 +94,24 @@ Be encouraging but honest. Focus on actionable improvements.`
       ],
     });
 
+    console.log('Anthropic API response received');
+
     // Parse Claude's response
     const responseText = message.content[0].type === 'text' 
       ? message.content[0].text 
       : '';
     
+    console.log('Response text:', responseText.substring(0, 200));
+
     // Extract JSON from response (Claude sometimes adds markdown)
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('Failed to parse AI response');
+      console.error('Failed to parse AI response - no JSON found');
+      return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
     }
     
     const analysis = JSON.parse(jsonMatch[0]);
+    console.log('Parsed analysis, overall score:', analysis.overallScore);
 
     // Save to database
     const headshotAnalysis = await prisma.headshotAnalysis.create({
@@ -107,11 +130,13 @@ Be encouraging but honest. Focus on actionable improvements.`
       },
     });
 
+    console.log('Analysis saved to database');
+
     return NextResponse.json(headshotAnalysis);
   } catch (error) {
     console.error('Error analyzing headshot:', error);
     return NextResponse.json(
-      { error: 'Failed to analyze headshot' },
+      { error: error instanceof Error ? error.message : 'Failed to analyze headshot' },
       { status: 500 }
     );
   }
