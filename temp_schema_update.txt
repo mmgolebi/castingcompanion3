@@ -1,0 +1,5 @@
+After line "roleTypesInterested    String[]     @default([])" in Profile model, add:
+  bio                    String?      // NEW: Actor bio for cover letters
+
+After line "status          String      @default("PENDING")" in Submission model, add:
+  coverLetter     String?     // NEW: AI-generated custom cover letter

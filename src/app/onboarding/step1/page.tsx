@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CheckCircle2 } from 'lucide-react';
@@ -29,6 +30,7 @@ export default function Step1Page() {
     hairColor: '',
     eyeColor: '',
     visibleTattoos: false,
+    bio: '',
   });
   const [phoneError, setPhoneError] = useState('');
   const [heightFeet, setHeightFeet] = useState('');
@@ -69,6 +71,7 @@ export default function Step1Page() {
             hairColor: data.hairColor || '',
             eyeColor: data.eyeColor || '',
             visibleTattoos: data.visibleTattoos || false,
+            bio: data.bio || '',
           });
         }
       } catch (error) {
@@ -155,6 +158,7 @@ export default function Step1Page() {
           hairColor: formData.hairColor || null,
           eyeColor: formData.eyeColor || null,
           visibleTattoos: formData.visibleTattoos,
+          bio: formData.bio || null,
         }),
       });
 
@@ -219,20 +223,20 @@ export default function Step1Page() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg md:text-xl">Basic Information & Physical Attributes</CardTitle>
-            <CardDescription>Tell us about yourself</CardDescription>
+            <CardTitle className="text-lg md:text-xl">Basic Information</CardTitle>
+            <CardDescription className="text-sm md:text-base">Tell us about yourself</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
               <div>
                 <Label htmlFor="name" className="text-base">Full Name *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="John Smith"
                   required
                   className="h-12 text-base mt-2"
-                  autoComplete="name"
                 />
               </div>
 
@@ -246,15 +250,15 @@ export default function Step1Page() {
                   onChange={(e) => handlePhoneChange(e.target.value)}
                   placeholder="(555) 123-4567"
                   required
-                  className={`h-12 text-base mt-2 ${phoneError ? 'border-red-500' : ''}`}
-                  autoComplete="tel"
+                  className="h-12 text-base mt-2"
                 />
-                {phoneError && <p className="text-sm text-red-600 mt-1">{phoneError}</p>}
-                <p className="text-xs text-gray-500 mt-1">US and Canadian numbers only (10 digits)</p>
+                {phoneError && (
+                  <p className="text-sm text-red-600 mt-1">{phoneError}</p>
+                )}
               </div>
 
               <div>
-                <Label htmlFor="age" className="text-base">Current Age *</Label>
+                <Label htmlFor="age" className="text-base">Age *</Label>
                 <Input
                   id="age"
                   type="number"
@@ -263,6 +267,7 @@ export default function Step1Page() {
                   max="120"
                   value={formData.age}
                   onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                  placeholder="25"
                   required
                   className="h-12 text-base mt-2"
                 />
@@ -448,6 +453,22 @@ export default function Step1Page() {
                     <SelectItem value="ELIGIBLE">Union Eligible</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* NEW: Bio field */}
+              <div>
+                <Label htmlFor="bio" className="text-base">Professional Bio (Optional)</Label>
+                <Textarea
+                  id="bio"
+                  value={formData.bio}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  placeholder="Share a bit about your acting experience, training, notable roles, or what makes you unique as a performer..."
+                  className="mt-2 min-h-[120px] text-base"
+                  maxLength={1000}
+                />
+                <p className="text-sm text-gray-600 mt-1">
+                  This will be used to create personalized cover letters for casting submissions • {formData.bio.length}/1000 characters
+                </p>
               </div>
 
               <Button 

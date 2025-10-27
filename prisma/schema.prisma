@@ -7,37 +7,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN
-  ACTOR
-}
-
 model User {
-  id                  String    @id @default(cuid())
-  name                String?
-  email               String    @unique
-  password            String
-  role                Role      @default(ACTOR)
-  profile             Profile?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  subscriptionStatus  String?   @default("inactive")
-  stripeCustomerId    String?
-  resetToken          String?   @unique
-  resetTokenExpiry    DateTime?
-  headshotAnalyses    HeadshotAnalysis[]
-  
+  id                 String             @id @default(cuid())
+  name               String?
+  email              String             @unique
+  password           String
+  role               Role               @default(ACTOR)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  subscriptionStatus String?            @default("inactive")
+  stripeCustomerId   String?
+  resetToken         String?            @unique
+  resetTokenExpiry   DateTime?
+  headshotAnalyses   HeadshotAnalysis[]
+  profile            Profile?
+
   @@map("User")
 }
 
 model Profile {
   id                     String       @id @default(cuid())
   userId                 String       @unique
-  user                   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
   profileSlug            String?      @unique
   isPublic               Boolean      @default(false)
-  
   phone                  String?
   age                    Int?
   playableAgeMin         Int?
@@ -45,17 +37,14 @@ model Profile {
   gender                 String?
   ethnicity              String?
   unionStatus            String?
-  
   height                 Int?
   weight                 Int?
   hairColor              String?
   eyeColor               String?
   visibleTattoos         Boolean      @default(false)
-  
   headshot               String?
   fullBodyPhoto          String?
   resume                 String?
-  
   city                   String?
   state                  String?
   zipCode                String?
@@ -64,83 +53,80 @@ model Profile {
   travelWilling          Boolean      @default(false)
   compensationPreference String?
   compensationMin        String?
-  
   skills                 String[]     @default([])
   roleTypesInterested    String[]     @default([])
-  
-  submissions            Submission[]
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
-  
+  bio                    String?
+  user                   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  submissions            Submission[]
+
   @@map("Profile")
 }
 
 model CastingCall {
-  id                  String       @id @default(cuid())
-  title               String
-  production          String
-  description         String
-  roleType            String
-  location            String
-  compensation        String
-  submissionDeadline  DateTime
-  shootingDates       String?
-  
-  ageRangeMin         Int?
-  ageRangeMax         Int?
-  gender              String?
-  ethnicity           String?
-  unionStatus         String
-  
-  castingEmail        String
-  featuredImage       String?
-  status              String       @default("ACTIVE")
-  
-  submissions         Submission[]
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
-  
+  id                 String       @id @default(cuid())
+  title              String
+  production         String
+  description        String
+  roleType           String
+  location           String
+  compensation       String
+  submissionDeadline DateTime
+  shootingDates      String?
+  ageRangeMin        Int?
+  ageRangeMax        Int?
+  gender             String?
+  ethnicity          String?
+  unionStatus        String
+  castingEmail       String
+  featuredImage      String?
+  status             String       @default("ACTIVE")
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  submissions        Submission[]
+
   @@map("CastingCall")
 }
 
 model Submission {
-  id              String      @id @default(cuid())
-  profileId       String
-  profile         Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  castingCallId   String
-  castingCall     CastingCall @relation(fields: [castingCallId], references: [id], onDelete: Cascade)
-  
-  matchScore      Int         @default(0)
-  submissionMethod String     @default("MANUAL")
-  status          String      @default("PENDING")
-  
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  
+  id               String      @id @default(cuid())
+  profileId        String
+  castingCallId    String
+  matchScore       Int         @default(0)
+  submissionMethod String      @default("MANUAL")
+  status           String      @default("PENDING")
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  coverLetter      String?
+  castingCall      CastingCall @relation(fields: [castingCallId], references: [id], onDelete: Cascade)
+  profile          Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
   @@unique([profileId, castingCallId])
   @@map("Submission")
 }
 
 model HeadshotAnalysis {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  imageUrl  String
-  
+  id                String   @id @default(cuid())
+  userId            String
+  imageUrl          String
   overallScore      Int
   lightingScore     Int
   compositionScore  Int
   expressionScore   Int
   professionalScore Int
   backgroundScore   Int
-  
   strengths         String[]
   improvements      String[]
-  detailedFeedback  String   @db.Text
-  
-  createdAt DateTime @default(now())
-  
+  detailedFeedback  String
+  createdAt         DateTime @default(now())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@map("HeadshotAnalysis")
+}
+
+enum Role {
+  ADMIN
+  ACTOR
 }
