@@ -48,8 +48,10 @@ export async function GET() {
     }
     
     const combinedData = {
+      id: user.profile?.id || '',
       name: user.name,
       email: user.email,
+      bio: user.profile?.bio || '',
       phone: user.profile?.phone || '',
       age: user.profile?.age || null,
       playableAgeMin: user.profile?.playableAgeMin || null,
@@ -106,6 +108,7 @@ export async function PATCH(req: Request) {
     // Profile data (everything except name)
     const profileData = {
       userId: session.user.id,
+      bio: cleanValue(data.bio),
       phone: cleanValue(data.phone),
       age: cleanNumber(data.age),
       playableAgeMin: cleanNumber(data.playableAgeMin),

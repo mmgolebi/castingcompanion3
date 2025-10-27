@@ -34,6 +34,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState({
     name: '',
     email: '',
+    bio: '',
     phone: '',
     age: '',
     playableAgeMin: '',
@@ -104,6 +105,7 @@ export default function ProfilePage() {
         setProfile({
           name: data.name || '',
           email: data.email || '',
+          bio: data.bio || '',
           phone: data.phone || '',
           age: data.age?.toString() || '',
           playableAgeMin: data.playableAgeMin?.toString() || '',
@@ -514,6 +516,20 @@ export default function ProfilePage() {
                     className="h-12 text-base mt-2"
                   />
                 </div>
+
+                <div>
+                  <Label htmlFor="bio" className="text-base">Professional Bio</Label>
+                  <textarea
+                    id="bio"
+                    value={profile.bio}
+                    onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                    placeholder="Tell us about your acting experience, training, and what makes you unique..."
+                    rows={4}
+                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-2 resize-none"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">This bio will be used to generate personalized cover letters</p>
+                </div>
+
 
                 <div>
                   <Label htmlFor="age" className="text-base">Current Age</Label>
