@@ -8,14 +8,16 @@ interface SubmissionEmailParams {
   castingCall: any;
   submissionId: string;
   coverLetter?: string;
+  profileUrl?: string;
 }
 
 export async function sendSubmissionEmail({
   castingEmail,
   userProfile,
   castingCall,
-  coverLetter,
   submissionId,
+  coverLetter,
+  profileUrl,
 }: SubmissionEmailParams) {
   try {
     console.log('=== SENDING SUBMISSION EMAIL ===');
@@ -27,6 +29,7 @@ export async function sendSubmissionEmail({
 
     const emailHtml = `
       <h2>New Talent Submission</h2>
+      <p>You have received a new submission for: <strong>${castingCall.title}</strong></p>
       
       ${coverLetter ? `
         <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3b82f6;">
@@ -34,7 +37,6 @@ export async function sendSubmissionEmail({
           <p style="white-space: pre-wrap; line-height: 1.6; color: #374151;">${coverLetter}</p>
         </div>
       ` : ''}
-      <p>You have received a new submission for: <strong>${castingCall.title}</strong></p>
       
       <h3>Talent Information</h3>
       <ul>
@@ -62,6 +64,13 @@ export async function sendSubmissionEmail({
         ${userProfile.demoReel ? `<li><a href="${userProfile.demoReel}">Demo Reel</a></li>` : ''}
       </ul>
 
+      ${profileUrl ? `
+        <div style="background-color: #eff6ff; padding: 16px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0 0 8px 0; font-weight: 600; color: #1e40af;">View Full Profile</p>
+          <a href="${profileUrl}" style="color: #2563eb; text-decoration: none;">${profileUrl}</a>
+        </div>
+      ` : ''}
+
       <p style="color: #666; font-size: 12px; margin-top: 20px;">
         Submission ID: ${submissionId}
       </p>
@@ -86,7 +95,8 @@ export async function sendSubmissionEmail({
 export async function sendSubmissionConfirmationEmail(
   userEmail: string,
   userName: string,
-  castingCall: any
+  castingCall: any,
+  coverLetter?: string
 ) {
   try {
     console.log('=== SENDING CONFIRMATION EMAIL ===');
@@ -109,6 +119,13 @@ export async function sendSubmissionConfirmationEmail(
         <p><strong>Location:</strong> ${castingCall.location}</p>
         <p><strong>Deadline:</strong> ${new Date(castingCall.submissionDeadline).toLocaleDateString()}</p>
       </div>
+
+      ${coverLetter ? `
+        <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+          <h3 style="margin-top: 0; color: #166534;">Your Cover Letter</h3>
+          <p style="white-space: pre-wrap; line-height: 1.6; color: #166534; font-style: italic;">${coverLetter}</p>
+        </div>
+      ` : ''}
 
       <p><strong>What happens next?</strong></p>
       <ul>

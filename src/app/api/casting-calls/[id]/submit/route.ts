@@ -65,6 +65,11 @@ export async function POST(
       },
     });
 
+    // Generate public profile URL if available
+    const profileUrl = user.profile?.isPublic && user.profile?.profileSlug
+      ? `${process.env.NEXT_PUBLIC_URL}/actors/${user.profile.profileSlug}`
+      : undefined;
+
     // Send emails (async, don't block response)
     Promise.all([
       sendSubmissionEmail({
@@ -89,11 +94,13 @@ export async function POST(
         castingCall,
         submissionId: submission.id,
         coverLetter: coverLetter || undefined,
+        profileUrl: profileUrl,
       }),
       sendSubmissionConfirmationEmail(
         user.email,
         user.name || 'Actor',
-        castingCall
+        castingCall,
+        coverLetter || undefined
       ),
     ]).catch(err => console.error('Email sending failed:', err));
 
