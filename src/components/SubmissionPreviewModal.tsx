@@ -27,12 +27,14 @@ export function SubmissionPreviewModal({
 
   // Generate cover letter when modal opens
   useEffect(() => {
-    if (open && !coverLetter) {
+    if (open && castingCall && !coverLetter) {
       generateCoverLetter();
     }
-  }, [open]);
+  }, [open, castingCall]);
 
   const generateCoverLetter = async () => {
+    if (!castingCall) return;
+    
     setGenerating(true);
     try {
       const res = await fetch('/api/generate-cover-letter', {
@@ -69,6 +71,8 @@ export function SubmissionPreviewModal({
       onOpenChange(false);
     }
   };
+
+  if (!castingCall) return null;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
