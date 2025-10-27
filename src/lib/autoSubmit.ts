@@ -1,6 +1,77 @@
 import { prisma } from '@/lib/db';
 import { calculateMatchScore } from '@/lib/matchScore';
 import { sendSubmissionEmail, sendSubmissionConfirmationEmail } from '@/lib/email';
+import Anthropic from '@anthropic-ai/sdk';
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+/**
+ * Generate a cover letter for auto-submission
+ */
+async function generateCoverLetter(profile: any, user: any, castingCall: any): Promise<string | null> {
+  try {
+    const prompt = `You are a professional casting assistant writing a personalized cover letter for an actor submitting to a casting call.
+
+**Actor Information:**
+Name: ${user.name || 'Actor'}
+${profile.bio ? `Bio: ${profile.bio}` : ''}
+Age: ${profile.age || 'N/A'} (Playable range: ${profile.playableAgeMin || 'N/A'}-${profile.playableAgeMax || 'N/A'})
+Gender: ${profile.gender || 'N/A'}
+Union Status: ${profile.unionStatus || 'Non-Union'}
+Skills: ${profile.skills.length > 0 ? profile.skills.join(', ') : 'None specified'}
+Location: ${profile.city || 'N/A'}, ${profile.state || 'N/A'}
+
+**Casting Call Details:**
+Role: ${castingCall.title}
+Production: ${castingCall.production}
+Description: ${castingCall.description}
+Type: ${castingCall.roleType}
+Location: ${castingCall.location}
+Compensation: ${castingCall.compensation}
+Requirements:
+- Age Range: ${castingCall.ageRangeMin || 'N/A'} - ${castingCall.ageRangeMax || 'N/A'}
+- Gender: ${castingCall.gender || 'Any'}
+- Union: ${castingCall.unionStatus || 'Any'}
+
+**Instructions:**
+Write a professional, personalized 2-3 paragraph cover letter for this actor's submission. 
+
+- Start with a strong opening that shows genuine interest in the role and production
+- Highlight 2-3 specific qualifications that match the role requirements
+- If the actor has a bio, naturally weave in relevant experience
+- Match any required skills or characteristics mentioned in the casting call
+- Keep it concise, professional, and enthusiastic
+- End with availability and eagerness to audition
+- Use a warm but professional tone
+- Do NOT use generic phrases like "I am writing to express my interest"
+- Do NOT be overly formal or stiff
+- Make it feel personal and authentic
+
+Return ONLY the cover letter text, no additional formatting or metadata.`;
+
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 1000,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    });
+
+    const coverLetter = message.content[0].type === 'text' 
+      ? message.content[0].text 
+      : null;
+
+    return coverLetter;
+  } catch (error) {
+    console.error('Error generating cover letter for auto-submission:', error);
+    return null; // Return null if generation fails, don't block submission
+  }
+}
 
 /**
  * Process auto-submissions for a single user against all active casting calls
@@ -37,6 +108,14 @@ export async function processUserAutoSubmissions(userId: string) {
     const matchScore = calculateMatchScore(user.profile, call);
 
     if (matchScore >= 85) {
+      // Generate cover letter
+      const coverLetter = await generateCoverLetter(user.profile, user, call);
+
+      // Generate public profile URL if available
+      const profileUrl = user.profile?.isPublic && user.profile?.profileSlug
+        ? `${process.env.NEXT_PUBLIC_URL}/actors/${user.profile.profileSlug}`
+        : undefined;
+
       const submission = await prisma.submission.create({
         data: {
           profileId: user.profile.id,
@@ -44,6 +123,7 @@ export async function processUserAutoSubmissions(userId: string) {
           submissionMethod: 'AUTO',
           matchScore,
           status: 'PENDING',
+          coverLetter: coverLetter || null,
         },
       });
 
@@ -70,11 +150,14 @@ export async function processUserAutoSubmissions(userId: string) {
           },
           castingCall: call,
           submissionId: submission.id,
+          coverLetter: coverLetter || undefined,
+          profileUrl: profileUrl,
         }),
         sendSubmissionConfirmationEmail(
           user.email,
           user.name || 'Actor',
-          call
+          call,
+          coverLetter || undefined
         ),
       ]).catch(err => console.error('Email sending failed:', err));
 
@@ -125,6 +208,14 @@ export async function processCastingCallAutoSubmissions(castingCallId: string) {
     const matchScore = calculateMatchScore(user.profile, castingCall);
 
     if (matchScore >= 85) {
+      // Generate cover letter
+      const coverLetter = await generateCoverLetter(user.profile, user, castingCall);
+
+      // Generate public profile URL if available
+      const profileUrl = user.profile?.isPublic && user.profile?.profileSlug
+        ? `${process.env.NEXT_PUBLIC_URL}/actors/${user.profile.profileSlug}`
+        : undefined;
+
       const submission = await prisma.submission.create({
         data: {
           profileId: user.profile.id,
@@ -132,6 +223,7 @@ export async function processCastingCallAutoSubmissions(castingCallId: string) {
           submissionMethod: 'AUTO',
           matchScore,
           status: 'PENDING',
+          coverLetter: coverLetter || null,
         },
       });
 
@@ -158,11 +250,14 @@ export async function processCastingCallAutoSubmissions(castingCallId: string) {
           },
           castingCall,
           submissionId: submission.id,
+          coverLetter: coverLetter || undefined,
+          profileUrl: profileUrl,
         }),
         sendSubmissionConfirmationEmail(
           user.email,
           user.name || 'Actor',
-          castingCall
+          castingCall,
+          coverLetter || undefined
         ),
       ]).catch(err => console.error('Email sending failed:', err));
 
