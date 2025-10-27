@@ -5,18 +5,18 @@ import { Check, X, Search, FileText, Video } from 'lucide-react';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'How Casting Companion Works - Not a Scam, Real Actor Software | Casting Companion',
-  description: 'Is Casting Companion a scam? Learn how our AI-powered platform helps actors find auditions automatically. We\'re not an agency - we\'re legitimate actor software. Read reviews and see how it works.',
-  keywords: 'casting companion, casting companion review, is casting companion a scam, what is casting companion, casting companion legitimate, actor audition software, automated casting submissions',
+  title: 'How Casting Companion Works - AI-Powered Actor Software | Casting Companion',
+  description: 'Learn how our AI-powered platform helps actors find auditions automatically. We\'re not an agency - we\'re legitimate actor software that empowers your career. See how it works.',
+  keywords: 'casting companion, casting companion review, what is casting companion, casting companion legitimate, actor audition software, automated casting submissions, AI casting tool',
   openGraph: {
     title: 'How Casting Companion Works - Legitimate AI Actor Software',
-    description: 'Not an agency, not a scam. Casting Companion is AI-powered software that helps actors find and submit to casting calls automatically.',
+    description: 'Not an agency. Casting Companion is AI-powered software that helps actors find and submit to casting calls automatically.',
     type: 'website',
     url: 'https://castingcompanion.com/how-it-works',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'How Casting Companion Works - Not a Scam',
+    title: 'How Casting Companion Works - AI Actor Software',
     description: 'AI-powered software for actors. Find auditions, submit automatically, get feedback. No commissions, no agency fees.',
   },
   alternates: {
@@ -40,10 +40,10 @@ export default function HowItWorksPage() {
       },
       {
         "@type": "Question",
-        "name": "Is Casting Companion a scam?",
+        "name": "Is Casting Companion legitimate?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "No, Casting Companion is not a scam. We are a legitimate software-as-a-service (SaaS) company. We never charge actors to attend auditions, we don't take commissions from your earnings, and we're not a modeling or talent agency. We provide technology tools that help actors manage their casting submissions."
+          "text": "Yes, Casting Companion is a legitimate software-as-a-service (SaaS) company. We never charge actors to attend auditions, we don't take commissions from your earnings, and we're not a modeling or talent agency. We provide technology tools that help actors manage their casting submissions."
         }
       },
       {
@@ -130,23 +130,23 @@ export default function HowItWorksPage() {
             </li>
           </ul>
 
-          {/* Not a Scam Section */}
-          <div className="bg-red-50 border-2 border-red-200 rounded-lg p-8 mb-12">
+          {/* Legitimacy Section */}
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-8 mb-12">
             <h2 className="text-3xl font-bold mb-6 text-center">
-              🚫 Not an Agency. Not a Scam.
+              ✅ We're a Legitimate Technology Company
             </h2>
             <div className="space-y-4 text-lg">
               <p className="flex items-start gap-3">
-                <span className="text-2xl">⚠️</span>
+                <span className="text-2xl">💼</span>
                 <span><strong>Casting Companion is NOT a talent or modeling agency.</strong></span>
               </p>
               <p className="flex items-start gap-3">
-                <span className="text-2xl">⚠️</span>
+                <span className="text-2xl">🎯</span>
                 <span><strong>We do NOT sell auditions.</strong></span>
               </p>
               <p className="flex items-start gap-3">
-                <span className="text-2xl">⚠️</span>
-                <span><strong>We are a technology company.</strong></span>
+                <span className="text-2xl">⚙️</span>
+                <span><strong>We are a software-as-a-service (SaaS) company.</strong></span>
               </p>
             </div>
             <p className="mt-6 text-gray-700">
