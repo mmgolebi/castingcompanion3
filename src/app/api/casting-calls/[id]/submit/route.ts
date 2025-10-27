@@ -15,6 +15,8 @@ export async function POST(
     }
 
     const { id } = await params;
+    const body = await req.json();
+    const { coverLetter } = body;
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
@@ -51,7 +53,7 @@ export async function POST(
     // Calculate match score
     const matchScore = calculateMatchScore(user.profile, castingCall);
 
-    // Create submission
+    // Create submission with cover letter
     const submission = await prisma.submission.create({
       data: {
         profileId: user.profile.id,
@@ -59,6 +61,7 @@ export async function POST(
         submissionMethod: 'MANUAL',
         matchScore,
         status: 'PENDING',
+        coverLetter: coverLetter || null,
       },
     });
 
@@ -85,6 +88,7 @@ export async function POST(
         },
         castingCall,
         submissionId: submission.id,
+        coverLetter: coverLetter || undefined,
       }),
       sendSubmissionConfirmationEmail(
         user.email,

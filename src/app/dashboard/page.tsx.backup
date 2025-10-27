@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Bell, Send, Target, TrendingUp, MapPin, DollarSign, Calendar, TrendingUpIcon, Check, ChevronLeft, ChevronRight, Search, ArrowRight, Zap, ChevronDown, ChevronUp, Camera } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { SubmissionPreviewModal } from '@/components/SubmissionPreviewModal';
+import { SubmissionPreviewModal } from '@/components/SubmissionPreviewModal';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -35,6 +36,8 @@ export default function DashboardPage() {
     roleType: 'all',
     location: '',
     unionStatus: 'all',
+  const [previewModal, setPreviewModal] = useState<{ open: boolean; call: any | null }>({ open: false, call: null });
+  const [userProfileId, setUserProfileId] = useState<string | null>(null);
   });
   const [previewModal, setPreviewModal] = useState<{ open: boolean; call: any | null }>({ open: false, call: null });
   const [userProfileId, setUserProfileId] = useState<string | null>(null);
@@ -57,7 +60,6 @@ export default function DashboardPage() {
       if (profileRes.ok) {
         const profileData = await profileRes.json();
         setUserName(profileData.name || '');
-        setUserProfileId(profileData.id || null);
         setUserProfileId(profileData.id || null);
       }
 
@@ -110,30 +112,11 @@ export default function DashboardPage() {
     }
   }, [status]); // Only runs when auth status changes
 
-
-  const handleSubmit = async (call: any) => {
-    if (!userProfileId) {
-      toast({
-        title: "Error",
-        description: 'Profile not found',
-        variant: "destructive",
-      });
-      return;
-    }
-    setPreviewModal({ open: true, call });
-  };
-
-  const handleConfirmSubmit = async (coverLetter: string) => {
-    if (!previewModal.call) return;
-    
-    const callId = previewModal.call.id;
+  const handleSubmit = async (callId: string) => {
     setSubmitting(callId);
-    
     try {
       const res = await fetch(`/api/casting-calls/${callId}/submit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ coverLetter }),
       });
 
       if (res.ok) {
@@ -141,7 +124,6 @@ export default function DashboardPage() {
           title: "Success!",
           description: "Your submission has been sent to the casting director.",
         });
-        setPreviewModal({ open: false, call: null });
         await fetchDashboardData();
       } else {
         const error = await res.json();
@@ -162,7 +144,6 @@ export default function DashboardPage() {
       setSubmitting(null);
     }
   };
-
 
   // Client-side filtering with all filter options
   const filteredCalls = (calls || []).filter(call => {
@@ -428,7 +409,7 @@ export default function DashboardPage() {
                             )
                           ) : (
                             <Button 
-                              onClick={() => handleSubmit(call)}
+                              onClick={() => handleSubmit(call.id)}
                               disabled={submitting === call.id}
                               size="sm"
                               className="w-full md:w-auto h-10 md:h-9 text-base md:text-sm"
@@ -521,15 +502,6 @@ export default function DashboardPage() {
                       ) : (
                         'Manual'
                       )}
-
-      {/* Submission Preview Modal */}
-      <SubmissionPreviewModal
-        open={previewModal.open}
-        onOpenChange={(open) => setPreviewModal({ open, call: open ? previewModal.call : null })}
-        castingCall={previewModal.call}
-        profileId={userProfileId || ''}
-        onConfirm={handleConfirmSubmit}
-      />
                     </div>
                   </div>
                 ))}
@@ -537,15 +509,6 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
-
-      {/* Submission Preview Modal */}
-      <SubmissionPreviewModal
-        open={previewModal.open}
-        onOpenChange={(open) => setPreviewModal({ open, call: open ? previewModal.call : null })}
-        castingCall={previewModal.call}
-        profileId={userProfileId || ''}
-        onConfirm={handleConfirmSubmit}
-      />
       </div>
     </div>
   );

@@ -7,12 +7,14 @@ interface SubmissionEmailParams {
   userProfile: any;
   castingCall: any;
   submissionId: string;
+  coverLetter?: string;
 }
 
 export async function sendSubmissionEmail({
   castingEmail,
   userProfile,
   castingCall,
+  coverLetter,
   submissionId,
 }: SubmissionEmailParams) {
   try {
@@ -25,6 +27,13 @@ export async function sendSubmissionEmail({
 
     const emailHtml = `
       <h2>New Talent Submission</h2>
+      
+      ${coverLetter ? `
+        <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3b82f6;">
+          <h3 style="margin-top: 0; color: #1f2937;">Cover Letter</h3>
+          <p style="white-space: pre-wrap; line-height: 1.6; color: #374151;">${coverLetter}</p>
+        </div>
+      ` : ''}
       <p>You have received a new submission for: <strong>${castingCall.title}</strong></p>
       
       <h3>Talent Information</h3>
