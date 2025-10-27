@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, TrendingUp, Zap, ChevronLeft, ChevronRight, Search, Filter, X } from 'lucide-react';
+import { Calendar, MapPin, TrendingUp, Zap, ChevronLeft, ChevronRight, Search, Filter, X, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -19,6 +19,7 @@ export default function SubmissionsPage() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const [expandedCoverLetter, setExpandedCoverLetter] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     search: '',
     method: 'all',
@@ -85,6 +86,10 @@ export default function SubmissionsPage() {
         {config.label}
       </Badge>
     );
+  };
+
+  const toggleCoverLetter = (submissionId: string) => {
+    setExpandedCoverLetter(expandedCoverLetter === submissionId ? null : submissionId);
   };
 
   const clearFilters = () => {
@@ -263,7 +268,37 @@ export default function SubmissionsPage() {
                               <span className="font-medium">Manual Submission</span>
                             )}
                           </div>
+
+                          {submission.coverLetter && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleCoverLetter(submission.id)}
+                              className="text-sm h-8"
+                            >
+                              <FileText className="h-4 w-4 mr-1" />
+                              Cover Letter
+                              {expandedCoverLetter === submission.id ? (
+                                <ChevronUp className="h-4 w-4 ml-1" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 ml-1" />
+                              )}
+                            </Button>
+                          )}
                         </div>
+
+                        {/* Expandable Cover Letter */}
+                        {submission.coverLetter && expandedCoverLetter === submission.id && (
+                          <div className="mt-3 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                            <div className="flex items-center gap-2 mb-3">
+                              <FileText className="h-4 w-4 text-purple-600" />
+                              <span className="font-semibold text-sm text-purple-900">Your Cover Letter</span>
+                            </div>
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                              {submission.coverLetter}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
