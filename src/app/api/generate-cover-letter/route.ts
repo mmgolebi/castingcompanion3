@@ -65,7 +65,6 @@ Requirements:
 - Age Range: ${castingCall.ageRangeMin || 'N/A'} - ${castingCall.ageRangeMax || 'N/A'}
 - Gender: ${castingCall.gender || 'Any'}
 - Union: ${castingCall.unionStatus || 'Any'}
-${castingCall.skillsRequired.length > 0 ? `- Skills: ${castingCall.skillsRequired.join(', ')}` : ''}
 
 **Instructions:**
 Write a professional, personalized 2-3 paragraph cover letter for this actor's submission. 
