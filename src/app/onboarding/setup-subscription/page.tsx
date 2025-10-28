@@ -17,16 +17,26 @@ function SetupSubscriptionContent() {
         const sessionId = searchParams.get('session_id');
         
         if (!sessionId) {
+          console.error('No session_id in URL');
           setStatus('error');
           return;
         }
 
-        // Call the API to create the subscription
+        console.log('Setting up subscription with session:', sessionId);
+
+        // Call the API to create the subscription with the checkout session ID
         const res = await fetch('/api/stripe/setup-subscription', {
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            checkoutSessionId: sessionId,
+          }),
         });
 
         if (res.ok) {
+          console.log('Subscription setup successful');
           setStatus('success');
           
           // Track purchase conversion
@@ -37,6 +47,8 @@ function SetupSubscriptionContent() {
             router.push('/dashboard?trial=started');
           }, 2000);
         } else {
+          const error = await res.json();
+          console.error('Subscription setup failed:', error);
           setStatus('error');
         }
       } catch (error) {

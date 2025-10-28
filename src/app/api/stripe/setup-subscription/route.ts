@@ -14,6 +14,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { checkoutSessionId } = await req.json();
+
+    if (!checkoutSessionId) {
+      console.error('Setup subscription: No checkout session ID provided');
+      return NextResponse.json({ error: 'Checkout session ID required' }, { status: 400 });
+    }
+
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -29,6 +36,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Stripe price ID not configured' }, { status: 500 });
     }
 
+    // Retrieve the checkout session to get payment method
+    console.log('Retrieving checkout session:', checkoutSessionId);
+    const checkoutSession = await stripe.checkout.sessions.retrieve(checkoutSessionId, {
+      expand: ['payment_intent.payment_method'],
+    });
+
+    if (!checkoutSession.payment_intent) {
+      console.error('No payment intent found in checkout session');
+      return NextResponse.json({ error: 'No payment found' }, { status: 400 });
+    }
+
+    // Get the payment method from the payment intent
+    const paymentIntent = checkoutSession.payment_intent as Stripe.PaymentIntent;
+    const paymentMethodId = typeof paymentIntent.payment_method === 'string' 
+      ? paymentIntent.payment_method 
+      : paymentIntent.payment_method?.id;
+
+    if (!paymentMethodId) {
+      console.error('No payment method found');
+      return NextResponse.json({ error: 'No payment method found' }, { status: 400 });
+    }
+
+    console.log('Found payment method:', paymentMethodId);
+
     // Create Stripe customer if doesn't exist
     let customerId = user.stripeCustomerId;
     
@@ -37,17 +68,35 @@ export async function POST(req: Request) {
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: { userId: user.id },
+        payment_method: paymentMethodId,
+        invoice_settings: {
+          default_payment_method: paymentMethodId,
+        },
       });
       customerId = customer.id;
       console.log('Created customer:', customerId);
+    } else {
+      // Attach payment method to existing customer
+      console.log('Attaching payment method to existing customer:', customerId);
+      await stripe.paymentMethods.attach(paymentMethodId, {
+        customer: customerId,
+      });
+      
+      // Set as default payment method
+      await stripe.customers.update(customerId, {
+        invoice_settings: {
+          default_payment_method: paymentMethodId,
+        },
+      });
     }
 
-    // Create subscription with 14-day trial
+    // Create subscription with 14-day trial AND payment method
     console.log('Creating subscription with price:', process.env.STRIPE_PRICE_ID_MONTHLY);
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: process.env.STRIPE_PRICE_ID_MONTHLY }],
       trial_period_days: 14,
+      default_payment_method: paymentMethodId,
     });
 
     console.log('Subscription created:', subscription.id, 'Status:', subscription.status);

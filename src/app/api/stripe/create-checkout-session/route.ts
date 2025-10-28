@@ -22,17 +22,21 @@ export async function POST(req: Request) {
     }
 
     // Create checkout for $1 one-time payment with EMBEDDED mode
+    // CRITICAL: setup_future_usage saves the payment method for the subscription
     const checkoutSession = await stripe.checkout.sessions.create({
       ui_mode: 'embedded',
       customer_email: user.email,
       payment_method_types: ['card'],
       line_items: [
         {
-          price: process.env.STRIPE_TRIAL_PRICE_ID, // Use the env variable
+          price: process.env.STRIPE_TRIAL_PRICE_ID,
           quantity: 1,
         },
       ],
       mode: 'payment',
+      payment_intent_data: {
+        setup_future_usage: 'off_session', // ✅ CRITICAL: Saves payment method for future charges
+      },
       return_url: `${process.env.NEXTAUTH_URL}/onboarding/setup-subscription?session_id={CHECKOUT_SESSION_ID}`,
       metadata: {
         userId: user.id,
