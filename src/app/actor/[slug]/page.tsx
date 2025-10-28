@@ -57,6 +57,17 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
               </div>
             </div>
 
+            {profile.bio && (
+              <Card className="mt-6 bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200">
+                <CardHeader>
+                  <CardTitle className="text-lg">About</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{profile.bio}</p>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
               <Card>
                 <CardHeader>
