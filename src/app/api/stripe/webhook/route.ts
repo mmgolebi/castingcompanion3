@@ -57,15 +57,28 @@ export async function POST(req: Request) {
         console.log('[WEBHOOK] Checkout completed for user:', session.metadata?.userId);
         
         if (session.metadata?.userId) {
+          // Fetch the actual subscription to get the correct status
+          let subscriptionStatus = 'active'; // default
+          
+          if (session.subscription) {
+            try {
+              const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+              subscriptionStatus = subscription.status;
+              console.log('[WEBHOOK] Retrieved subscription status:', subscriptionStatus);
+            } catch (error) {
+              console.error('[WEBHOOK] Failed to retrieve subscription:', error);
+            }
+          }
+
           const user = await prisma.user.update({
             where: { id: session.metadata.userId },
             data: {
               stripeCustomerId: session.customer as string,
-              subscriptionStatus: 'active',
+              subscriptionStatus: subscriptionStatus,
             },
           });
 
-          console.log('[WEBHOOK] User updated, adding GHL paid tag to:', user.email);
+          console.log('[WEBHOOK] User updated with status:', subscriptionStatus, 'for:', user.email);
 
           // Track successful payment
           trackPaymentFunnel('success', user.id);
@@ -103,7 +116,7 @@ export async function POST(req: Request) {
         await prisma.user.updateMany({
           where: { stripeCustomerId: subscription.customer as string },
           data: {
-            subscriptionStatus: subscription.status === 'active' ? 'active' : 'inactive',
+            subscriptionStatus: subscription.status,
           },
         });
         break;
