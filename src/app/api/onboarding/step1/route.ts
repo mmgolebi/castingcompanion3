@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { createOrUpdateGHLContact } from '@/lib/ghl';
 
 export async function POST(req: Request) {
   try {
@@ -66,6 +67,21 @@ export async function POST(req: Request) {
           visibleTattoos: data.visibleTattoos,
           bio: data.bio,
         },
+      });
+    }
+
+    // Sync phone number to GHL (non-blocking)
+    if (data.phone) {
+      createOrUpdateGHLContact({
+        email: user.email,
+        firstName: user.name || '',
+        phone: data.phone,
+        tags: ['registered', 'euphoria-applicant', 'step1-complete'],
+        customFields: {
+          user_id: user.id,
+        }
+      }).catch(error => {
+        console.error('GHL sync failed (non-blocking):', error);
       });
     }
 
