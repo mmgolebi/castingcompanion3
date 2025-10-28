@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Briefcase, User, Download, Phone, Mail, Calendar, Car, Plane, DollarSign } from 'lucide-react';
+import { MapPin, Briefcase, User, Download, Phone, Mail, Calendar, Car, Plane, DollarSign, FileText } from 'lucide-react';
 
 export default async function PublicProfilePage({ 
   params 
@@ -142,6 +142,19 @@ export default async function PublicProfilePage({
                   </a>
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Bio Section */}
+        {profile.bio && (
+          <Card className="mb-6 hover:shadow-lg transition-shadow bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200">
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                <FileText className="w-6 h-6 text-purple-600" />
+                About
+              </h2>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{profile.bio}</p>
             </CardContent>
           </Card>
         )}
