@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import Link from 'next/link';
 
 interface Metrics {
   totalRegistrations: number;
@@ -190,9 +191,17 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-          <p className="text-gray-600 mt-1">Track registrations, trials, and conversions</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
+            <p className="text-gray-600 mt-1">Track registrations, trials, and conversions</p>
+          </div>
+          <Link
+            href="/admin/calculator"
+            className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 flex items-center gap-2"
+          >
+            🧮 Forecast Calculator
+          </Link>
         </div>
 
         {/* Date Filter */}

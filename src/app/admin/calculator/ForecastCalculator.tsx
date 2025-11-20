@@ -18,13 +18,22 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
   const [dailyAdSpend, setDailyAdSpend] = useState(50);
   const [regToTrialRate, setRegToTrialRate] = useState(currentMetrics.regToTrialRate);
   const [rebillRate, setRebillRate] = useState(currentMetrics.rebillRate);
-  const [monthlyChurn, setMonthlyChurn] = useState(15); // % of customers who cancel per month
+  const [monthlyChurn, setMonthlyChurn] = useState(25); // % of customers who cancel per month
   const [trialPrice, setTrialPrice] = useState(1);
   const [monthlyPrice, setMonthlyPrice] = useState(39.97);
-  const [averageRetentionMonths, setAverageRetentionMonths] = useState(4);
+
+  // Derived from churn: avg retention = 1 / churn rate
+  const averageRetentionMonths = monthlyChurn > 0 ? 100 / monthlyChurn : 12;
 
   // Calculated metrics
   const [calculations, setCalculations] = useState<any>({});
+
+  // Helper to update churn from retention input
+  const handleRetentionChange = (months: number) => {
+    if (months > 0) {
+      setMonthlyChurn(parseFloat((100 / months).toFixed(1)));
+    }
+  };
 
   useEffect(() => {
     // Daily metrics
@@ -247,7 +256,24 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
                     max="100"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    % of customers who cancel each month
+                    = {averageRetentionMonths.toFixed(1)} months avg retention
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Avg. Retention (months)
+                  </label>
+                  <input
+                    type="number"
+                    value={averageRetentionMonths.toFixed(1)}
+                    onChange={(e) => handleRetentionChange(parseFloat(e.target.value) || 1)}
+                    className="w-full border rounded px-3 py-2"
+                    step="0.5"
+                    min="0.5"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Linked to churn rate above
                   </p>
                 </div>
               </div>
@@ -278,19 +304,6 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
                     type="number"
                     value={monthlyPrice}
                     onChange={(e) => setMonthlyPrice(parseFloat(e.target.value) || 0)}
-                    className="w-full border rounded px-3 py-2"
-                    step="1"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Avg. Retention (months)
-                  </label>
-                  <input
-                    type="number"
-                    value={averageRetentionMonths}
-                    onChange={(e) => setAverageRetentionMonths(parseFloat(e.target.value) || 0)}
                     className="w-full border rounded px-3 py-2"
                     step="1"
                   />
