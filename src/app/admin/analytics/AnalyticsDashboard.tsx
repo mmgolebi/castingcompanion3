@@ -86,34 +86,57 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
     );
   };
 
-  // Calculate days since registration
   const daysSince = (dateString: string) => {
     const now = new Date();
     const then = new Date(dateString);
     return Math.floor((now.getTime() - then.getTime()) / (1000 * 60 * 60 * 24));
   };
 
-  // Advanced metrics calculations
+  const isCanceled = (status: string | null) => 
+    status === 'canceled' || status === 'CANCELED' || status === 'cancelled';
+  
+  const isActive = (status: string | null) => 
+    status === 'active' || status === 'ACTIVE';
+
+  const isTrialing = (status: string | null) => 
+    status === 'trialing' || status === 'TRIAL' || status === 'trial';
+
+  // Users who started a trial (paid $1)
   const usersWithTrial = users.filter(u => u.stripeCustomerId);
+  
+  // Users whose 14-day trial period has ended
   const usersTrialEnded = usersWithTrial.filter(u => daysSince(u.createdAt) >= 14);
+  
+  // Users still in trial period
   const usersTrialActive = usersWithTrial.filter(u => daysSince(u.createdAt) < 14);
-  
-  const successfulRebills = usersTrialEnded.filter(u => 
-    u.subscriptionStatus === 'active' || u.subscriptionStatus === 'ACTIVE'
-  ).length;
-  
+
+  // FIXED: Successful rebills = anyone who paid $39.97 (active OR canceled-after-trial)
+  // If trial ended and they're canceled, they likely paid first then canceled
+  const currentlyActive = usersTrialEnded.filter(u => isActive(u.subscriptionStatus)).length;
+  const canceledAfterTrial = usersTrialEnded.filter(u => isCanceled(u.subscriptionStatus)).length;
+  const successfulRebills = currentlyActive + canceledAfterTrial;
+
+  // Trial cancellations = canceled BEFORE trial ended (never paid $39.97)
   const trialCancellations = usersWithTrial.filter(u => 
-    u.subscriptionStatus === 'canceled' || u.subscriptionStatus === 'CANCELED' || u.subscriptionStatus === 'cancelled'
+    isCanceled(u.subscriptionStatus) && daysSince(u.createdAt) < 14
   ).length;
 
-  // Rebill rate (only from trials that have ended)
+  // Churn = paid $39.97 but then canceled
+  const churnedCustomers = canceledAfterTrial;
+
+  // Rebill rate (of trials that ended, how many paid $39.97)
   const rebillRate = usersTrialEnded.length > 0 
     ? ((successfulRebills / usersTrialEnded.length) * 100).toFixed(1)
     : 'N/A';
 
-  // Trial cancellation rate (of all trials started)
+  // Trial cancellation rate (canceled during trial / all trials started)
   const trialCancelRate = usersWithTrial.length > 0
     ? ((trialCancellations / usersWithTrial.length) * 100).toFixed(1)
+    : '0';
+
+  // Churn rate (of successful rebills, how many later canceled)
+  const churnRate = successfulRebills > 0
+    ? ((churnedCustomers / successfulRebills) * 100).toFixed(1)
     : '0';
 
   // Registration to trial rate
@@ -140,37 +163,30 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
     ? (parseFloat(projectedMonthlyPaying) * 39.97).toFixed(2)
     : 'N/A';
 
-  // Customer Lifetime Value (assuming 3 month average retention for now)
   const estimatedLTV = (39.97 * 3).toFixed(2);
 
-  // Cost per acquisition (you can update this with your actual ad spend)
-  const totalTrialRevenue = usersWithTrial.length * 1; // $1 per trial
+  const totalTrialRevenue = usersWithTrial.length * 1;
   const revenuePerRegistration = metrics.totalRegistrations > 0
     ? (totalTrialRevenue / metrics.totalRegistrations).toFixed(2)
     : '0';
 
-  // Recalculate daily data to show journey
+  // Daily breakdown with corrected logic
   const dailyBreakdown = chartData.map(day => {
     const dayUsers = users.filter(u => u.createdAt.startsWith(day.date));
     const daysAgo = daysSince(day.date);
     const trialEnded = daysAgo >= 14;
     
     const startedTrial = dayUsers.filter(u => u.stripeCustomerId).length;
-    const nowPaying = dayUsers.filter(u => 
-      u.subscriptionStatus === 'active' || u.subscriptionStatus === 'ACTIVE'
-    ).length;
-    const stillTrialing = dayUsers.filter(u => 
-      u.subscriptionStatus === 'trialing' || u.subscriptionStatus === 'TRIAL' || u.subscriptionStatus === 'trial'
-    ).length;
-    const canceled = dayUsers.filter(u => 
-      u.subscriptionStatus === 'canceled' || u.subscriptionStatus === 'CANCELED' || u.subscriptionStatus === 'cancelled'
-    ).length;
+    const nowActive = dayUsers.filter(u => isActive(u.subscriptionStatus)).length;
+    const nowCanceled = dayUsers.filter(u => isCanceled(u.subscriptionStatus)).length;
+    const stillTrialing = dayUsers.filter(u => isTrialing(u.subscriptionStatus)).length;
     const neverPaid = dayUsers.filter(u => !u.stripeCustomerId).length;
 
-    // Cohort rebill rate (only if trial ended)
+    // For cohort rebill rate: if trial ended, count active + canceled as "rebilled"
+    const cohortRebills = trialEnded ? nowActive + nowCanceled : 0;
     const cohortTrialsEnded = trialEnded ? startedTrial : 0;
     const cohortRebillRate = cohortTrialsEnded > 0 
-      ? ((nowPaying / cohortTrialsEnded) * 100).toFixed(0)
+      ? ((cohortRebills / cohortTrialsEnded) * 100).toFixed(0)
       : null;
 
     return {
@@ -180,8 +196,9 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
       registrations: dayUsers.length,
       startedTrial,
       stillTrialing,
-      nowPaying,
-      canceled,
+      nowActive,
+      churned: trialEnded ? nowCanceled : 0,
+      trialCanceled: !trialEnded ? nowCanceled : 0,
       neverPaid,
       cohortRebillRate,
     };
@@ -273,24 +290,24 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
             <div className="text-sm text-gray-500 mt-1">{regToTrialRate}% of registrations</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-sm font-medium text-gray-500">Paying Customers</div>
-            <div className="text-3xl font-bold text-green-600 mt-2">{metrics.activeSubscriptions}</div>
-            <div className="text-sm text-gray-500 mt-1">${(metrics.activeSubscriptions * 39.97).toFixed(2)} MRR</div>
+            <div className="text-sm font-medium text-gray-500">Currently Active</div>
+            <div className="text-3xl font-bold text-green-600 mt-2">{currentlyActive}</div>
+            <div className="text-sm text-gray-500 mt-1">${(currentlyActive * 39.97).toFixed(2)} MRR</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-sm font-medium text-gray-500">Canceled</div>
-            <div className="text-3xl font-bold text-red-600 mt-2">{metrics.canceled}</div>
-            <div className="text-sm text-gray-500 mt-1">{trialCancelRate}% cancel rate</div>
+            <div className="text-sm font-medium text-gray-500">Total Paying (Ever)</div>
+            <div className="text-3xl font-bold text-emerald-600 mt-2">{successfulRebills}</div>
+            <div className="text-sm text-gray-500 mt-1">{currentlyActive} active + {churnedCustomers} churned</div>
           </div>
         </div>
 
-        {/* Conversion Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Conversion Metrics - Now with 4 cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
             <div className="text-sm font-medium text-gray-500">Registration → Trial</div>
             <div className="text-3xl font-bold text-blue-600 mt-2">{regToTrialRate}%</div>
             <div className="text-xs text-gray-500 mt-1">
-              {usersWithTrial.length} of {metrics.totalRegistrations} registered users
+              {usersWithTrial.length} of {metrics.totalRegistrations} registered
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
@@ -304,11 +321,18 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
                 : 'No trials ended yet'}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
-            <div className="text-sm font-medium text-gray-500">Trial Cancellation Rate</div>
-            <div className="text-3xl font-bold text-red-600 mt-2">{trialCancelRate}%</div>
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-orange-500">
+            <div className="text-sm font-medium text-gray-500">Trial Cancellation</div>
+            <div className="text-3xl font-bold text-orange-600 mt-2">{trialCancelRate}%</div>
             <div className="text-xs text-gray-500 mt-1">
-              {trialCancellations} of {usersWithTrial.length} trials canceled
+              {trialCancellations} canceled during trial
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+            <div className="text-sm font-medium text-gray-500">Customer Churn</div>
+            <div className="text-3xl font-bold text-red-600 mt-2">{churnRate}%</div>
+            <div className="text-xs text-gray-500 mt-1">
+              {churnedCustomers} of {successfulRebills} paying customers left
             </div>
           </div>
         </div>
@@ -363,8 +387,8 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
             </div>
             <div>
               <div className="text-sm font-medium text-gray-500">Current MRR</div>
-              <div className="text-xl font-bold">${(metrics.activeSubscriptions * 39.97).toFixed(2)}</div>
-              <div className="text-xs text-gray-500">{metrics.activeSubscriptions} × $39.97</div>
+              <div className="text-xl font-bold">${(currentlyActive * 39.97).toFixed(2)}</div>
+              <div className="text-xs text-gray-500">{currentlyActive} × $39.97</div>
             </div>
           </div>
         </div>
@@ -410,11 +434,24 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
             </div>
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-sm font-medium">Converted to Paid ($39.97/mo)</span>
-                <span className="text-sm text-gray-600">{metrics.activeSubscriptions} ({metrics.paidConversionRate}%)</span>
+                <span className="text-sm font-medium">Paid $39.97 (ever)</span>
+                <span className="text-sm text-gray-600">
+                  {successfulRebills} ({usersTrialEnded.length > 0 ? ((successfulRebills / usersTrialEnded.length) * 100).toFixed(1) : 0}% of ended trials)
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-4">
-                <div className="bg-green-600 h-4 rounded-full" style={{ width: `${metrics.paidConversionRate}%` }}></div>
+                <div className="bg-emerald-600 h-4 rounded-full" style={{ width: `${metrics.totalRegistrations > 0 ? (successfulRebills / metrics.totalRegistrations) * 100 : 0}%` }}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between mb-1">
+                <span className="text-sm font-medium">Currently Active</span>
+                <span className="text-sm text-gray-600">
+                  {currentlyActive} ({successfulRebills > 0 ? ((currentlyActive / successfulRebills) * 100).toFixed(1) : 0}% retention)
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-4">
+                <div className="bg-green-600 h-4 rounded-full" style={{ width: `${metrics.totalRegistrations > 0 ? (currentlyActive / metrics.totalRegistrations) * 100 : 0}%` }}></div>
               </div>
             </div>
           </div>
@@ -433,10 +470,10 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
                     <th className="text-center py-2 px-3 text-sm font-medium text-gray-500">Trial Status</th>
                     <th className="text-right py-2 px-3 text-sm font-medium text-gray-500">Registered</th>
                     <th className="text-right py-2 px-3 text-sm font-medium text-gray-500">Started Trial</th>
-                    <th className="text-right py-2 px-3 text-sm font-medium text-gray-500">Now Paying</th>
+                    <th className="text-right py-2 px-3 text-sm font-medium text-gray-500">Active</th>
+                    <th className="text-right py-2 px-3 text-sm font-medium text-gray-500">Churned</th>
                     <th className="text-right py-2 px-3 text-sm font-medium text-gray-500">Rebill %</th>
-                    <th className="text-right py-2 px-3 text-sm font-medium text-gray-500">Canceled</th>
-                    <th className="text-right py-2 px-3 text-sm font-medium text-gray-500">Never Paid</th>
+                    <th className="text-right py-2 px-3 text-sm font-medium text-gray-500">Never Paid $1</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -456,7 +493,8 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
                       </td>
                       <td className="py-2 px-3 text-sm text-right">{day.registrations}</td>
                       <td className="py-2 px-3 text-sm text-right text-blue-600 font-medium">{day.startedTrial}</td>
-                      <td className="py-2 px-3 text-sm text-right text-green-600 font-medium">{day.nowPaying}</td>
+                      <td className="py-2 px-3 text-sm text-right text-green-600 font-medium">{day.nowActive}</td>
+                      <td className="py-2 px-3 text-sm text-right text-red-600">{day.churned}</td>
                       <td className="py-2 px-3 text-sm text-right">
                         {day.cohortRebillRate !== null ? (
                           <span className={`font-medium ${parseFloat(day.cohortRebillRate) >= 50 ? 'text-green-600' : parseFloat(day.cohortRebillRate) >= 25 ? 'text-yellow-600' : 'text-red-600'}`}>
@@ -466,7 +504,6 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
                           <span className="text-gray-400">-</span>
                         )}
                       </td>
-                      <td className="py-2 px-3 text-sm text-right text-red-600">{day.canceled}</td>
                       <td className="py-2 px-3 text-sm text-right text-gray-400">
                         {!day.trialEnded && day.neverPaid > 0 ? (
                           <span className="text-yellow-600" title="Trial still active">
