@@ -7,8 +7,11 @@ interface Props {
   currentMetrics: {
     regToTrialRate: number;
     rebillRate: number;
+    churnRate: number;
     currentMRR: number;
     activeCustomers: number;
+    totalPaying: number;
+    churnedCustomers: number;
   };
 }
 
@@ -18,7 +21,7 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
   const [dailyAdSpend, setDailyAdSpend] = useState(50);
   const [regToTrialRate, setRegToTrialRate] = useState(currentMetrics.regToTrialRate);
   const [rebillRate, setRebillRate] = useState(currentMetrics.rebillRate);
-  const [monthlyChurn, setMonthlyChurn] = useState(25); // % of customers who cancel per month
+  const [monthlyChurn, setMonthlyChurn] = useState(currentMetrics.churnRate || 25);
   const [trialPrice, setTrialPrice] = useState(1);
   const [monthlyPrice, setMonthlyPrice] = useState(39.97);
 
@@ -66,6 +69,8 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
     let cumulativeAdSpend = 0;
     let cumulativeTrialRevenue = 0;
     let cumulativeProfit = 0;
+    let totalNewCustomers = 0;
+    let totalChurned = 0;
 
     for (let month = 1; month <= 12; month++) {
       // New customers this month (accounting for 14-day trial delay)
@@ -78,6 +83,10 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
       
       // Net customer change
       cumulativeCustomers = cumulativeCustomers + newCustomers - churnedCustomers;
+      
+      // Track totals
+      totalNewCustomers += newCustomers;
+      totalChurned += churnedCustomers;
       
       // Revenue this month
       const subscriptionRevenue = cumulativeCustomers * monthlyPrice;
@@ -139,6 +148,8 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
         profit: cumulativeProfit,
         finalCustomers: Math.round(cumulativeCustomers),
         finalMRR: cumulativeCustomers * monthlyPrice,
+        totalNewCustomers: Math.round(totalNewCustomers),
+        totalChurned: Math.round(totalChurned),
       },
     });
   }, [
@@ -168,6 +179,32 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
           >
             ← Back to Analytics
           </Link>
+        </div>
+
+        {/* Current Metrics Summary */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h3 className="font-medium text-blue-900 mb-2">📊 Your Current Metrics</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span className="text-blue-700">Reg → Trial:</span>
+              <span className="font-bold text-blue-900 ml-1">{currentMetrics.regToTrialRate}%</span>
+            </div>
+            <div>
+              <span className="text-blue-700">Rebill Rate:</span>
+              <span className="font-bold text-blue-900 ml-1">{currentMetrics.rebillRate}%</span>
+            </div>
+            <div>
+              <span className="text-blue-700">Churn Rate:</span>
+              <span className="font-bold text-blue-900 ml-1">{currentMetrics.churnRate}%</span>
+            </div>
+            <div>
+              <span className="text-blue-700">Active Customers:</span>
+              <span className="font-bold text-blue-900 ml-1">{currentMetrics.activeCustomers}</span>
+            </div>
+          </div>
+          <div className="mt-2 text-xs text-blue-600">
+            Total who paid $39.97: {currentMetrics.totalPaying} ({currentMetrics.activeCustomers} active + {currentMetrics.churnedCustomers} churned)
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -239,7 +276,7 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
                     max="100"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Current: {currentMetrics.rebillRate}%
+                    Current: {currentMetrics.rebillRate}% (includes churned)
                   </p>
                 </div>
 
@@ -256,7 +293,7 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
                     max="100"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    = {averageRetentionMonths.toFixed(1)} months avg retention
+                    Current: {currentMetrics.churnRate}% | = {averageRetentionMonths.toFixed(1)} months avg retention
                   </p>
                 </div>
 
@@ -315,6 +352,7 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
               onClick={() => {
                 setRegToTrialRate(currentMetrics.regToTrialRate);
                 setRebillRate(currentMetrics.rebillRate);
+                setMonthlyChurn(currentMetrics.churnRate);
               }}
               className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
             >
@@ -449,6 +487,16 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
                   </div>
                 </div>
               </div>
+              <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                <div className="bg-white rounded p-3">
+                  <span className="text-gray-500">Total New Customers:</span>
+                  <span className="font-bold text-green-600 ml-2">+{calculations.yearTotals?.totalNewCustomers || 0}</span>
+                </div>
+                <div className="bg-white rounded p-3">
+                  <span className="text-gray-500">Total Churned:</span>
+                  <span className="font-bold text-red-600 ml-2">-{calculations.yearTotals?.totalChurned || 0}</span>
+                </div>
+              </div>
             </div>
 
             {/* Month by Month Table */}
@@ -500,6 +548,7 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
                     setCostPerRegistration(5);
                     setRegToTrialRate(currentMetrics.regToTrialRate);
                     setRebillRate(currentMetrics.rebillRate);
+                    setMonthlyChurn(currentMetrics.churnRate);
                   }}
                   className="p-4 border rounded hover:bg-gray-50 text-left"
                 >
@@ -512,6 +561,7 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
                     setCostPerRegistration(5);
                     setRegToTrialRate(currentMetrics.regToTrialRate);
                     setRebillRate(currentMetrics.rebillRate);
+                    setMonthlyChurn(currentMetrics.churnRate);
                   }}
                   className="p-4 border rounded hover:bg-gray-50 text-left"
                 >
@@ -524,6 +574,7 @@ export default function ForecastCalculator({ currentMetrics }: Props) {
                     setCostPerRegistration(6);
                     setRegToTrialRate(currentMetrics.regToTrialRate * 0.9);
                     setRebillRate(currentMetrics.rebillRate * 0.9);
+                    setMonthlyChurn(currentMetrics.churnRate * 1.1);
                   }}
                   className="p-4 border rounded hover:bg-gray-50 text-left"
                 >
