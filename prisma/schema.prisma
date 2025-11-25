@@ -80,6 +80,8 @@ model CastingCall {
   ethnicity          String?
   unionStatus        String
   castingEmail       String
+  castingDirector    String?
+  sourceUrl          String?
   featuredImage      String?
   status             String       @default("ACTIVE")
   createdAt          DateTime     @default(now())
