@@ -108,7 +108,6 @@ export async function POST(request: NextRequest) {
         submissionDeadline: deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         sourceUrl: body.sourceUrl || null,
         status: 'ACTIVE',
-        createdById: currentUser.id,
       },
     });
 
