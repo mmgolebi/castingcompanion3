@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         compensation: body.compensation || null,
         unionStatus,
         castingDirector: body.castingDirector || null,
-        castingDirectorEmail: body.castingDirectorEmail || null,
+        castingEmail: body.castingDirectorEmail || null,
         deadline: deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         sourceUrl: body.sourceUrl || null,
         status: 'ACTIVE',
