@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
     }
 
     let submissionDeadline: Date | undefined;
+    let deadline: Date | null = null;
     if (body.deadline) {
       const parsed = new Date(body.deadline);
       if (!isNaN(parsed.getTime())) {
