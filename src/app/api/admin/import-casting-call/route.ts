@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    let deadline: Date | undefined;
+    let submissionDeadline: Date | undefined;
     if (body.deadline) {
       const parsed = new Date(body.deadline);
       if (!isNaN(parsed.getTime())) {
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         unionStatus,
         castingDirector: body.castingDirector || null,
         castingEmail: body.castingDirectorEmail || null,
-        deadline: deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        submissionDeadline: deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         sourceUrl: body.sourceUrl || null,
         status: 'ACTIVE',
         createdById: currentUser.id,
