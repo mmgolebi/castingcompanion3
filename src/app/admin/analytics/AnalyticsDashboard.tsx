@@ -3,6 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
+import LandingPageSection from './LandingPageSection';
+import LandingPageSection from './LandingPageSection';
+import LandingPageSection from './LandingPageSection';
 
 interface Metrics {
   totalRegistrations: number;
@@ -277,6 +280,9 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
           </div>
         </div>
 
+
+        {/* Landing Page Performance */}
+        <LandingPageSection fromDate={from} toDate={to} />
         {/* Primary KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div className="bg-white rounded-lg shadow p-6">
