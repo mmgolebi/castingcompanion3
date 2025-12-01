@@ -4,8 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
 import LandingPageSection from './LandingPageSection';
-import LandingPageSection from './LandingPageSection';
-import LandingPageSection from './LandingPageSection';
 
 interface Metrics {
   totalRegistrations: number;
