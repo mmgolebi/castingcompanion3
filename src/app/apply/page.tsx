@@ -45,6 +45,9 @@ function ApplyPageContent() {
         // Track registration conversion
         trackCompleteRegistration();
         
+        // Store show name for payment page
+        localStorage.setItem("landingPageShowName", "Euphoria Season 3");
+        
         // Automatically sign them in
         const result = await signIn('credentials', {
           email,

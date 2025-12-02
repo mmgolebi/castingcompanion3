@@ -20,6 +20,7 @@ const trackInitiateCheckout = () => {
 export default function PaymentPage() {
   const router = useRouter();
   const [checkoutError, setCheckoutError] = useState('');
+  const [showName, setShowName] = useState<string | null>(null);
 
   // Track InitiateCheckout when payment page loads
   useEffect(() => {
@@ -27,6 +28,14 @@ export default function PaymentPage() {
 
     // Track payment page view in GHL
     fetch("/api/track-payment-view", { method: "POST" }).catch(console.error);
+  }, []);
+
+  // Read show name from localStorage (set during registration)
+  useEffect(() => {
+    const storedShowName = localStorage.getItem("landingPageShowName");
+    if (storedShowName) {
+      setShowName(storedShowName);
+    }
   }, []);
 
   return (
@@ -59,7 +68,7 @@ export default function PaymentPage() {
             Lock In Your Spot & Get Auto-Submitted
           </h1>
           <p className="text-lg md:text-xl text-gray-200 mb-3">
-            You'll be automatically submitted to the <span className="text-purple-300 font-semibold">Euphoria Season 3 casting call</span> you came here for, 
+            You'll be automatically submitted to {showName ? (<><span className="text-purple-300 font-semibold">the {showName} casting call</span> you came here for,</>) : (<>casting calls that match your profile,</>)} 
             <span className="text-purple-300 font-semibold"> plus hundreds of other matching roles</span> - all on autopilot.
           </p>
           <p className="text-base md:text-lg text-gray-300">

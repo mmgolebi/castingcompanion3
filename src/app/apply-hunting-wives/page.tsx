@@ -37,6 +37,9 @@ function ApplyPageContent() {
 
       if (res.ok) {
         trackCompleteRegistration();
+        
+        // Store show name for payment page
+        localStorage.setItem("landingPageShowName", "Hunting Wives Season 2");
         const result = await signIn('credentials', { email, password, redirect: false });
         if (result?.ok) {
           router.push('/onboarding/step1');
