@@ -20,6 +20,7 @@ interface ScrapedData {
   gender?: string;
   ethnicity?: string;
   rawContent?: string;
+  shootingDates?: string;
 }
 
 interface EmailResult {
@@ -239,6 +240,17 @@ export default function ImportPage() {
                 onChange={(e) => updateField('deadline', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Application deadline"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Shooting Dates</label>
+              <input
+                type="text"
+                value={formData.shootingDates || ''}
+                onChange={(e) => updateField('shootingDates', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="e.g., Dec 4-5, 2025"
               />
             </div>
           </div>
