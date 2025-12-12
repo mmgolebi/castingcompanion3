@@ -18,6 +18,26 @@ interface FBCampaign {
   clicks: string;
 }
 
+interface FBAdSet {
+  adset_name: string;
+  campaign_name: string;
+  spend: string;
+  impressions: string;
+  clicks: string;
+  actions?: { action_type: string; value: string }[];
+}
+
+// Map ad set names to landing pages
+const adSetToLandingPage: Record<string, string> = {
+  'Chad Powers S2': '/apply-chad-powers',
+  'Euphoria': '/apply',
+  'The Bear S5': '/apply-the-bear',
+  'Tulsa King S2': '/apply-tulsa-king',
+  'Hunting Wives S2': '/apply-hunting-wives',
+  'Tis So Sweet': '/apply-tis-so-sweet',
+  'Chicago Fire': '/apply-chicago-fire',
+};
+
 export async function GET(request: NextRequest) {
   if (!FB_ACCESS_TOKEN || !FB_AD_ACCOUNT_ID) {
     return NextResponse.json({ error: 'FB credentials not configured' }, { status: 500 });
@@ -51,6 +71,11 @@ export async function GET(request: NextRequest) {
     const campaignRes = await fetch(campaignUrl);
     const campaignData = await campaignRes.json();
 
+    // Get ad set breakdown with conversions
+    const adsetUrl = `https://graph.facebook.com/v18.0/act_${FB_AD_ACCOUNT_ID}/insights?fields=adset_name,campaign_name,spend,impressions,clicks,actions,cost_per_action_type&level=adset&${dateParams}&access_token=${FB_ACCESS_TOKEN}`;
+    const adsetRes = await fetch(adsetUrl);
+    const adsetData = await adsetRes.json();
+
     // Get monthly spend for the year
     const yearUrl = `https://graph.facebook.com/v18.0/act_${FB_AD_ACCOUNT_ID}/insights?fields=spend&date_preset=this_year&time_increment=monthly&access_token=${FB_ACCESS_TOKEN}`;
     const yearRes = await fetch(yearUrl);
@@ -67,8 +92,36 @@ export async function GET(request: NextRequest) {
       clicks: parseInt(c.clicks || '0'),
     })) || [];
 
+    // Process ad sets
+    const adsets = adsetData.data?.map((a: FBAdSet) => {
+      // Find conversions (registrations)
+      const registrations = a.actions?.find(
+        act => act.action_type === 'omni_complete_registration' || 
+               act.action_type === 'complete_registration' ||
+               act.action_type === 'lead'
+      );
+      
+      const spend = parseFloat(a.spend || '0');
+      const regs = parseInt(registrations?.value || '0');
+      
+      return {
+        name: a.adset_name,
+        campaign: a.campaign_name,
+        landingPage: adSetToLandingPage[a.adset_name] || null,
+        spend,
+        impressions: parseInt(a.impressions || '0'),
+        clicks: parseInt(a.clicks || '0'),
+        registrations: regs,
+        costPerRegistration: regs > 0 ? spend / regs : null,
+        ctr: parseInt(a.impressions || '0') > 0 
+          ? ((parseInt(a.clicks || '0') / parseInt(a.impressions || '0')) * 100).toFixed(2)
+          : '0',
+      };
+    }) || [];
+
     // Sort by spend descending
     campaigns.sort((a, b) => b.spend - a.spend);
+    adsets.sort((a: { spend: number }, b: { spend: number }) => b.spend - a.spend);
 
     const monthlySpend = yearData.data?.map((m: FBInsight) => ({
       month: m.date_start,
@@ -85,6 +138,7 @@ export async function GET(request: NextRequest) {
         ctr: totalImpressions !== '0' ? ((parseInt(totalClicks) / parseInt(totalImpressions)) * 100).toFixed(2) : '0',
       },
       campaigns,
+      adsets,
       monthlySpend,
       yearlyTotal,
     });

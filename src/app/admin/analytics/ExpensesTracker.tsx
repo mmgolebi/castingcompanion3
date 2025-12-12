@@ -19,6 +19,18 @@ interface FBCampaign {
   clicks: number;
 }
 
+interface FBAdSet {
+  name: string;
+  campaign: string;
+  landingPage: string | null;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  registrations: number;
+  costPerRegistration: number | null;
+  ctr: string;
+}
+
 interface FBData {
   total: {
     spend: number;
@@ -27,6 +39,7 @@ interface FBData {
     ctr: string;
   };
   campaigns: FBCampaign[];
+  adsets: FBAdSet[];
   monthlySpend: { month: string; spend: number }[];
   yearlyTotal: number;
 }
@@ -127,6 +140,7 @@ export default function ExpensesTracker() {
   const [fbLoading, setFbLoading] = useState(true);
   const [fbError, setFbError] = useState<string | null>(null);
   const [fbDateRange, setFbDateRange] = useState<'this_month' | 'last_30d' | 'this_year'>('this_month');
+  const [showAdSets, setShowAdSets] = useState(true);
 
   // Fetch FB ads data
   useEffect(() => {
@@ -276,8 +290,117 @@ export default function ExpensesTracker() {
               </div>
             </div>
 
+            {/* Toggle between Campaign and Ad Set view */}
+            <div className="flex gap-2 mb-2">
+              <button
+                onClick={() => setShowAdSets(false)}
+                className={`px-3 py-1 rounded text-sm ${!showAdSets ? 'bg-purple-600 text-white' : 'bg-white text-gray-700'}`}
+              >
+                By Campaign
+              </button>
+              <button
+                onClick={() => setShowAdSets(true)}
+                className={`px-3 py-1 rounded text-sm ${showAdSets ? 'bg-purple-600 text-white' : 'bg-white text-gray-700'}`}
+              >
+                By Ad Set (Landing Page)
+              </button>
+            </div>
+
+            {/* Ad Set Breakdown */}
+            {showAdSets && fbData.adsets && fbData.adsets.length > 0 && (
+              <div className="bg-white rounded p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Ad Set Performance by Landing Page</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-2 font-medium text-gray-500">Ad Set</th>
+                        <th className="text-left py-2 px-2 font-medium text-gray-500">Landing Page</th>
+                        <th className="text-right py-2 px-2 font-medium text-gray-500">Spend</th>
+                        <th className="text-right py-2 px-2 font-medium text-gray-500">Impr.</th>
+                        <th className="text-right py-2 px-2 font-medium text-gray-500">Clicks</th>
+                        <th className="text-right py-2 px-2 font-medium text-gray-500">CTR</th>
+                        <th className="text-right py-2 px-2 font-medium text-gray-500">Regs</th>
+                        <th className="text-right py-2 px-2 font-medium text-gray-500">CPA</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fbData.adsets.map((adset, i) => (
+                        <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
+                          <td className="py-2 px-2 font-medium">{adset.name}</td>
+                          <td className="py-2 px-2">
+                            {adset.landingPage ? (
+                              <a 
+                                href={`https://castingcompanion.com${adset.landingPage}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline"
+                              >
+                                {adset.landingPage}
+                              </a>
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
+                          </td>
+                          <td className="py-2 px-2 text-right font-semibold text-pink-600">
+                            ${adset.spend.toFixed(2)}
+                          </td>
+                          <td className="py-2 px-2 text-right text-gray-600">
+                            {adset.impressions.toLocaleString()}
+                          </td>
+                          <td className="py-2 px-2 text-right text-gray-600">
+                            {adset.clicks.toLocaleString()}
+                          </td>
+                          <td className="py-2 px-2 text-right text-gray-600">
+                            {adset.ctr}%
+                          </td>
+                          <td className="py-2 px-2 text-right font-semibold text-green-600">
+                            {adset.registrations}
+                          </td>
+                          <td className="py-2 px-2 text-right">
+                            {adset.costPerRegistration ? (
+                              <span className={`font-semibold ${adset.costPerRegistration < 2 ? 'text-green-600' : adset.costPerRegistration < 3 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                ${adset.costPerRegistration.toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-gray-50">
+                      <tr>
+                        <td className="py-2 px-2 font-bold" colSpan={2}>Total</td>
+                        <td className="py-2 px-2 text-right font-bold text-pink-600">
+                          ${fbData.total.spend.toFixed(2)}
+                        </td>
+                        <td className="py-2 px-2 text-right font-bold">
+                          {fbData.total.impressions.toLocaleString()}
+                        </td>
+                        <td className="py-2 px-2 text-right font-bold">
+                          {fbData.total.clicks.toLocaleString()}
+                        </td>
+                        <td className="py-2 px-2 text-right font-bold">
+                          {fbData.total.ctr}%
+                        </td>
+                        <td className="py-2 px-2 text-right font-bold text-green-600">
+                          {fbData.adsets.reduce((sum, a) => sum + a.registrations, 0)}
+                        </td>
+                        <td className="py-2 px-2 text-right font-bold">
+                          {fbData.adsets.reduce((sum, a) => sum + a.registrations, 0) > 0 
+                            ? `$${(fbData.total.spend / fbData.adsets.reduce((sum, a) => sum + a.registrations, 0)).toFixed(2)}`
+                            : '—'}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            )}
+
             {/* Campaign Breakdown */}
-            {fbData.campaigns.length > 0 && (
+            {!showAdSets && fbData.campaigns.length > 0 && (
               <div className="bg-white rounded p-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Campaign Breakdown</h3>
                 <div className="space-y-2">
