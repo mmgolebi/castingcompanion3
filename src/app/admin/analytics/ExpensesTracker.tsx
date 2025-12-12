@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Expense {
   id: string;
@@ -12,7 +12,26 @@ interface Expense {
   notes?: string;
 }
 
-// Initial expenses data - you can modify these values
+interface FBCampaign {
+  name: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+}
+
+interface FBData {
+  total: {
+    spend: number;
+    impressions: number;
+    clicks: number;
+    ctr: string;
+  };
+  campaigns: FBCampaign[];
+  monthlySpend: { month: string; spend: number }[];
+  yearlyTotal: number;
+}
+
+// Initial expenses data
 const initialExpenses: Expense[] = [
   {
     id: '1',
@@ -94,24 +113,52 @@ const categoryColors: Record<string, { bg: string; text: string; label: string }
   marketing: { bg: 'bg-green-100', text: 'text-green-800', label: 'Marketing' },
   tools: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'Tools' },
   other: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Other' },
+  ads: { bg: 'bg-pink-100', text: 'text-pink-800', label: 'FB Ads' },
 };
 
 export default function ExpensesTracker() {
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [newExpense, setNewExpense] = useState<Partial<Expense>>({
     frequency: 'monthly',
     category: 'other',
   });
+  const [fbData, setFbData] = useState<FBData | null>(null);
+  const [fbLoading, setFbLoading] = useState(true);
+  const [fbError, setFbError] = useState<string | null>(null);
+  const [fbDateRange, setFbDateRange] = useState<'this_month' | 'last_30d' | 'this_year'>('this_month');
 
-  // Calculate totals
+  // Fetch FB ads data
+  useEffect(() => {
+    const fetchFbData = async () => {
+      setFbLoading(true);
+      try {
+        const res = await fetch(`/api/admin/fb-ads?preset=${fbDateRange}`);
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        setFbData(data);
+        setFbError(null);
+      } catch (err) {
+        setFbError(err instanceof Error ? err.message : 'Failed to load FB data');
+      } finally {
+        setFbLoading(false);
+      }
+    };
+    fetchFbData();
+  }, [fbDateRange]);
+
+  // Calculate totals (excluding FB ads - those are variable)
   const monthlyTotal = expenses.reduce((sum, exp) => {
     if (exp.frequency === 'monthly') return sum + exp.amount;
-    return sum + (exp.amount / 12); // Convert yearly to monthly
+    return sum + (exp.amount / 12);
   }, 0);
 
   const yearlyTotal = monthlyTotal * 12;
+
+  // Total including FB ads this month
+  const fbMonthlySpend = fbData?.total.spend || 0;
+  const totalWithAds = monthlyTotal + fbMonthlySpend;
 
   // Group by category
   const byCategory = expenses.reduce((acc, exp) => {
@@ -119,6 +166,11 @@ export default function ExpensesTracker() {
     acc[exp.category] = (acc[exp.category] || 0) + monthly;
     return acc;
   }, {} as Record<string, number>);
+
+  // Add FB ads to category breakdown
+  if (fbMonthlySpend > 0) {
+    byCategory['ads'] = fbMonthlySpend;
+  }
 
   const addExpense = () => {
     if (!newExpense.name || !newExpense.amount) return;
@@ -142,30 +194,123 @@ export default function ExpensesTracker() {
     setExpenses(expenses.filter(e => e.id !== id));
   };
 
-  const updateExpense = (id: string, updates: Partial<Expense>) => {
-    setExpenses(expenses.map(e => e.id === id ? { ...e, ...updates } : e));
-    setEditingId(null);
-  };
-
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-sm font-medium text-gray-500">Monthly Total</h3>
+          <h3 className="text-sm font-medium text-gray-500">Fixed Monthly</h3>
           <p className="text-3xl font-bold text-gray-900">${monthlyTotal.toFixed(2)}</p>
-          <p className="text-sm text-gray-500 mt-1">per month</p>
+          <p className="text-sm text-gray-500 mt-1">recurring costs</p>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-sm font-medium text-gray-500">Yearly Total</h3>
-          <p className="text-3xl font-bold text-gray-900">${yearlyTotal.toFixed(2)}</p>
-          <p className="text-sm text-gray-500 mt-1">per year</p>
+          <h3 className="text-sm font-medium text-gray-500">FB Ads (This Month)</h3>
+          <p className="text-3xl font-bold text-pink-600">
+            {fbLoading ? '...' : `$${fbMonthlySpend.toFixed(2)}`}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {fbData ? `${fbData.total.impressions.toLocaleString()} impressions` : 'variable'}
+          </p>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-sm font-medium text-gray-500">Break-even Customers</h3>
-          <p className="text-3xl font-bold text-green-600">{Math.ceil(monthlyTotal / 39.97)}</p>
-          <p className="text-sm text-gray-500 mt-1">@ $39.97/mo each</p>
+          <h3 className="text-sm font-medium text-gray-500">Total This Month</h3>
+          <p className="text-3xl font-bold text-red-600">${totalWithAds.toFixed(2)}</p>
+          <p className="text-sm text-gray-500 mt-1">fixed + ads</p>
         </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-sm font-medium text-gray-500">Break-even</h3>
+          <p className="text-3xl font-bold text-green-600">{Math.ceil(totalWithAds / 39.97)}</p>
+          <p className="text-sm text-gray-500 mt-1">customers @ $39.97/mo</p>
+        </div>
+      </div>
+
+      {/* FB Ads Section */}
+      <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg shadow p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-pink-900">📣 Facebook Ads</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFbDateRange('this_month')}
+              className={`px-3 py-1 rounded text-sm ${fbDateRange === 'this_month' ? 'bg-pink-600 text-white' : 'bg-white text-gray-700'}`}
+            >
+              This Month
+            </button>
+            <button
+              onClick={() => setFbDateRange('last_30d')}
+              className={`px-3 py-1 rounded text-sm ${fbDateRange === 'last_30d' ? 'bg-pink-600 text-white' : 'bg-white text-gray-700'}`}
+            >
+              Last 30 Days
+            </button>
+            <button
+              onClick={() => setFbDateRange('this_year')}
+              className={`px-3 py-1 rounded text-sm ${fbDateRange === 'this_year' ? 'bg-pink-600 text-white' : 'bg-white text-gray-700'}`}
+            >
+              This Year
+            </button>
+          </div>
+        </div>
+
+        {fbError ? (
+          <div className="text-red-600 bg-red-50 p-4 rounded">{fbError}</div>
+        ) : fbLoading ? (
+          <div className="text-gray-500 animate-pulse">Loading Facebook Ads data...</div>
+        ) : fbData ? (
+          <div className="space-y-4">
+            {/* Metrics Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white rounded p-4">
+                <div className="text-xs font-medium text-gray-500">Total Spend</div>
+                <div className="text-2xl font-bold text-pink-600">${fbData.total.spend.toFixed(2)}</div>
+              </div>
+              <div className="bg-white rounded p-4">
+                <div className="text-xs font-medium text-gray-500">Impressions</div>
+                <div className="text-2xl font-bold">{fbData.total.impressions.toLocaleString()}</div>
+              </div>
+              <div className="bg-white rounded p-4">
+                <div className="text-xs font-medium text-gray-500">Clicks</div>
+                <div className="text-2xl font-bold">{fbData.total.clicks.toLocaleString()}</div>
+              </div>
+              <div className="bg-white rounded p-4">
+                <div className="text-xs font-medium text-gray-500">CTR</div>
+                <div className="text-2xl font-bold">{fbData.total.ctr}%</div>
+              </div>
+            </div>
+
+            {/* Campaign Breakdown */}
+            {fbData.campaigns.length > 0 && (
+              <div className="bg-white rounded p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Campaign Breakdown</h3>
+                <div className="space-y-2">
+                  {fbData.campaigns.map((campaign, i) => (
+                    <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm truncate max-w-xs">{campaign.name}</div>
+                        <div className="text-xs text-gray-500">
+                          {campaign.impressions.toLocaleString()} impr • {campaign.clicks.toLocaleString()} clicks
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-pink-600">${campaign.spend.toFixed(2)}</div>
+                        <div className="text-xs text-gray-500">
+                          {fbData.total.spend > 0 ? ((campaign.spend / fbData.total.spend) * 100).toFixed(0) : 0}%
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Yearly Total */}
+            {fbDateRange === 'this_year' && (
+              <div className="bg-white rounded p-4">
+                <div className="text-sm text-gray-600">
+                  <strong>Year to Date:</strong> ${fbData.yearlyTotal.toFixed(2)} spent on Facebook Ads
+                </div>
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {/* Category Breakdown */}
@@ -175,7 +320,7 @@ export default function ExpensesTracker() {
           {Object.entries(byCategory)
             .sort((a, b) => b[1] - a[1])
             .map(([category, amount]) => {
-              const percentage = (amount / monthlyTotal) * 100;
+              const percentage = (amount / totalWithAds) * 100;
               const colors = categoryColors[category] || categoryColors.other;
               return (
                 <div key={category} className="flex items-center gap-4">
@@ -192,7 +337,7 @@ export default function ExpensesTracker() {
                       />
                     </div>
                   </div>
-                  <div className="w-24 text-right">
+                  <div className="w-28 text-right">
                     <span className="font-semibold">${amount.toFixed(2)}</span>
                     <span className="text-gray-500 text-sm ml-1">({percentage.toFixed(0)}%)</span>
                   </div>
@@ -202,10 +347,10 @@ export default function ExpensesTracker() {
         </div>
       </div>
 
-      {/* Expenses Table */}
+      {/* Fixed Expenses Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="p-6 border-b flex justify-between items-center">
-          <h2 className="text-lg font-semibold">💰 All Expenses</h2>
+          <h2 className="text-lg font-semibold">💰 Fixed Expenses</h2>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
@@ -214,7 +359,6 @@ export default function ExpensesTracker() {
           </button>
         </div>
 
-        {/* Add Form */}
         {showAddForm && (
           <div className="p-6 bg-gray-50 border-b">
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
@@ -277,7 +421,6 @@ export default function ExpensesTracker() {
           </div>
         )}
 
-        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -352,7 +495,7 @@ export default function ExpensesTracker() {
             </tbody>
             <tfoot className="bg-gray-100">
               <tr>
-                <td className="py-3 px-4 font-bold">Total</td>
+                <td className="py-3 px-4 font-bold">Fixed Total</td>
                 <td className="text-center py-3 px-4">-</td>
                 <td className="text-center py-3 px-4">-</td>
                 <td className="text-center py-3 px-4 font-bold text-green-600">
@@ -369,9 +512,9 @@ export default function ExpensesTracker() {
       {/* Profitability Note */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
         <p className="text-amber-800 text-sm">
-          💡 <strong>Note:</strong> You need at least <strong>{Math.ceil(monthlyTotal / 39.97)} paying customers</strong> at $39.97/mo 
-          to cover your monthly expenses of ${monthlyTotal.toFixed(2)}. 
-          Each customer beyond that is pure profit!
+          💡 <strong>Note:</strong> You need at least <strong>{Math.ceil(totalWithAds / 39.97)} paying customers</strong> at $39.97/mo 
+          to cover your total monthly spend of ${totalWithAds.toFixed(2)} (${monthlyTotal.toFixed(2)} fixed + ${fbMonthlySpend.toFixed(2)} ads). 
+          Each customer beyond that is profit!
         </p>
       </div>
     </div>
