@@ -27,7 +27,10 @@ interface FBAdSet {
   impressions: number;
   clicks: number;
   registrations: number;
+  trials: number;
   costPerRegistration: number | null;
+  costPerTrial: number | null;
+  trialConversionRate: string | null;
   ctr: string;
 }
 
@@ -37,6 +40,10 @@ interface FBData {
     impressions: number;
     clicks: number;
     ctr: string;
+    registrations: number;
+    trials: number;
+    costPerRegistration: number | null;
+    costPerTrial: number | null;
   };
   campaigns: FBCampaign[];
   adsets: FBAdSet[];
@@ -271,7 +278,7 @@ export default function ExpensesTracker() {
         ) : fbData ? (
           <div className="space-y-4">
             {/* Metrics Row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
               <div className="bg-white rounded p-4">
                 <div className="text-xs font-medium text-gray-500">Total Spend</div>
                 <div className="text-2xl font-bold text-pink-600">${fbData.total.spend.toFixed(2)}</div>
@@ -285,8 +292,26 @@ export default function ExpensesTracker() {
                 <div className="text-2xl font-bold">{fbData.total.clicks.toLocaleString()}</div>
               </div>
               <div className="bg-white rounded p-4">
-                <div className="text-xs font-medium text-gray-500">CTR</div>
-                <div className="text-2xl font-bold">{fbData.total.ctr}%</div>
+                <div className="text-xs font-medium text-gray-500">Registrations</div>
+                <div className="text-2xl font-bold text-blue-600">{fbData.total.registrations}</div>
+                <div className="text-xs text-gray-500">
+                  {fbData.total.costPerRegistration ? `$${fbData.total.costPerRegistration.toFixed(2)} CPR` : ''}
+                </div>
+              </div>
+              <div className="bg-white rounded p-4">
+                <div className="text-xs font-medium text-gray-500">Trials ($1)</div>
+                <div className="text-2xl font-bold text-green-600">{fbData.total.trials}</div>
+                <div className="text-xs text-gray-500">
+                  {fbData.total.costPerTrial ? `$${fbData.total.costPerTrial.toFixed(2)} CPT` : ''}
+                </div>
+              </div>
+              <div className="bg-white rounded p-4">
+                <div className="text-xs font-medium text-gray-500">Trial Rate</div>
+                <div className="text-2xl font-bold">
+                  {fbData.total.registrations > 0 
+                    ? `${((fbData.total.trials / fbData.total.registrations) * 100).toFixed(1)}%`
+                    : '—'}
+                </div>
               </div>
             </div>
 
@@ -317,11 +342,12 @@ export default function ExpensesTracker() {
                         <th className="text-left py-2 px-2 font-medium text-gray-500">Ad Set</th>
                         <th className="text-left py-2 px-2 font-medium text-gray-500">Landing Page</th>
                         <th className="text-right py-2 px-2 font-medium text-gray-500">Spend</th>
-                        <th className="text-right py-2 px-2 font-medium text-gray-500">Impr.</th>
                         <th className="text-right py-2 px-2 font-medium text-gray-500">Clicks</th>
-                        <th className="text-right py-2 px-2 font-medium text-gray-500">CTR</th>
                         <th className="text-right py-2 px-2 font-medium text-gray-500">Regs</th>
-                        <th className="text-right py-2 px-2 font-medium text-gray-500">CPA</th>
+                        <th className="text-right py-2 px-2 font-medium text-gray-500">CPR</th>
+                        <th className="text-right py-2 px-2 font-medium text-gray-500">Trials</th>
+                        <th className="text-right py-2 px-2 font-medium text-gray-500">CPT</th>
+                        <th className="text-right py-2 px-2 font-medium text-gray-500">Trial %</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -346,21 +372,36 @@ export default function ExpensesTracker() {
                             ${adset.spend.toFixed(2)}
                           </td>
                           <td className="py-2 px-2 text-right text-gray-600">
-                            {adset.impressions.toLocaleString()}
-                          </td>
-                          <td className="py-2 px-2 text-right text-gray-600">
                             {adset.clicks.toLocaleString()}
                           </td>
-                          <td className="py-2 px-2 text-right text-gray-600">
-                            {adset.ctr}%
-                          </td>
-                          <td className="py-2 px-2 text-right font-semibold text-green-600">
+                          <td className="py-2 px-2 text-right font-semibold text-blue-600">
                             {adset.registrations}
                           </td>
                           <td className="py-2 px-2 text-right">
                             {adset.costPerRegistration ? (
                               <span className={`font-semibold ${adset.costPerRegistration < 2 ? 'text-green-600' : adset.costPerRegistration < 3 ? 'text-yellow-600' : 'text-red-600'}`}>
                                 ${adset.costPerRegistration.toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
+                          </td>
+                          <td className="py-2 px-2 text-right font-semibold text-green-600">
+                            {adset.trials}
+                          </td>
+                          <td className="py-2 px-2 text-right">
+                            {adset.costPerTrial ? (
+                              <span className={`font-semibold ${adset.costPerTrial < 5 ? 'text-green-600' : adset.costPerTrial < 10 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                ${adset.costPerTrial.toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
+                          </td>
+                          <td className="py-2 px-2 text-right">
+                            {adset.trialConversionRate ? (
+                              <span className={`font-semibold ${parseFloat(adset.trialConversionRate) >= 30 ? 'text-green-600' : parseFloat(adset.trialConversionRate) >= 15 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                {adset.trialConversionRate}%
                               </span>
                             ) : (
                               <span className="text-gray-400">—</span>
@@ -376,20 +417,27 @@ export default function ExpensesTracker() {
                           ${fbData.total.spend.toFixed(2)}
                         </td>
                         <td className="py-2 px-2 text-right font-bold">
-                          {fbData.total.impressions.toLocaleString()}
-                        </td>
-                        <td className="py-2 px-2 text-right font-bold">
                           {fbData.total.clicks.toLocaleString()}
                         </td>
+                        <td className="py-2 px-2 text-right font-bold text-blue-600">
+                          {fbData.total.registrations}
+                        </td>
                         <td className="py-2 px-2 text-right font-bold">
-                          {fbData.total.ctr}%
+                          {fbData.total.costPerRegistration 
+                            ? `$${fbData.total.costPerRegistration.toFixed(2)}`
+                            : '—'}
                         </td>
                         <td className="py-2 px-2 text-right font-bold text-green-600">
-                          {fbData.adsets.reduce((sum, a) => sum + a.registrations, 0)}
+                          {fbData.total.trials}
                         </td>
                         <td className="py-2 px-2 text-right font-bold">
-                          {fbData.adsets.reduce((sum, a) => sum + a.registrations, 0) > 0 
-                            ? `$${(fbData.total.spend / fbData.adsets.reduce((sum, a) => sum + a.registrations, 0)).toFixed(2)}`
+                          {fbData.total.costPerTrial
+                            ? `$${fbData.total.costPerTrial.toFixed(2)}`
+                            : '—'}
+                        </td>
+                        <td className="py-2 px-2 text-right font-bold">
+                          {fbData.total.registrations > 0 
+                            ? `${((fbData.total.trials / fbData.total.registrations) * 100).toFixed(1)}%`
                             : '—'}
                         </td>
                       </tr>

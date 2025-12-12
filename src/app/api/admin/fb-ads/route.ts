@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
 
 const FB_ACCESS_TOKEN = process.env.FB_ACCESS_TOKEN;
 const FB_AD_ACCOUNT_ID = process.env.FB_AD_ACCOUNT_ID;
@@ -27,7 +28,18 @@ interface FBAdSet {
   actions?: { action_type: string; value: string }[];
 }
 
-// Map ad set names to landing pages
+// Map ad set names to landing page sources (what gets stored in user.source)
+const adSetToSource: Record<string, string[]> = {
+  'Chad Powers S2': ['chad-powers', 'apply-chad-powers'],
+  'Euphoria': ['apply', 'euphoria', ''],
+  'The Bear S5': ['the-bear', 'apply-the-bear'],
+  'Tulsa King S2': ['tulsa-king', 'apply-tulsa-king'],
+  'Hunting Wives S2': ['hunting-wives', 'apply-hunting-wives'],
+  'Tis So Sweet': ['tis-so-sweet', 'apply-tis-so-sweet'],
+  'Chicago Fire': ['chicago-fire', 'apply-chicago-fire'],
+};
+
+// Map ad set names to landing pages for display
 const adSetToLandingPage: Record<string, string> = {
   'Chad Powers S2': '/apply-chad-powers',
   'Euphoria': '/apply',
@@ -49,7 +61,29 @@ export async function GET(request: NextRequest) {
   const preset = searchParams.get('preset') || 'this_month';
 
   try {
-    // Build date params
+    // Calculate date range for database query
+    let startDate: Date;
+    let endDate: Date = new Date();
+    
+    if (from && to) {
+      startDate = new Date(from);
+      endDate = new Date(to);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      // Match FB presets
+      const now = new Date();
+      if (preset === 'this_month') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      } else if (preset === 'last_30d') {
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      } else if (preset === 'this_year') {
+        startDate = new Date(now.getFullYear(), 0, 1);
+      } else {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+    }
+
+    // Build date params for FB API
     let dateParams = '';
     if (from && to) {
       dateParams = `time_range={"since":"${from}","until":"${to}"}`;
@@ -81,6 +115,35 @@ export async function GET(request: NextRequest) {
     const yearRes = await fetch(yearUrl);
     const yearData = await yearRes.json();
 
+    // Fetch user data from database for the same time period
+    const users = await prisma.user.findMany({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      select: {
+        source: true,
+        stripeCustomerId: true,
+        subscriptionStatus: true,
+      },
+    });
+
+    // Group users by source
+    const usersBySource: Record<string, { registrations: number; trials: number }> = {};
+    
+    users.forEach(user => {
+      const source = user.source || 'apply'; // default to 'apply' if no source
+      if (!usersBySource[source]) {
+        usersBySource[source] = { registrations: 0, trials: 0 };
+      }
+      usersBySource[source].registrations++;
+      if (user.stripeCustomerId) {
+        usersBySource[source].trials++;
+      }
+    });
+
     const totalSpend = accountData.data?.[0]?.spend || '0';
     const totalImpressions = accountData.data?.[0]?.impressions || '0';
     const totalClicks = accountData.data?.[0]?.clicks || '0';
@@ -92,17 +155,29 @@ export async function GET(request: NextRequest) {
       clicks: parseInt(c.clicks || '0'),
     })) || [];
 
-    // Process ad sets
+    // Process ad sets with trial data
     const adsets = adsetData.data?.map((a: FBAdSet) => {
-      // Find conversions (registrations)
-      const registrations = a.actions?.find(
+      // Find conversions (registrations from FB pixel)
+      const fbRegistrations = a.actions?.find(
         act => act.action_type === 'omni_complete_registration' || 
                act.action_type === 'complete_registration' ||
                act.action_type === 'lead'
       );
       
       const spend = parseFloat(a.spend || '0');
-      const regs = parseInt(registrations?.value || '0');
+      const fbRegs = parseInt(fbRegistrations?.value || '0');
+      
+      // Get actual registrations and trials from database
+      const sources = adSetToSource[a.adset_name] || [];
+      let dbRegistrations = 0;
+      let dbTrials = 0;
+      
+      sources.forEach(source => {
+        if (usersBySource[source]) {
+          dbRegistrations += usersBySource[source].registrations;
+          dbTrials += usersBySource[source].trials;
+        }
+      });
       
       return {
         name: a.adset_name,
@@ -111,8 +186,15 @@ export async function GET(request: NextRequest) {
         spend,
         impressions: parseInt(a.impressions || '0'),
         clicks: parseInt(a.clicks || '0'),
-        registrations: regs,
-        costPerRegistration: regs > 0 ? spend / regs : null,
+        // FB pixel registrations (for reference)
+        fbRegistrations: fbRegs,
+        // Actual DB registrations
+        registrations: dbRegistrations,
+        // Actual trials (paid $1)
+        trials: dbTrials,
+        costPerRegistration: dbRegistrations > 0 ? spend / dbRegistrations : null,
+        costPerTrial: dbTrials > 0 ? spend / dbTrials : null,
+        trialConversionRate: dbRegistrations > 0 ? ((dbTrials / dbRegistrations) * 100).toFixed(1) : null,
         ctr: parseInt(a.impressions || '0') > 0 
           ? ((parseInt(a.clicks || '0') / parseInt(a.impressions || '0')) * 100).toFixed(2)
           : '0',
@@ -130,17 +212,26 @@ export async function GET(request: NextRequest) {
 
     const yearlyTotal = monthlySpend.reduce((sum: number, m: { spend: number }) => sum + m.spend, 0);
 
+    // Calculate totals from DB
+    const totalRegistrations = users.length;
+    const totalTrials = users.filter(u => u.stripeCustomerId).length;
+
     return NextResponse.json({
       total: {
         spend: parseFloat(totalSpend),
         impressions: parseInt(totalImpressions),
         clicks: parseInt(totalClicks),
         ctr: totalImpressions !== '0' ? ((parseInt(totalClicks) / parseInt(totalImpressions)) * 100).toFixed(2) : '0',
+        registrations: totalRegistrations,
+        trials: totalTrials,
+        costPerRegistration: totalRegistrations > 0 ? parseFloat(totalSpend) / totalRegistrations : null,
+        costPerTrial: totalTrials > 0 ? parseFloat(totalSpend) / totalTrials : null,
       },
       campaigns,
       adsets,
       monthlySpend,
       yearlyTotal,
+      usersBySource, // Include for debugging
     });
   } catch (error) {
     console.error('FB API error:', error);
