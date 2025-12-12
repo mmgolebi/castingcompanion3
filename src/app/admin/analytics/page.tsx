@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import AnalyticsTabWrapper from './AnalyticsTabWrapper';
 
 interface Props {
   searchParams: Promise<{ from?: string; to?: string }>;
@@ -106,7 +107,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
   const chartData = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
 
   return (
-    <AnalyticsDashboard
+    <AnalyticsTabWrapper><AnalyticsDashboard
       fromDate={fromDate.toISOString().split('T')[0]}
       toDate={toDate.toISOString().split('T')[0]}
       metrics={{
