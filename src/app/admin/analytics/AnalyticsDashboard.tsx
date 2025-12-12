@@ -260,13 +260,13 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
               </button>
             </div>
             <div className="flex items-end gap-2">
-              <button
-              <button
-                onClick={() => quickFilter(0)}
+  <button
+    onClick={() => quickFilter(0)}
                 className="bg-gray-200 text-gray-700 px-3 py-2 rounded hover:bg-gray-300 text-sm"
               >
                 Today
               </button>
+              <button
                 onClick={() => quickFilter(7)}
                 className="bg-gray-200 text-gray-700 px-3 py-2 rounded hover:bg-gray-300 text-sm"
               >
