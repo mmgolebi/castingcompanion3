@@ -107,7 +107,8 @@ export default async function AnalyticsPage({ searchParams }: Props) {
   const chartData = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
 
   return (
-    <AnalyticsTabWrapper><AnalyticsDashboard
+    <AnalyticsTabWrapper>
+      <AnalyticsDashboard
       fromDate={fromDate.toISOString().split('T')[0]}
       toDate={toDate.toISOString().split('T')[0]}
       metrics={{
@@ -124,6 +125,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
         createdAt: u.createdAt.toISOString(),
       }))}
       chartData={chartData}
-    />
+      />
+    </AnalyticsTabWrapper>
   );
 }
