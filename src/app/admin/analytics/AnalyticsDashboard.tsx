@@ -49,6 +49,13 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
   };
 
   const quickFilter = (days: number) => {
+    if (days === 0) {
+      const today = new Date().toISOString().split('T')[0];
+      setFrom(today);
+      setTo(today);
+      router.push(`/admin/analytics?from=${today}&to=${today}`);
+      return;
+    }
     const end = new Date();
     const start = new Date();
     start.setDate(end.getDate() - days);
