@@ -28,26 +28,28 @@ interface FBAdSet {
   actions?: { action_type: string; value: string }[];
 }
 
-// Map ad set names to landing page sources (what gets stored in user.source)
-const adSetToSource: Record<string, string[]> = {
-  'Chad Powers S2': ['chad-powers', 'apply-chad-powers'],
-  'Euphoria': ['apply', 'euphoria', ''],
-  'The Bear S5': ['the-bear', 'apply-the-bear'],
-  'Tulsa King S2': ['tulsa-king', 'apply-tulsa-king'],
-  'Hunting Wives S2': ['hunting-wives', 'apply-hunting-wives'],
-  'Tis So Sweet': ['tis-so-sweet', 'apply-tis-so-sweet'],
-  'Chicago Fire': ['chicago-fire', 'apply-chicago-fire'],
+// Map ad set names to source values in database
+const adSetToSource: Record<string, string> = {
+  'Chad Powers S2': 'chad-powers',
+  'Euphoria': 'apply',
+  'The Bear S5': 'the-bear',
+  'Tulsa King S2': 'tulsa-king',
+  'Hunting Wives S2': 'hunting-wives',
+  'Tis So Sweet': 'tis-so-sweet',
+  'Chicago Fire': 'chicago-fire',
 };
 
-// Map ad set names to landing pages for display
-const adSetToLandingPage: Record<string, string> = {
-  'Chad Powers S2': '/apply-chad-powers',
-  'Euphoria': '/apply',
-  'The Bear S5': '/apply-the-bear',
-  'Tulsa King S2': '/apply-tulsa-king',
-  'Hunting Wives S2': '/apply-hunting-wives',
-  'Tis So Sweet': '/apply-tis-so-sweet',
-  'Chicago Fire': '/apply-chicago-fire',
+// Map source values to landing page URLs for display
+const sourceToLandingPage: Record<string, string> = {
+  'chad-powers': '/apply-chad-powers',
+  'apply': '/apply',
+  'the-bear': '/apply-the-bear',
+  'tulsa-king': '/apply-tulsa-king',
+  'hunting-wives': '/apply-hunting-wives',
+  'tis-so-sweet': '/apply-tis-so-sweet',
+  'chicago-fire': '/apply-chicago-fire',
+  'tyler-perry': '/apply-tyler-perry',
+  'direct': '(direct)',
 };
 
 export async function GET(request: NextRequest) {
@@ -70,9 +72,14 @@ export async function GET(request: NextRequest) {
       endDate = new Date(to);
       endDate.setHours(23, 59, 59, 999);
     } else {
-      // Match FB presets
       const now = new Date();
-      if (preset === 'this_month') {
+      if (preset === 'today') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      } else if (preset === 'this_week') {
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - now.getDay());
+        startDate.setHours(0, 0, 0, 0);
+      } else if (preset === 'this_month') {
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
       } else if (preset === 'last_30d') {
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -87,6 +94,14 @@ export async function GET(request: NextRequest) {
     let dateParams = '';
     if (from && to) {
       dateParams = `time_range={"since":"${from}","until":"${to}"}`;
+    } else if (preset === 'today') {
+      const today = new Date().toISOString().split('T')[0];
+      dateParams = `time_range={"since":"${today}","until":"${today}"}`;
+    } else if (preset === 'this_week') {
+      const now = new Date();
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
+      dateParams = `time_range={"since":"${startOfWeek.toISOString().split('T')[0]}","until":"${now.toISOString().split('T')[0]}"}`;
     } else {
       dateParams = `date_preset=${preset}`;
     }
@@ -105,8 +120,8 @@ export async function GET(request: NextRequest) {
     const campaignRes = await fetch(campaignUrl);
     const campaignData = await campaignRes.json();
 
-    // Get ad set breakdown with conversions
-    const adsetUrl = `https://graph.facebook.com/v18.0/act_${FB_AD_ACCOUNT_ID}/insights?fields=adset_name,campaign_name,spend,impressions,clicks,actions,cost_per_action_type&level=adset&${dateParams}&access_token=${FB_ACCESS_TOKEN}`;
+    // Get ad set breakdown
+    const adsetUrl = `https://graph.facebook.com/v18.0/act_${FB_AD_ACCOUNT_ID}/insights?fields=adset_name,campaign_name,spend,impressions,clicks,actions&level=adset&${dateParams}&access_token=${FB_ACCESS_TOKEN}`;
     const adsetRes = await fetch(adsetUrl);
     const adsetData = await adsetRes.json();
 
@@ -115,7 +130,7 @@ export async function GET(request: NextRequest) {
     const yearRes = await fetch(yearUrl);
     const yearData = await yearRes.json();
 
-    // Fetch user data from database for the same time period
+    // Fetch ALL users from database for the time period, grouped by source
     const users = await prisma.user.findMany({
       where: {
         createdAt: {
@@ -126,7 +141,6 @@ export async function GET(request: NextRequest) {
       select: {
         source: true,
         stripeCustomerId: true,
-        subscriptionStatus: true,
       },
     });
 
@@ -134,7 +148,7 @@ export async function GET(request: NextRequest) {
     const usersBySource: Record<string, { registrations: number; trials: number }> = {};
     
     users.forEach(user => {
-      const source = user.source || 'apply'; // default to 'apply' if no source
+      const source = user.source || 'direct';
       if (!usersBySource[source]) {
         usersBySource[source] = { registrations: 0, trials: 0 };
       }
@@ -155,55 +169,62 @@ export async function GET(request: NextRequest) {
       clicks: parseInt(c.clicks || '0'),
     })) || [];
 
-    // Process ad sets with trial data
+    // Create a set of sources that have FB ad sets
+    const mappedSources = new Set(Object.values(adSetToSource));
+
+    // Process FB ad sets
     const adsets = adsetData.data?.map((a: FBAdSet) => {
-      // Find conversions (registrations from FB pixel)
-      const fbRegistrations = a.actions?.find(
-        act => act.action_type === 'omni_complete_registration' || 
-               act.action_type === 'complete_registration' ||
-               act.action_type === 'lead'
-      );
-      
       const spend = parseFloat(a.spend || '0');
-      const fbRegs = parseInt(fbRegistrations?.value || '0');
+      const source = adSetToSource[a.adset_name];
+      const sourceData = source ? usersBySource[source] : null;
       
-      // Get actual registrations and trials from database
-      const sources = adSetToSource[a.adset_name] || [];
-      let dbRegistrations = 0;
-      let dbTrials = 0;
-      
-      sources.forEach(source => {
-        if (usersBySource[source]) {
-          dbRegistrations += usersBySource[source].registrations;
-          dbTrials += usersBySource[source].trials;
-        }
-      });
+      const registrations = sourceData?.registrations || 0;
+      const trials = sourceData?.trials || 0;
       
       return {
         name: a.adset_name,
         campaign: a.campaign_name,
-        landingPage: adSetToLandingPage[a.adset_name] || null,
+        source: source || null,
+        landingPage: source ? sourceToLandingPage[source] : null,
         spend,
         impressions: parseInt(a.impressions || '0'),
         clicks: parseInt(a.clicks || '0'),
-        // FB pixel registrations (for reference)
-        fbRegistrations: fbRegs,
-        // Actual DB registrations
-        registrations: dbRegistrations,
-        // Actual trials (paid $1)
-        trials: dbTrials,
-        costPerRegistration: dbRegistrations > 0 ? spend / dbRegistrations : null,
-        costPerTrial: dbTrials > 0 ? spend / dbTrials : null,
-        trialConversionRate: dbRegistrations > 0 ? ((dbTrials / dbRegistrations) * 100).toFixed(1) : null,
+        registrations,
+        trials,
+        costPerRegistration: registrations > 0 ? spend / registrations : null,
+        costPerTrial: trials > 0 ? spend / trials : null,
+        trialConversionRate: registrations > 0 ? ((trials / registrations) * 100).toFixed(1) : null,
         ctr: parseInt(a.impressions || '0') > 0 
           ? ((parseInt(a.clicks || '0') / parseInt(a.impressions || '0')) * 100).toFixed(2)
           : '0',
       };
     }) || [];
 
-    // Sort by spend descending
+    // Add unmapped sources (like tyler-perry, direct) as separate entries
+    const unmappedSources = Object.entries(usersBySource)
+      .filter(([source]) => !mappedSources.has(source))
+      .map(([source, data]) => ({
+        name: source === 'direct' ? '(Direct / No Source)' : source,
+        campaign: 'No Active Campaign',
+        source,
+        landingPage: sourceToLandingPage[source] || null,
+        spend: 0,
+        impressions: 0,
+        clicks: 0,
+        registrations: data.registrations,
+        trials: data.trials,
+        costPerRegistration: null,
+        costPerTrial: null,
+        trialConversionRate: data.registrations > 0 ? ((data.trials / data.registrations) * 100).toFixed(1) : null,
+        ctr: '0',
+        isUnmapped: true,
+      }));
+
+    // Combine and sort
+    const allAdsets = [...adsets, ...unmappedSources];
+    allAdsets.sort((a, b) => b.spend - a.spend || b.registrations - a.registrations);
+
     campaigns.sort((a, b) => b.spend - a.spend);
-    adsets.sort((a: { spend: number }, b: { spend: number }) => b.spend - a.spend);
 
     const monthlySpend = yearData.data?.map((m: FBInsight) => ({
       month: m.date_start,
@@ -228,10 +249,10 @@ export async function GET(request: NextRequest) {
         costPerTrial: totalTrials > 0 ? parseFloat(totalSpend) / totalTrials : null,
       },
       campaigns,
-      adsets,
+      adsets: allAdsets,
       monthlySpend,
       yearlyTotal,
-      usersBySource, // Include for debugging
+      debug: { usersBySource, startDate: startDate.toISOString(), endDate: endDate.toISOString() },
     });
   } catch (error) {
     console.error('FB API error:', error);

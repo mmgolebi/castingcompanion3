@@ -296,7 +296,7 @@ export default function ExpensesTracker() {
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {fbData.adsets.map((adset, i) => (
-                          <tr key={i} className="hover:bg-gray-50 transition-colors">
+                          <tr key={i} className={`hover:bg-gray-50 transition-colors ${(adset as any).isUnmapped ? "bg-amber-50" : ""}`}>
                             <td className="py-3 px-4">
                               <div className="font-medium text-gray-900">{adset.name}</div>
                               {adset.landingPage && (
