@@ -34,10 +34,18 @@ export default async function AnalyticsPage({ searchParams }: Props) {
     ? new Date(params.to + 'T23:59:59Z') 
     : new Date();
 
-  // Fetch Stripe payment history for accurate rebill tracking
-  const stripePayments = await getStripePaymentHistory();
+  // Fetch Stripe payment history (with error handling)
+  let stripePayments: Map<string, { customerId: string; hasPaidFullPrice: boolean; totalPaid: number; paymentCount: number }>;
+  try {
+    stripePayments = await getStripePaymentHistory();
+  } catch (error) {
+    console.error('[Analytics] Failed to fetch Stripe data:', error);
+    stripePayments = new Map();
+  }
+  
+  const useStripeData = stripePayments.size > 0;
 
-  // Fetch all users in date range with source
+  // Fetch all users in date range
   const users = await prisma.user.findMany({
     where: {
       createdAt: {
@@ -59,7 +67,6 @@ export default async function AnalyticsPage({ searchParams }: Props) {
     },
   });
 
-  // Calculate metrics
   const totalRegistrations = users.length;
   const trials = users.filter(u => 
     u.subscriptionStatus === 'trialing' || 
@@ -81,17 +88,8 @@ export default async function AnalyticsPage({ searchParams }: Props) {
     u.subscriptionStatus === 'INACTIVE'
   ).length;
 
-  // Users who started a trial (have stripeCustomerId)
   const startedTrial = users.filter(u => u.stripeCustomerId).length;
   
-  // *** ACCURATE: Users who actually paid $39.97 (verified from Stripe invoices) ***
-  const paidEver = users.filter(u => {
-    if (!u.stripeCustomerId) return false;
-    const stripeData = stripePayments.get(u.stripeCustomerId);
-    return stripeData?.hasPaidFullPrice === true;
-  }).length;
-
-  // Trials that have ended (started more than 14 days ago)
   const fourteenDaysAgo = new Date();
   fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
   
@@ -106,34 +104,55 @@ export default async function AnalyticsPage({ searchParams }: Props) {
     new Date(u.createdAt) >= fourteenDaysAgo
   ).length;
 
-  // Rebill success rate (of trials that ended, how many ACTUALLY paid $39.97)
+  // paidEver: Use Stripe data if available, otherwise fall back to old logic
+  const paidEver = useStripeData
+    ? users.filter(u => {
+        if (!u.stripeCustomerId) return false;
+        const stripeData = stripePayments.get(u.stripeCustomerId);
+        return stripeData?.hasPaidFullPrice === true;
+      }).length
+    : users.filter(u => 
+        u.stripeCustomerId && 
+        (u.subscriptionStatus === 'active' || u.subscriptionStatus === 'canceled' || u.subscriptionStatus === 'cancelled')
+      ).length;
+
+  // churned: Use Stripe data if available
+  const churned = useStripeData
+    ? users.filter(u => {
+        if (!u.stripeCustomerId) return false;
+        const stripeData = stripePayments.get(u.stripeCustomerId);
+        const hasPaid = stripeData?.hasPaidFullPrice === true;
+        const isNotActive = u.subscriptionStatus !== 'active' && u.subscriptionStatus !== 'ACTIVE';
+        return hasPaid && isNotActive;
+      }).length
+    : users.filter(u =>
+        u.stripeCustomerId &&
+        (u.subscriptionStatus === 'canceled' || u.subscriptionStatus === 'cancelled') &&
+        new Date(u.createdAt) < fourteenDaysAgo
+      ).length;
+
   const rebillSuccessRate = trialsEnded > 0 
     ? ((paidEver / trialsEnded) * 100).toFixed(1)
     : '0';
 
-  // Trial cancellation (canceled and never paid $39.97)
-  const canceledDuringTrial = users.filter(u => {
-    if (!u.stripeCustomerId) return false;
-    const stripeData = stripePayments.get(u.stripeCustomerId);
-    const neverPaidFull = !stripeData?.hasPaidFullPrice;
-    const isCanceled = u.subscriptionStatus === 'canceled' || u.subscriptionStatus === 'cancelled';
-    return neverPaidFull && isCanceled;
-  }).length;
+  const canceledDuringTrial = useStripeData
+    ? users.filter(u => {
+        if (!u.stripeCustomerId) return false;
+        const stripeData = stripePayments.get(u.stripeCustomerId);
+        const neverPaidFull = !stripeData?.hasPaidFullPrice;
+        const isCanceled = u.subscriptionStatus === 'canceled' || u.subscriptionStatus === 'cancelled';
+        return neverPaidFull && isCanceled;
+      }).length
+    : users.filter(u =>
+        u.stripeCustomerId &&
+        (u.subscriptionStatus === 'canceled' || u.subscriptionStatus === 'cancelled') &&
+        new Date(u.createdAt) >= fourteenDaysAgo
+      ).length;
 
-  // Customer churn (paid $39.97 but no longer active)
-  const churned = users.filter(u => {
-    if (!u.stripeCustomerId) return false;
-    const stripeData = stripePayments.get(u.stripeCustomerId);
-    const hasPaidFull = stripeData?.hasPaidFullPrice === true;
-    const isNotActive = u.subscriptionStatus !== 'active' && u.subscriptionStatus !== 'ACTIVE';
-    return hasPaidFull && isNotActive;
-  }).length;
-  
   const churnRate = paidEver > 0 
     ? ((churned / paidEver) * 100).toFixed(1)
     : '0';
 
-  // Conversion rates
   const trialConversionRate = totalRegistrations > 0 
     ? ((startedTrial / totalRegistrations) * 100).toFixed(1)
     : '0';
@@ -141,11 +160,10 @@ export default async function AnalyticsPage({ searchParams }: Props) {
     ? (activeSubscriptions / totalRegistrations * 100).toFixed(1)
     : '0';
 
-  // Days in range for daily avg
   const daysDiff = Math.max(1, Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)));
   const dailyAvg = (totalRegistrations / daysDiff).toFixed(1);
 
-  // Landing page performance - now with accurate paid data from Stripe
+  // Landing page performance
   const sourceStats: Record<string, { registrations: number; trials: number; paid: number }> = {};
   
   users.forEach(user => {
@@ -156,9 +174,12 @@ export default async function AnalyticsPage({ searchParams }: Props) {
     sourceStats[source].registrations++;
     if (user.stripeCustomerId) {
       sourceStats[source].trials++;
-      // Check if actually paid $39.97 from Stripe
-      const stripeData = stripePayments.get(user.stripeCustomerId);
-      if (stripeData?.hasPaidFullPrice) {
+      if (useStripeData) {
+        const stripeData = stripePayments.get(user.stripeCustomerId);
+        if (stripeData?.hasPaidFullPrice) {
+          sourceStats[source].paid++;
+        }
+      } else if (user.subscriptionStatus === 'active') {
         sourceStats[source].paid++;
       }
     }
@@ -175,7 +196,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
     }))
     .sort((a, b) => b.registrations - a.registrations);
 
-  // Daily cohort analysis - with accurate Stripe payment data
+  // Daily cohort analysis
   const dailyCohorts: Record<string, {
     date: string;
     registered: number;
@@ -208,15 +229,25 @@ export default async function AnalyticsPage({ searchParams }: Props) {
     if (user.stripeCustomerId) {
       dailyCohorts[dateKey].startedTrial++;
       
-      // Check actual Stripe payment
-      const stripeData = stripePayments.get(user.stripeCustomerId);
-      const hasPaidFull = stripeData?.hasPaidFullPrice === true;
-      
-      if (hasPaidFull) {
-        dailyCohorts[dateKey].paidEver++;
+      if (useStripeData) {
+        const stripeData = stripePayments.get(user.stripeCustomerId);
+        const hasPaidFull = stripeData?.hasPaidFullPrice === true;
+        
+        if (hasPaidFull) {
+          dailyCohorts[dateKey].paidEver++;
+          if (user.subscriptionStatus === 'active') {
+            dailyCohorts[dateKey].active++;
+          } else {
+            dailyCohorts[dateKey].churned++;
+          }
+        }
+      } else {
+        // Fallback to old logic
         if (user.subscriptionStatus === 'active') {
+          dailyCohorts[dateKey].paidEver++;
           dailyCohorts[dateKey].active++;
-        } else {
+        } else if (user.subscriptionStatus === 'canceled' || user.subscriptionStatus === 'cancelled') {
+          dailyCohorts[dateKey].paidEver++;
           dailyCohorts[dateKey].churned++;
         }
       }
@@ -228,7 +259,6 @@ export default async function AnalyticsPage({ searchParams }: Props) {
   const cohortData = Object.values(dailyCohorts)
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  // Group by day for chart
   const dailyData: Record<string, { date: string; registrations: number; trials: number; active: number }> = {};
   
   users.forEach(user => {
