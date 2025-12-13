@@ -13,8 +13,10 @@ interface MonthlyData {
   totalRevenue: number;
   profit: number;
   registrations: number;
-  trials: number;
+  newTrials: number;
+  conversions: number;
   activeSubscribers: number;
+  conversionRate: string;
 }
 
 interface ApiResponse {
@@ -26,7 +28,9 @@ interface ApiResponse {
     totalRevenue: number;
     profit: number;
     registrations: number;
-    trials: number;
+    newTrials: number;
+    conversions: number;
+    currentActiveSubscribers: number;
   };
 }
 
@@ -98,7 +102,7 @@ export default function MonthlyPLPage() {
       ) : data ? (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
               <div className="text-sm font-medium text-gray-500">Total Revenue</div>
               <div className="text-2xl font-bold text-green-600 mt-1">
@@ -120,7 +124,19 @@ export default function MonthlyPLPage() {
             <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
               <div className="text-sm font-medium text-gray-500">Total Trials</div>
               <div className="text-2xl font-bold text-blue-600 mt-1">
-                {data.totals.trials}
+                {data.totals.newTrials}
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+              <div className="text-sm font-medium text-gray-500">Total Converted</div>
+              <div className="text-2xl font-bold text-purple-600 mt-1">
+                {data.totals.conversions}
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+              <div className="text-sm font-medium text-gray-500">Active Now</div>
+              <div className="text-2xl font-bold text-emerald-600 mt-1">
+                {data.totals.currentActiveSubscribers}
               </div>
             </div>
           </div>
@@ -134,35 +150,37 @@ export default function MonthlyPLPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-600">Month</th>
-                    <th className="text-right py-4 px-6 font-semibold text-gray-600">Ad Spend</th>
-                    <th className="text-right py-4 px-6 font-semibold text-gray-600">Fixed Costs</th>
-                    <th className="text-right py-4 px-6 font-semibold text-gray-600">Total Costs</th>
-                    <th className="text-right py-4 px-6 font-semibold text-gray-600">Revenue</th>
-                    <th className="text-right py-4 px-6 font-semibold text-gray-600">Profit/Loss</th>
-                    <th className="text-right py-4 px-6 font-semibold text-gray-600">Regs</th>
-                    <th className="text-right py-4 px-6 font-semibold text-gray-600">Trials</th>
+                    <th className="text-left py-4 px-4 font-semibold text-gray-600">Month</th>
+                    <th className="text-right py-4 px-4 font-semibold text-gray-600">Ad Spend</th>
+                    <th className="text-right py-4 px-4 font-semibold text-gray-600">Fixed</th>
+                    <th className="text-right py-4 px-4 font-semibold text-gray-600">Revenue</th>
+                    <th className="text-right py-4 px-4 font-semibold text-gray-600">Profit/Loss</th>
+                    <th className="text-right py-4 px-4 font-semibold text-blue-600 bg-blue-50">New Trials</th>
+                    <th className="text-right py-4 px-4 font-semibold text-purple-600 bg-purple-50">Converted</th>
+                    <th className="text-right py-4 px-4 font-semibold text-green-600 bg-green-50">Active</th>
+                    <th className="text-right py-4 px-4 font-semibold text-gray-600">Conv %</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {data.months.map((month) => (
                     <tr key={month.month} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-6">
+                      <td className="py-4 px-4">
                         <div className="font-semibold text-gray-900">{month.label}</div>
+                        <div className="text-xs text-gray-400">{month.registrations} registrations</div>
                       </td>
-                      <td className="py-4 px-6 text-right text-pink-600 font-medium">
+                      <td className="py-4 px-4 text-right text-pink-600 font-medium">
                         {formatCurrency(month.adSpend)}
                       </td>
-                      <td className="py-4 px-6 text-right text-gray-600">
+                      <td className="py-4 px-4 text-right text-gray-500">
                         {formatCurrency(month.fixedCosts)}
                       </td>
-                      <td className="py-4 px-6 text-right font-medium text-gray-900">
-                        {formatCurrency(month.totalCosts)}
+                      <td className="py-4 px-4 text-right">
+                        <div className="text-green-600 font-medium">{formatCurrency(month.totalRevenue)}</div>
+                        <div className="text-xs text-gray-400">
+                          ${month.trialRevenue.toFixed(0)} + ${month.subscriptionRevenue.toFixed(0)}
+                        </div>
                       </td>
-                      <td className="py-4 px-6 text-right text-green-600 font-medium">
-                        {formatCurrency(month.totalRevenue)}
-                      </td>
-                      <td className="py-4 px-6 text-right">
+                      <td className="py-4 px-4 text-right">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${
                           month.profit >= 0 
                             ? 'bg-emerald-100 text-emerald-700' 
@@ -171,31 +189,43 @@ export default function MonthlyPLPage() {
                           {month.profit >= 0 ? '+' : ''}{formatCurrency(month.profit)}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-right text-blue-600 font-medium">
-                        {month.registrations}
+                      <td className="py-4 px-4 text-right bg-blue-50/50">
+                        <span className="font-bold text-blue-600 text-lg">{month.newTrials}</span>
                       </td>
-                      <td className="py-4 px-6 text-right text-purple-600 font-medium">
-                        {month.trials}
+                      <td className="py-4 px-4 text-right bg-purple-50/50">
+                        <span className="font-bold text-purple-600 text-lg">{month.conversions}</span>
+                      </td>
+                      <td className="py-4 px-4 text-right bg-green-50/50">
+                        <span className="font-bold text-green-600 text-lg">{month.activeSubscribers}</span>
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        <span className={`font-semibold ${
+                          parseFloat(month.conversionRate) >= 50 ? 'text-green-600' :
+                          parseFloat(month.conversionRate) >= 30 ? 'text-yellow-600' :
+                          'text-red-600'
+                        }`}>
+                          {month.conversionRate}%
+                        </span>
                       </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot className="bg-gray-50 border-t-2 border-gray-200">
                   <tr className="font-bold">
-                    <td className="py-4 px-6 text-gray-900">Total</td>
-                    <td className="py-4 px-6 text-right text-pink-600">
+                    <td className="py-4 px-4 text-gray-900">
+                      Total
+                      <div className="text-xs text-gray-400 font-normal">{data.totals.registrations} registrations</div>
+                    </td>
+                    <td className="py-4 px-4 text-right text-pink-600">
                       {formatCurrency(data.totals.adSpend)}
                     </td>
-                    <td className="py-4 px-6 text-right text-gray-600">
+                    <td className="py-4 px-4 text-right text-gray-500">
                       {formatCurrency(data.totals.fixedCosts)}
                     </td>
-                    <td className="py-4 px-6 text-right text-gray-900">
-                      {formatCurrency(data.totals.totalCosts)}
-                    </td>
-                    <td className="py-4 px-6 text-right text-green-600">
+                    <td className="py-4 px-4 text-right text-green-600">
                       {formatCurrency(data.totals.totalRevenue)}
                     </td>
-                    <td className="py-4 px-6 text-right">
+                    <td className="py-4 px-4 text-right">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${
                         data.totals.profit >= 0 
                           ? 'bg-emerald-100 text-emerald-700' 
@@ -204,11 +234,19 @@ export default function MonthlyPLPage() {
                         {data.totals.profit >= 0 ? '+' : ''}{formatCurrency(data.totals.profit)}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-right text-blue-600">
-                      {data.totals.registrations}
+                    <td className="py-4 px-4 text-right bg-blue-50/50 text-blue-600 text-lg">
+                      {data.totals.newTrials}
                     </td>
-                    <td className="py-4 px-6 text-right text-purple-600">
-                      {data.totals.trials}
+                    <td className="py-4 px-4 text-right bg-purple-50/50 text-purple-600 text-lg">
+                      {data.totals.conversions}
+                    </td>
+                    <td className="py-4 px-4 text-right bg-green-50/50 text-green-600 text-lg">
+                      {data.totals.currentActiveSubscribers}
+                    </td>
+                    <td className="py-4 px-4 text-right text-gray-600">
+                      {data.totals.newTrials > 0 
+                        ? ((data.totals.conversions / data.totals.newTrials) * 100).toFixed(1) 
+                        : '0'}%
                     </td>
                   </tr>
                 </tfoot>
@@ -216,47 +254,84 @@ export default function MonthlyPLPage() {
             </div>
           </div>
 
-          {/* Visual Chart - Monthly Profit/Loss Bars */}
+          {/* Profit/Loss Chart */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Profit/Loss Trend</h2>
-            <div className="flex items-end justify-between gap-2 h-48">
+            <div className="flex items-end justify-center gap-8 h-48">
               {data.months.map((month) => {
                 const maxProfit = Math.max(...data.months.map(m => Math.abs(m.profit)));
                 const height = maxProfit > 0 ? (Math.abs(month.profit) / maxProfit) * 100 : 0;
                 const isPositive = month.profit >= 0;
                 
                 return (
-                  <div key={month.month} className="flex-1 flex flex-col items-center gap-2">
-                    <div className="w-full flex flex-col items-center justify-end h-40">
-                      {isPositive ? (
-                        <div 
-                          className="w-full bg-emerald-500 rounded-t-lg transition-all duration-300 hover:bg-emerald-600"
-                          style={{ height: `${height}%`, minHeight: month.profit !== 0 ? '4px' : '0' }}
-                          title={`${month.label}: ${formatCurrency(month.profit)}`}
-                        />
-                      ) : (
-                        <div 
-                          className="w-full bg-red-500 rounded-b-lg transition-all duration-300 hover:bg-red-600"
-                          style={{ height: `${height}%`, minHeight: month.profit !== 0 ? '4px' : '0' }}
-                          title={`${month.label}: ${formatCurrency(month.profit)}`}
-                        />
-                      )}
+                  <div key={month.month} className="flex flex-col items-center gap-2 flex-1 max-w-32">
+                    <div className="text-sm font-semibold text-gray-600">
+                      {formatCurrency(month.profit)}
                     </div>
-                    <div className="text-xs text-gray-500 font-medium">
-                      {month.label.split(' ')[0].slice(0, 3)}
+                    <div className="w-full flex flex-col items-center justify-end h-32">
+                      <div 
+                        className={`w-full rounded-t-lg transition-all duration-300 ${
+                          isPositive ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'
+                        }`}
+                        style={{ height: `${height}%`, minHeight: '8px' }}
+                      />
+                    </div>
+                    <div className="text-sm text-gray-500 font-medium">
+                      {month.label.split(' ')[0]}
                     </div>
                   </div>
                 );
               })}
             </div>
-            <div className="flex justify-center gap-6 mt-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-emerald-500 rounded"></div>
-                <span className="text-gray-600">Profit</span>
+          </div>
+
+          {/* Conversion Funnel */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Conversion Funnel (All Time)</h2>
+            <div className="flex items-center justify-center gap-4 flex-wrap">
+              <div className="text-center">
+                <div className="w-28 h-28 rounded-full bg-gray-100 flex items-center justify-center mx-auto">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-700">{data.totals.registrations}</div>
+                    <div className="text-xs text-gray-500">Regs</div>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-red-500 rounded"></div>
-                <span className="text-gray-600">Loss</span>
+              <div className="text-gray-300 text-2xl">→</div>
+              <div className="text-center">
+                <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
+                  <div>
+                    <div className="text-2xl font-bold text-blue-600">{data.totals.newTrials}</div>
+                    <div className="text-xs text-blue-600">Trials</div>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 mt-2">
+                  {((data.totals.newTrials / data.totals.registrations) * 100).toFixed(1)}%
+                </div>
+              </div>
+              <div className="text-gray-300 text-2xl">→</div>
+              <div className="text-center">
+                <div className="w-20 h-20 rounded-full bg-purple-100 flex items-center justify-center mx-auto">
+                  <div>
+                    <div className="text-xl font-bold text-purple-600">{data.totals.conversions}</div>
+                    <div className="text-xs text-purple-600">Paid</div>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 mt-2">
+                  {data.totals.newTrials > 0 ? ((data.totals.conversions / data.totals.newTrials) * 100).toFixed(1) : 0}%
+                </div>
+              </div>
+              <div className="text-gray-300 text-2xl">→</div>
+              <div className="text-center">
+                <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+                  <div>
+                    <div className="text-xl font-bold text-green-600">{data.totals.currentActiveSubscribers}</div>
+                    <div className="text-xs text-green-600">Active</div>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 mt-2">
+                  ${(data.totals.currentActiveSubscribers * 39.97).toFixed(0)} MRR
+                </div>
               </div>
             </div>
           </div>
