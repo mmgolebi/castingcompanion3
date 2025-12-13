@@ -216,6 +216,26 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
 
   return (
     <div className="space-y-6">
+      {/* Date Filter */}
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="flex flex-wrap items-end gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">From</label>
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">To</label>
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <button onClick={handleFilter} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Apply</button>
+          <div className="flex gap-2 ml-auto">
+            <button onClick={() => quickFilter(0)} className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700">Today</button>
+            <button onClick={() => quickFilter(7)} className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700">Last 7 days</button>
+            <button onClick={() => quickFilter(30)} className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700">Last 30 days</button>
+            <button onClick={() => router.push(`/admin/analytics?from=2025-10-28&to=${new Date().toISOString().split('T')[0]}`)} className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700">All time</button>
+          </div>
+        </div>
+      </div>
       {/* Main Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 border-l-gray-400">
@@ -452,26 +472,6 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
         </div>
       </div>
 
-      {/* Date Filter */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-        <div className="flex flex-wrap items-end gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">From</label>
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">To</label>
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm" />
-          </div>
-          <button onClick={handleFilter} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Apply</button>
-          <div className="flex gap-2 ml-auto">
-            <button onClick={() => quickFilter(0)} className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700">Today</button>
-            <button onClick={() => quickFilter(7)} className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700">Last 7 days</button>
-            <button onClick={() => quickFilter(30)} className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700">Last 30 days</button>
-            <button onClick={() => router.push(`/admin/analytics?from=2025-10-28&to=${new Date().toISOString().split('T')[0]}`)} className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700">All time</button>
-          </div>
-        </div>
-      </div>
 
       {/* Users Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
