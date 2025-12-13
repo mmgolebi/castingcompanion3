@@ -28,6 +28,9 @@ export async function GET() {
     // Map of customerId -> payment info (only for Casting Companion)
     const paymentMap: Record<string, { hasPaidFullPrice: boolean; totalPaid: number; paymentCount: number }> = {};
     
+    // Cache price -> product mapping to avoid repeated lookups
+    const priceProductCache: Record<string, string> = {};
+    
     let hasMore = true;
     let startingAfter: string | undefined;
     let pageCount = 0;
@@ -40,7 +43,6 @@ export async function GET() {
         limit: 100,
         status: 'paid',
         starting_after: startingAfter,
-        expand: ['data.lines.data.price.product'],
       });
       
       for (const invoice of invoices.data) {
@@ -51,8 +53,15 @@ export async function GET() {
         let ccAmount = 0;
         
         for (const lineItem of invoice.lines.data) {
-          const product = lineItem.price?.product;
-          const productId = typeof product === 'string' ? product : product?.id;
+          if (!lineItem.price?.id) continue;
+          
+          // Get product ID from cache or fetch
+          let productId = priceProductCache[lineItem.price.id];
+          if (!productId) {
+            const price = await stripe.prices.retrieve(lineItem.price.id);
+            productId = typeof price.product === 'string' ? price.product : price.product.id;
+            priceProductCache[lineItem.price.id] = productId;
+          }
           
           if (productId === CASTING_COMPANION_PRODUCT_ID) {
             hasCastingCompanionItem = true;

@@ -36,15 +36,16 @@ export async function GET() {
         limit: 100,
         status: 'active',
         starting_after: startingAfter,
-        expand: ['data.items.data.price.product'],
       });
       
       for (const sub of subscriptions.data) {
         // Check if this subscription is for Casting Companion
         let isCastingCompanion = false;
         for (const item of sub.items.data) {
-          const product = item.price?.product;
-          const productId = typeof product === 'string' ? product : product?.id;
+          // Get the price to check product
+          const price = await stripe.prices.retrieve(item.price.id);
+          const productId = typeof price.product === 'string' ? price.product : price.product.id;
+          
           if (productId === CASTING_COMPANION_PRODUCT_ID) {
             isCastingCompanion = true;
             break;
