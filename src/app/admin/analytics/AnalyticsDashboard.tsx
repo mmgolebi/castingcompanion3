@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import StripeVerifiedMetrics from './StripeVerifiedMetrics';
 
 interface User {
   id: string;
@@ -278,6 +279,9 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
         </div>
       )}
 
+
+      {/* Stripe-Verified Metrics */}
+      <StripeVerifiedMetrics />
       {/* Conversion Funnel */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-6">Conversion Funnel</h2>
