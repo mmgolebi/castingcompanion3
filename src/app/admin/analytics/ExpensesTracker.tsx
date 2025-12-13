@@ -75,6 +75,18 @@ const getShortCampaignName = (name: string): string => {
   return name.slice(0, 15) + (name.length > 15 ? '...' : '');
 };
 
+const getDatePresetLabel = (preset: DatePreset): string => {
+  switch (preset) {
+    case 'today': return "today's";
+    case 'this_week': return "this week's";
+    case 'this_month': return "this month's";
+    case 'last_30d': return "last 30 days'";
+    case 'this_year': return "this year's";
+    case 'custom': return "selected period's";
+    default: return "current";
+  }
+};
+
 export default function ExpensesTracker() {
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -87,11 +99,12 @@ export default function ExpensesTracker() {
   const [customTo, setCustomTo] = useState('');
   const [expandedSection, setExpandedSection] = useState<'adsets' | 'campaigns' | null>('adsets');
   const [showFixedExpenses, setShowFixedExpenses] = useState(false);
+  const [showShowBreakdown, setShowShowBreakdown] = useState(true);
   
   // Forecast assumptions (editable)
-  const [rebillRate, setRebillRate] = useState(50); // % of trials that convert to paid
-  const [monthlyChurnRate, setMonthlyChurnRate] = useState(15); // % of customers that churn per month
-  const [avgCustomerLifespan, setAvgCustomerLifespan] = useState(3); // months
+  const [rebillRate, setRebillRate] = useState(50);
+  const [monthlyChurnRate, setMonthlyChurnRate] = useState(15);
+  const [avgCustomerLifespan, setAvgCustomerLifespan] = useState(3);
 
   const getDateRange = () => {
     const now = new Date();
@@ -176,27 +189,12 @@ export default function ExpensesTracker() {
 
   const deleteExpense = (id: string) => setExpenses(expenses.filter(e => e.id !== id));
 
-  // Calculate 6-month forecast
-  const calculateForecast = () => {
-    if (!fbData) return null;
-
+  // Calculate forecast for a given set of metrics
+  const calculateForecastForMetrics = (trials: number, adSpend: number) => {
     const monthlyPrice = 39.97;
-    const trialPrice = 1.00;
-    
-    // Current period metrics
-    const trials = fbData.total.trials;
-    const adSpend = fbData.total.spend;
-    
-    // Immediate revenue from trials
-    const trialRevenue = trials * trialPrice;
-    
-    // Expected conversions from these trials (after 14 days)
     const expectedConversions = Math.floor(trials * (rebillRate / 100));
-    
-    // Monthly churn rate as decimal
     const churnDecimal = monthlyChurnRate / 100;
     
-    // Calculate 6-month projection
     const months: {
       month: number;
       label: string;
@@ -217,31 +215,15 @@ export default function ExpensesTracker() {
     
     for (let i = 1; i <= 6; i++) {
       const monthLabel = new Date(Date.now() + i * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-      
-      // New customers from this month's trials (assuming similar performance)
-      const newCustomers = i === 1 ? expectedConversions : expectedConversions;
-      
-      // Customers churned this month
+      const newCustomers = expectedConversions;
       const churnedCustomers = Math.floor(activeCustomers * churnDecimal);
-      
-      // Active customers at end of month
       activeCustomers = activeCustomers + newCustomers - churnedCustomers;
-      
-      // MRR
       const mrr = activeCustomers * monthlyPrice;
-      
-      // Costs (assuming similar ad spend each month)
       const monthAdSpend = adSpend;
       const fixedCosts = monthlyTotal;
       const totalCosts = monthAdSpend + fixedCosts;
-      
-      // Trial revenue (assuming similar trial numbers)
-      const monthTrialRevenue = trials * trialPrice;
-      
-      // Total revenue
+      const monthTrialRevenue = trials * 1.00;
       const revenue = mrr + monthTrialRevenue;
-      
-      // Profit
       const profit = revenue - totalCosts;
       cumulativeProfit += profit;
       
@@ -264,14 +246,70 @@ export default function ExpensesTracker() {
     return {
       trials,
       expectedConversions,
-      trialRevenue,
+      trialRevenue: trials * 1.00,
       months,
       ltv: monthlyPrice * avgCustomerLifespan,
-      cac: trials > 0 ? adSpend / expectedConversions : 0,
+      cac: expectedConversions > 0 ? adSpend / expectedConversions : 0,
     };
   };
 
+  // Calculate 6-month forecast for total
+  const calculateForecast = () => {
+    if (!fbData) return null;
+    return calculateForecastForMetrics(fbData.total.trials, fbData.total.spend);
+  };
+
+  // Calculate per-show forecasts
+  const calculateShowForecasts = () => {
+    if (!fbData || !fbData.adsets) return [];
+    
+    return fbData.adsets
+      .filter(adset => adset.trials > 0 || adset.spend > 0)
+      .map(adset => {
+        const expectedConversions = Math.floor(adset.trials * (rebillRate / 100));
+        const monthlyPrice = 39.97;
+        const ltv = monthlyPrice * avgCustomerLifespan;
+        const cac = expectedConversions > 0 ? adset.spend / expectedConversions : 0;
+        
+        // Calculate 6-month projection for this show
+        let activeCustomers = 0;
+        let cumulativeProfit = 0;
+        const churnDecimal = monthlyChurnRate / 100;
+        
+        for (let i = 1; i <= 6; i++) {
+          const newCustomers = expectedConversions;
+          const churnedCustomers = Math.floor(activeCustomers * churnDecimal);
+          activeCustomers = activeCustomers + newCustomers - churnedCustomers;
+          const mrr = activeCustomers * monthlyPrice;
+          // Proportional fixed costs based on spend ratio
+          const spendRatio = fbData.total.spend > 0 ? adset.spend / fbData.total.spend : 0;
+          const proportionalFixedCosts = monthlyTotal * spendRatio;
+          const totalCosts = adset.spend + proportionalFixedCosts;
+          const monthTrialRevenue = adset.trials * 1.00;
+          const revenue = mrr + monthTrialRevenue;
+          const profit = revenue - totalCosts;
+          cumulativeProfit += profit;
+        }
+        
+        return {
+          name: adset.name,
+          campaign: adset.campaign,
+          spend: adset.spend,
+          trials: adset.trials,
+          expectedConversions,
+          ltv,
+          cac,
+          ltvCacRatio: cac > 0 ? ltv / cac : 0,
+          sixMonthProfit: cumulativeProfit,
+          activeCustomersIn6Mo: activeCustomers,
+          roi: adset.spend > 0 ? ((cumulativeProfit / adset.spend) * 100) : 0,
+        };
+      })
+      .sort((a, b) => b.sixMonthProfit - a.sixMonthProfit);
+  };
+
   const forecast = calculateForecast();
+  const showForecasts = calculateShowForecasts();
 
   const DateButton = ({ preset, label }: { preset: DatePreset; label: string }) => (
     <button
@@ -510,10 +548,11 @@ export default function ExpensesTracker() {
             <div className="flex flex-wrap justify-between items-start gap-4">
               <div>
                 <h2 className="text-xl font-semibold text-emerald-900">📈 Profitability Forecast</h2>
-                <p className="text-sm text-emerald-700 mt-1">Based on current ad performance and assumptions</p>
+                <p className="text-sm text-emerald-700 mt-1">
+                  Based on <span className="font-semibold">{getDatePresetLabel(datePreset)}</span> ad performance
+                </p>
               </div>
               
-              {/* Editable Assumptions */}
               <div className="flex flex-wrap gap-4 text-sm">
                 <div className="bg-white rounded-lg px-3 py-2 border border-emerald-200">
                   <label className="block text-xs text-emerald-600 font-medium">Rebill Rate</label>
@@ -590,10 +629,118 @@ export default function ExpensesTracker() {
               </div>
             </div>
 
+            {/* Per-Show Breakdown */}
+            {showForecasts.length > 0 && (
+              <div className="bg-white rounded-xl border border-emerald-200 overflow-hidden mb-6">
+                <button
+                  onClick={() => setShowShowBreakdown(!showShowBreakdown)}
+                  className="w-full flex items-center justify-between p-4 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+                >
+                  <div>
+                    <h3 className="font-semibold text-emerald-900">📺 Forecast by Show</h3>
+                    <p className="text-xs text-emerald-600 mt-1">6-month projection per ad set</p>
+                  </div>
+                  <svg className={`w-5 h-5 text-emerald-600 transition-transform ${showShowBreakdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {showShowBreakdown && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-emerald-50 border-b border-emerald-200">
+                        <tr>
+                          <th className="text-left py-3 px-4 font-semibold text-emerald-700">Show</th>
+                          <th className="text-right py-3 px-4 font-semibold text-emerald-700">Spend</th>
+                          <th className="text-right py-3 px-4 font-semibold text-emerald-700">Trials</th>
+                          <th className="text-right py-3 px-4 font-semibold text-emerald-700">Est. Conversions</th>
+                          <th className="text-right py-3 px-4 font-semibold text-emerald-700">CAC</th>
+                          <th className="text-right py-3 px-4 font-semibold text-emerald-700">LTV:CAC</th>
+                          <th className="text-right py-3 px-4 font-semibold text-emerald-700">6-Mo Customers</th>
+                          <th className="text-right py-3 px-4 font-semibold text-emerald-700">6-Mo Profit</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-emerald-100">
+                        {showForecasts.map((show, i) => (
+                          <tr key={i} className="hover:bg-emerald-50 transition-colors">
+                            <td className="py-3 px-4">
+                              <div className="font-medium text-gray-900">{show.name}</div>
+                              <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium mt-1 ${
+                                show.campaign.includes('ABO') ? 'bg-blue-100 text-blue-700' :
+                                show.campaign.includes('CBO') ? 'bg-purple-100 text-purple-700' :
+                                'bg-gray-100 text-gray-600'
+                              }`}>
+                                {getShortCampaignName(show.campaign)}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right font-semibold text-pink-600">
+                              ${show.spend.toFixed(2)}
+                            </td>
+                            <td className="py-3 px-4 text-right font-medium text-blue-600">
+                              {show.trials}
+                            </td>
+                            <td className="py-3 px-4 text-right font-medium text-emerald-600">
+                              {show.expectedConversions}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              {show.cac > 0 ? (
+                                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                  show.cac < show.ltv / 3 ? 'bg-green-100 text-green-700' : 
+                                  show.cac < show.ltv ? 'bg-yellow-100 text-yellow-700' : 
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  ${show.cac.toFixed(2)}
+                                </span>
+                              ) : <span className="text-gray-300">—</span>}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              {show.ltvCacRatio > 0 ? (
+                                <span className={`font-semibold ${
+                                  show.ltvCacRatio >= 3 ? 'text-green-600' : 
+                                  show.ltvCacRatio >= 1 ? 'text-yellow-600' : 
+                                  'text-red-600'
+                                }`}>
+                                  {show.ltvCacRatio.toFixed(1)}x
+                                </span>
+                              ) : <span className="text-gray-300">—</span>}
+                            </td>
+                            <td className="py-3 px-4 text-right font-medium text-gray-900">
+                              {show.activeCustomersIn6Mo}
+                            </td>
+                            <td className={`py-3 px-4 text-right font-bold ${show.sixMonthProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                              ${show.sixMonthProfit.toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-emerald-50 border-t border-emerald-200">
+                        <tr className="font-semibold">
+                          <td className="py-3 px-4 text-emerald-900">Total</td>
+                          <td className="py-3 px-4 text-right text-pink-600">${fbData.total.spend.toFixed(2)}</td>
+                          <td className="py-3 px-4 text-right text-blue-600">{fbData.total.trials}</td>
+                          <td className="py-3 px-4 text-right text-emerald-600">{forecast.expectedConversions}</td>
+                          <td className="py-3 px-4 text-right">
+                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                              ${forecast.cac.toFixed(2)}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-right text-emerald-600">
+                            {(forecast.ltv / forecast.cac).toFixed(1)}x
+                          </td>
+                          <td className="py-3 px-4 text-right text-gray-900">{forecast.months[5]?.activeCustomers || 0}</td>
+                          <td className="py-3 px-4 text-right text-emerald-700">${forecast.months[5]?.cumulativeProfit.toFixed(2) || '0.00'}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* 6-Month Forecast Table */}
             <div className="bg-white rounded-xl border border-emerald-200 overflow-hidden">
               <div className="p-4 bg-emerald-50 border-b border-emerald-200">
-                <h3 className="font-semibold text-emerald-900">6-Month Projection</h3>
+                <h3 className="font-semibold text-emerald-900">6-Month Projection (All Shows Combined)</h3>
                 <p className="text-xs text-emerald-600 mt-1">Assuming similar monthly ad spend and performance</p>
               </div>
               <div className="overflow-x-auto">
@@ -636,7 +783,7 @@ export default function ExpensesTracker() {
             <div className="mt-6 p-4 bg-white rounded-xl border border-emerald-200">
               <div className="flex flex-wrap justify-between items-center gap-4">
                 <div>
-                  <div className="text-sm text-emerald-700">At current rates, in 6 months you'll have:</div>
+                  <div className="text-sm text-emerald-700">At current rates, in 6 months you&apos;ll have:</div>
                   <div className="text-2xl font-bold text-emerald-900 mt-1">
                     {forecast.months[5]?.activeCustomers || 0} active customers
                   </div>
