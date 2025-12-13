@@ -4,10 +4,7 @@ import { prisma } from '@/lib/db';
 const FB_ACCESS_TOKEN = process.env.FB_ACCESS_TOKEN;
 const FB_AD_ACCOUNT_ID = process.env.FB_AD_ACCOUNT_ID;
 
-// Fixed monthly costs
 const FIXED_MONTHLY_COSTS = 292 + (61/12);
-
-// Platform launch date - only show data from this month onwards
 const LAUNCH_YEAR = 2025;
 const LAUNCH_MONTH = 10; // November (0-indexed)
 
@@ -41,12 +38,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Determine start month based on launch date
     const startMonth = year === LAUNCH_YEAR ? LAUNCH_MONTH : 0;
 
     // Process each month
     for (let month = startMonth; month < 12; month++) {
-      // Skip future months
       if (year > currentYear || (year === currentYear && month > currentMonth)) {
         continue;
       }
@@ -56,25 +51,54 @@ export async function GET(request: NextRequest) {
       const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
       const monthLabel = monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-      // Get registrations and trials for this month
-      const users = await prisma.user.findMany({
+      // Get all users created this month (new registrations)
+      const newUsers = await prisma.user.findMany({
         where: {
           createdAt: {
             gte: monthStart,
             lte: monthEnd,
           },
+          role: 'ACTOR',
         },
         select: {
+          id: true,
           stripeCustomerId: true,
           subscriptionStatus: true,
         },
       });
 
-      const registrations = users.length;
-      const trials = users.filter(u => u.stripeCustomerId).length;
+      const registrations = newUsers.length;
+      
+      // New trials this month (users who started a trial this month)
+      const newTrials = newUsers.filter(u => u.stripeCustomerId).length;
 
-      // Get subscription revenue estimate
-      const subscriptionRevenue = await getSubscriptionRevenueForMonth(monthStart, monthEnd);
+      // Get users who converted to paying this month
+      // These are users with active status who were created before or during this month
+      // and whose trial would have ended this month (created ~14 days before month end)
+      const trialEndCutoff = new Date(monthStart);
+      trialEndCutoff.setDate(trialEndCutoff.getDate() - 14);
+      
+      const convertedUsers = await prisma.user.count({
+        where: {
+          subscriptionStatus: 'active',
+          stripeCustomerId: { not: null },
+          createdAt: {
+            gte: new Date(monthStart.getFullYear(), monthStart.getMonth() - 1, 1), // Started last month or earlier
+            lte: trialEndCutoff, // Trial ended before this month
+          },
+        },
+      });
+
+      // Active subscribers at end of month
+      // Count all users with active subscription status created before month end
+      const activeSubscribers = await prisma.user.count({
+        where: {
+          subscriptionStatus: 'active',
+          createdAt: {
+            lte: monthEnd,
+          },
+        },
+      });
 
       // Calculate costs
       const adSpend = fbMonthlySpend[monthKey] || 0;
@@ -82,7 +106,8 @@ export async function GET(request: NextRequest) {
       const totalCosts = adSpend + fixedCosts;
 
       // Calculate revenue
-      const trialRevenue = trials * 1.00;
+      const trialRevenue = newTrials * 1.00; // $1 per new trial
+      const subscriptionRevenue = activeSubscribers * 39.97; // MRR from active subscribers
       const totalRevenue = trialRevenue + subscriptionRevenue;
 
       // Calculate profit
@@ -99,8 +124,10 @@ export async function GET(request: NextRequest) {
         totalRevenue,
         profit,
         registrations,
-        trials,
-        activeSubscribers: 0,
+        newTrials,
+        conversions: convertedUsers,
+        activeSubscribers,
+        conversionRate: newTrials > 0 ? ((convertedUsers / newTrials) * 100).toFixed(1) : '0',
       });
     }
 
@@ -112,7 +139,8 @@ export async function GET(request: NextRequest) {
       totalRevenue: acc.totalRevenue + m.totalRevenue,
       profit: acc.profit + m.profit,
       registrations: acc.registrations + m.registrations,
-      trials: acc.trials + m.trials,
+      newTrials: acc.newTrials + m.newTrials,
+      conversions: acc.conversions + m.conversions,
     }), {
       adSpend: 0,
       fixedCosts: 0,
@@ -120,31 +148,26 @@ export async function GET(request: NextRequest) {
       totalRevenue: 0,
       profit: 0,
       registrations: 0,
-      trials: 0,
+      newTrials: 0,
+      conversions: 0,
     });
 
-    return NextResponse.json({ months, totals });
+    // Get current active subscribers for the "current" total
+    const currentActiveSubscribers = await prisma.user.count({
+      where: {
+        subscriptionStatus: 'active',
+      },
+    });
+
+    return NextResponse.json({ 
+      months, 
+      totals: {
+        ...totals,
+        currentActiveSubscribers,
+      },
+    });
   } catch (error) {
     console.error('Monthly P&L error:', error);
     return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });
   }
-}
-
-async function getSubscriptionRevenueForMonth(start: Date, end: Date): Promise<number> {
-  const trialStartCutoff = new Date(start);
-  trialStartCutoff.setDate(trialStartCutoff.getDate() - 14);
-  
-  const potentialSubscribers = await prisma.user.count({
-    where: {
-      stripeCustomerId: { not: null },
-      subscriptionStatus: 'active',
-      createdAt: {
-        gte: new Date(start.getFullYear(), start.getMonth() - 2, 1),
-        lt: trialStartCutoff,
-      },
-    },
-  });
-  
-  const estimatedSubscribers = Math.floor(potentialSubscribers * 0.5);
-  return estimatedSubscribers * 39.97;
 }
