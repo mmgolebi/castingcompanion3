@@ -35,7 +35,7 @@ const adSetToSource: Record<string, string> = {
   'The Bear S5': 'the-bear',
   'Tulsa King S2': 'tulsa-king',
   'Hunting Wives S2': 'hunting-wives',
-  'Tis So Sweet': 'tis-so-sweet',
+  'Tis So Sweet': 'tyler-perry',
   'Chicago Fire': 'chicago-fire',
 };
 
@@ -46,7 +46,7 @@ const sourceToLandingPage: Record<string, string> = {
   'the-bear': '/apply-the-bear',
   'tulsa-king': '/apply-tulsa-king',
   'hunting-wives': '/apply-hunting-wives',
-  'tis-so-sweet': '/apply-tis-so-sweet',
+  
   'chicago-fire': '/apply-chicago-fire',
   'tyler-perry': '/apply-tyler-perry',
   'direct': '(direct)',
