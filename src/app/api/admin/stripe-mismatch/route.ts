@@ -7,6 +7,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
 
+const CASTING_COMPANION_PRODUCT_ID = 'prod_TDrkODWf80MCWP';
+
 export async function GET() {
   const session = await auth();
   
@@ -23,7 +25,7 @@ export async function GET() {
   }
 
   try {
-    // Get all active subscriptions from Stripe
+    // Get all active subscriptions from Stripe for Casting Companion only
     const activeInStripe: { customerId: string; email: string; status: string }[] = [];
     
     let hasMore = true;
@@ -34,9 +36,23 @@ export async function GET() {
         limit: 100,
         status: 'active',
         starting_after: startingAfter,
+        expand: ['data.items.data.price.product'],
       });
       
       for (const sub of subscriptions.data) {
+        // Check if this subscription is for Casting Companion
+        let isCastingCompanion = false;
+        for (const item of sub.items.data) {
+          const product = item.price?.product;
+          const productId = typeof product === 'string' ? product : product?.id;
+          if (productId === CASTING_COMPANION_PRODUCT_ID) {
+            isCastingCompanion = true;
+            break;
+          }
+        }
+        
+        if (!isCastingCompanion) continue;
+        
         const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
         
         // Get customer email
@@ -103,7 +119,7 @@ export async function GET() {
           mismatches.push({
             email: dbUser.email,
             stripeCustomerId: dbUser.stripeCustomerId,
-            stripeStatus: 'NOT ACTIVE',
+            stripeStatus: 'NOT ACTIVE IN STRIPE (for this product)',
             dbStatus: 'active',
             issue: 'Status mismatch - active in DB but not in Stripe',
           });
@@ -112,6 +128,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
+      productId: CASTING_COMPANION_PRODUCT_ID,
       activeInStripe: activeInStripe.length,
       activeInDb: dbUsers.filter(u => u.subscriptionStatus === 'active').length,
       mismatches,

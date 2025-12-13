@@ -7,6 +7,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
 
+const CASTING_COMPANION_PRODUCT_ID = 'prod_TDrkODWf80MCWP';
+
 export async function GET() {
   const session = await auth();
   
@@ -23,7 +25,7 @@ export async function GET() {
   }
 
   try {
-    // Map of customerId -> payment info
+    // Map of customerId -> payment info (only for Casting Companion)
     const paymentMap: Record<string, { hasPaidFullPrice: boolean; totalPaid: number; paymentCount: number }> = {};
     
     let hasMore = true;
@@ -38,13 +40,29 @@ export async function GET() {
         limit: 100,
         status: 'paid',
         starting_after: startingAfter,
+        expand: ['data.lines.data.price.product'],
       });
       
       for (const invoice of invoices.data) {
         if (!invoice.customer || typeof invoice.customer !== 'string') continue;
         
+        // Check if this invoice contains Casting Companion product
+        let hasCastingCompanionItem = false;
+        let ccAmount = 0;
+        
+        for (const lineItem of invoice.lines.data) {
+          const product = lineItem.price?.product;
+          const productId = typeof product === 'string' ? product : product?.id;
+          
+          if (productId === CASTING_COMPANION_PRODUCT_ID) {
+            hasCastingCompanionItem = true;
+            ccAmount += (lineItem.amount || 0) / 100;
+          }
+        }
+        
+        if (!hasCastingCompanionItem) continue;
+        
         const customerId = invoice.customer;
-        const amountPaid = invoice.amount_paid / 100;
         
         if (!paymentMap[customerId]) {
           paymentMap[customerId] = {
@@ -54,11 +72,11 @@ export async function GET() {
           };
         }
         
-        paymentMap[customerId].totalPaid += amountPaid;
+        paymentMap[customerId].totalPaid += ccAmount;
         paymentMap[customerId].paymentCount++;
         
         // $39.97 payment (using $35+ threshold)
-        if (amountPaid >= 35) {
+        if (ccAmount >= 35) {
           paymentMap[customerId].hasPaidFullPrice = true;
         }
       }
@@ -121,6 +139,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
+      productId: CASTING_COMPANION_PRODUCT_ID,
       metrics: {
         paidFullPrice,
         activeAfterPaying,
