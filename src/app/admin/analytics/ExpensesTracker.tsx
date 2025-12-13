@@ -67,7 +67,6 @@ const categoryColors: Record<string, { bg: string; text: string; bar: string; la
 
 type DatePreset = 'today' | 'this_week' | 'this_month' | 'last_30d' | 'this_year' | 'custom';
 
-// Helper to get short campaign name
 const getShortCampaignName = (name: string): string => {
   if (name.includes('ABO')) return 'ABO';
   if (name.includes('CBO')) return 'CBO';
@@ -83,13 +82,17 @@ export default function ExpensesTracker() {
   const [fbData, setFbData] = useState<FBData | null>(null);
   const [fbLoading, setFbLoading] = useState(true);
   const [fbError, setFbError] = useState<string | null>(null);
-  const [datePreset, setDatePreset] = useState<DatePreset>('today');
+  const [datePreset, setDatePreset] = useState<DatePreset>('this_month');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [expandedSection, setExpandedSection] = useState<'adsets' | 'campaigns' | null>('adsets');
   const [showFixedExpenses, setShowFixedExpenses] = useState(false);
+  
+  // Forecast assumptions (editable)
+  const [rebillRate, setRebillRate] = useState(50); // % of trials that convert to paid
+  const [monthlyChurnRate, setMonthlyChurnRate] = useState(15); // % of customers that churn per month
+  const [avgCustomerLifespan, setAvgCustomerLifespan] = useState(3); // months
 
-  // Calculate date range based on preset
   const getDateRange = () => {
     const now = new Date();
     const today = now.toISOString().split('T')[0];
@@ -109,7 +112,6 @@ export default function ExpensesTracker() {
     }
   };
 
-  // Fetch FB ads data
   useEffect(() => {
     const fetchFbData = async () => {
       setFbLoading(true);
@@ -142,7 +144,6 @@ export default function ExpensesTracker() {
     }
   }, [datePreset, customFrom, customTo]);
 
-  // Calculate totals
   const monthlyTotal = expenses.reduce((sum, exp) => {
     return sum + (exp.frequency === 'monthly' ? exp.amount : exp.amount / 12);
   }, 0);
@@ -150,7 +151,6 @@ export default function ExpensesTracker() {
   const fbMonthlySpend = fbData?.total.spend || 0;
   const totalWithAds = monthlyTotal + fbMonthlySpend;
 
-  // Group by category
   const byCategory = expenses.reduce((acc, exp) => {
     const monthly = exp.frequency === 'monthly' ? exp.amount : exp.amount / 12;
     acc[exp.category] = (acc[exp.category] || 0) + monthly;
@@ -175,6 +175,103 @@ export default function ExpensesTracker() {
   };
 
   const deleteExpense = (id: string) => setExpenses(expenses.filter(e => e.id !== id));
+
+  // Calculate 6-month forecast
+  const calculateForecast = () => {
+    if (!fbData) return null;
+
+    const monthlyPrice = 39.97;
+    const trialPrice = 1.00;
+    
+    // Current period metrics
+    const trials = fbData.total.trials;
+    const adSpend = fbData.total.spend;
+    
+    // Immediate revenue from trials
+    const trialRevenue = trials * trialPrice;
+    
+    // Expected conversions from these trials (after 14 days)
+    const expectedConversions = Math.floor(trials * (rebillRate / 100));
+    
+    // Monthly churn rate as decimal
+    const churnDecimal = monthlyChurnRate / 100;
+    
+    // Calculate 6-month projection
+    const months: {
+      month: number;
+      label: string;
+      newCustomers: number;
+      churnedCustomers: number;
+      activeCustomers: number;
+      mrr: number;
+      adSpend: number;
+      fixedCosts: number;
+      totalCosts: number;
+      revenue: number;
+      profit: number;
+      cumulativeProfit: number;
+    }[] = [];
+    
+    let activeCustomers = 0;
+    let cumulativeProfit = 0;
+    
+    for (let i = 1; i <= 6; i++) {
+      const monthLabel = new Date(Date.now() + i * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      
+      // New customers from this month's trials (assuming similar performance)
+      const newCustomers = i === 1 ? expectedConversions : expectedConversions;
+      
+      // Customers churned this month
+      const churnedCustomers = Math.floor(activeCustomers * churnDecimal);
+      
+      // Active customers at end of month
+      activeCustomers = activeCustomers + newCustomers - churnedCustomers;
+      
+      // MRR
+      const mrr = activeCustomers * monthlyPrice;
+      
+      // Costs (assuming similar ad spend each month)
+      const monthAdSpend = adSpend;
+      const fixedCosts = monthlyTotal;
+      const totalCosts = monthAdSpend + fixedCosts;
+      
+      // Trial revenue (assuming similar trial numbers)
+      const monthTrialRevenue = trials * trialPrice;
+      
+      // Total revenue
+      const revenue = mrr + monthTrialRevenue;
+      
+      // Profit
+      const profit = revenue - totalCosts;
+      cumulativeProfit += profit;
+      
+      months.push({
+        month: i,
+        label: monthLabel,
+        newCustomers,
+        churnedCustomers,
+        activeCustomers,
+        mrr,
+        adSpend: monthAdSpend,
+        fixedCosts,
+        totalCosts,
+        revenue,
+        profit,
+        cumulativeProfit,
+      });
+    }
+    
+    return {
+      trials,
+      expectedConversions,
+      trialRevenue,
+      months,
+      ltv: monthlyPrice * avgCustomerLifespan,
+      cac: trials > 0 ? adSpend / expectedConversions : 0,
+    };
+  };
+
+  const forecast = calculateForecast();
 
   const DateButton = ({ preset, label }: { preset: DatePreset; label: string }) => (
     <button
@@ -219,7 +316,6 @@ export default function ExpensesTracker() {
 
       {/* FB Ads Section */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Header with Date Filters */}
         <div className="p-6 border-b border-gray-100">
           <div className="flex flex-wrap justify-between items-center gap-4">
             <h2 className="text-xl font-semibold text-gray-900">📣 Facebook Ads</h2>
@@ -233,7 +329,6 @@ export default function ExpensesTracker() {
             </div>
           </div>
           
-          {/* Custom Date Picker */}
           {datePreset === 'custom' && (
             <div className="flex items-center gap-3 mt-4 p-3 bg-gray-50 rounded-lg">
               <input
@@ -253,7 +348,6 @@ export default function ExpensesTracker() {
           )}
         </div>
 
-        {/* FB Content */}
         <div className="p-6">
           {fbError ? (
             <div className="text-red-600 bg-red-50 p-4 rounded-lg">{fbError}</div>
@@ -264,7 +358,6 @@ export default function ExpensesTracker() {
             </div>
           ) : fbData ? (
             <div className="space-y-6">
-              {/* Key Metrics Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 <MetricCard label="Ad Spend" value={`$${fbData.total.spend.toFixed(2)}`} color="pink" />
                 <MetricCard label="Registrations" value={fbData.total.registrations} subtext={fbData.total.costPerRegistration ? `$${fbData.total.costPerRegistration.toFixed(2)} each` : undefined} color="blue" />
@@ -278,7 +371,6 @@ export default function ExpensesTracker() {
                 <MetricCard label="Impressions" value={fbData.total.impressions.toLocaleString()} />
               </div>
 
-              {/* Ad Sets Table */}
               <div className="border border-gray-200 rounded-xl overflow-hidden">
                 <button
                   onClick={() => setExpandedSection(expandedSection === 'adsets' ? null : 'adsets')}
@@ -411,9 +503,161 @@ export default function ExpensesTracker() {
         </div>
       </div>
 
+      {/* Profitability Forecast Section */}
+      {forecast && fbData && (
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl shadow-sm border border-emerald-200 overflow-hidden">
+          <div className="p-6 border-b border-emerald-200">
+            <div className="flex flex-wrap justify-between items-start gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-emerald-900">📈 Profitability Forecast</h2>
+                <p className="text-sm text-emerald-700 mt-1">Based on current ad performance and assumptions</p>
+              </div>
+              
+              {/* Editable Assumptions */}
+              <div className="flex flex-wrap gap-4 text-sm">
+                <div className="bg-white rounded-lg px-3 py-2 border border-emerald-200">
+                  <label className="block text-xs text-emerald-600 font-medium">Rebill Rate</label>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      value={rebillRate}
+                      onChange={(e) => setRebillRate(Number(e.target.value))}
+                      className="w-12 text-center font-semibold text-emerald-900 border-0 p-0 focus:ring-0"
+                      min="0"
+                      max="100"
+                    />
+                    <span className="text-emerald-600">%</span>
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg px-3 py-2 border border-emerald-200">
+                  <label className="block text-xs text-emerald-600 font-medium">Monthly Churn</label>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      value={monthlyChurnRate}
+                      onChange={(e) => setMonthlyChurnRate(Number(e.target.value))}
+                      className="w-12 text-center font-semibold text-emerald-900 border-0 p-0 focus:ring-0"
+                      min="0"
+                      max="100"
+                    />
+                    <span className="text-emerald-600">%</span>
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg px-3 py-2 border border-emerald-200">
+                  <label className="block text-xs text-emerald-600 font-medium">Avg Lifespan</label>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      value={avgCustomerLifespan}
+                      onChange={(e) => setAvgCustomerLifespan(Number(e.target.value))}
+                      className="w-12 text-center font-semibold text-emerald-900 border-0 p-0 focus:ring-0"
+                      min="1"
+                      max="24"
+                    />
+                    <span className="text-emerald-600">mo</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {/* Key Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white rounded-xl p-4 border border-emerald-200">
+                <div className="text-xs font-medium text-emerald-600 uppercase">Trials This Period</div>
+                <div className="text-2xl font-bold text-emerald-900 mt-1">{forecast.trials}</div>
+                <div className="text-xs text-emerald-600 mt-1">${fbData.total.trials} × $1 = ${fbData.total.trials} revenue</div>
+              </div>
+              <div className="bg-white rounded-xl p-4 border border-emerald-200">
+                <div className="text-xs font-medium text-emerald-600 uppercase">Expected Conversions</div>
+                <div className="text-2xl font-bold text-emerald-900 mt-1">{forecast.expectedConversions}</div>
+                <div className="text-xs text-emerald-600 mt-1">{rebillRate}% of {forecast.trials} trials</div>
+              </div>
+              <div className="bg-white rounded-xl p-4 border border-emerald-200">
+                <div className="text-xs font-medium text-emerald-600 uppercase">Est. LTV</div>
+                <div className="text-2xl font-bold text-emerald-900 mt-1">${forecast.ltv.toFixed(2)}</div>
+                <div className="text-xs text-emerald-600 mt-1">${(39.97).toFixed(2)} × {avgCustomerLifespan} months</div>
+              </div>
+              <div className="bg-white rounded-xl p-4 border border-emerald-200">
+                <div className="text-xs font-medium text-emerald-600 uppercase">CAC</div>
+                <div className={`text-2xl font-bold mt-1 ${forecast.cac < forecast.ltv ? 'text-emerald-900' : 'text-red-600'}`}>
+                  ${forecast.cac.toFixed(2)}
+                </div>
+                <div className="text-xs text-emerald-600 mt-1">
+                  {forecast.cac < forecast.ltv ? '✓ LTV > CAC' : '⚠ CAC exceeds LTV'}
+                </div>
+              </div>
+            </div>
+
+            {/* 6-Month Forecast Table */}
+            <div className="bg-white rounded-xl border border-emerald-200 overflow-hidden">
+              <div className="p-4 bg-emerald-50 border-b border-emerald-200">
+                <h3 className="font-semibold text-emerald-900">6-Month Projection</h3>
+                <p className="text-xs text-emerald-600 mt-1">Assuming similar monthly ad spend and performance</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-emerald-50 border-b border-emerald-200">
+                    <tr>
+                      <th className="text-left py-3 px-4 font-semibold text-emerald-700">Month</th>
+                      <th className="text-right py-3 px-4 font-semibold text-emerald-700">New Customers</th>
+                      <th className="text-right py-3 px-4 font-semibold text-emerald-700">Churned</th>
+                      <th className="text-right py-3 px-4 font-semibold text-emerald-700">Active</th>
+                      <th className="text-right py-3 px-4 font-semibold text-emerald-700">MRR</th>
+                      <th className="text-right py-3 px-4 font-semibold text-emerald-700">Total Costs</th>
+                      <th className="text-right py-3 px-4 font-semibold text-emerald-700">Profit</th>
+                      <th className="text-right py-3 px-4 font-semibold text-emerald-700">Cumulative</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-emerald-100">
+                    {forecast.months.map((month) => (
+                      <tr key={month.month} className="hover:bg-emerald-50 transition-colors">
+                        <td className="py-3 px-4 font-medium text-gray-900">{month.label}</td>
+                        <td className="py-3 px-4 text-right text-green-600 font-medium">+{month.newCustomers}</td>
+                        <td className="py-3 px-4 text-right text-red-500">-{month.churnedCustomers}</td>
+                        <td className="py-3 px-4 text-right font-semibold text-gray-900">{month.activeCustomers}</td>
+                        <td className="py-3 px-4 text-right text-emerald-600 font-medium">${month.mrr.toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right text-pink-600">${month.totalCosts.toFixed(2)}</td>
+                        <td className={`py-3 px-4 text-right font-semibold ${month.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {month.profit >= 0 ? '+' : ''}{month.profit.toFixed(2)}
+                        </td>
+                        <td className={`py-3 px-4 text-right font-bold ${month.cumulativeProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                          ${month.cumulativeProfit.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div className="mt-6 p-4 bg-white rounded-xl border border-emerald-200">
+              <div className="flex flex-wrap justify-between items-center gap-4">
+                <div>
+                  <div className="text-sm text-emerald-700">At current rates, in 6 months you'll have:</div>
+                  <div className="text-2xl font-bold text-emerald-900 mt-1">
+                    {forecast.months[5]?.activeCustomers || 0} active customers
+                  </div>
+                  <div className="text-sm text-emerald-600">
+                    generating ${(forecast.months[5]?.mrr || 0).toFixed(2)}/mo MRR
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-emerald-700">6-Month Cumulative Profit:</div>
+                  <div className={`text-3xl font-bold ${(forecast.months[5]?.cumulativeProfit || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    ${(forecast.months[5]?.cumulativeProfit || 0).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Expenses Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Category Breakdown */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Spending by Category</h3>
           <div className="space-y-3">
@@ -444,7 +688,6 @@ export default function ExpensesTracker() {
           </div>
         </div>
 
-        {/* Quick Stats */}
         <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-100">
           <h3 className="text-lg font-semibold text-amber-900 mb-4">💡 Quick Stats</h3>
           <div className="space-y-4 text-sm">
