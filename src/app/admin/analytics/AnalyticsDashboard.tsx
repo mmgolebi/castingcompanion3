@@ -54,6 +54,7 @@ interface CohortData {
   active: number;
   churned: number;
   neverPaid: number;
+  paidEver: number;
   trialEndDate: string;
 }
 
@@ -204,7 +205,6 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
     canceled: metrics.canceled,
   };
 
-  // Calculate days until first conversion for active trials
   const oldestActiveTrial = cohortData
     .filter(c => new Date(c.trialEndDate) > new Date())
     .sort((a, b) => a.date.localeCompare(b.date))[0];
@@ -253,8 +253,10 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
         </div>
         <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 border-l-yellow-400">
           <div className="text-sm font-medium text-gray-500">Trial Cancellation</div>
-          <div className="text-3xl font-bold text-yellow-600 mt-1">{metrics.canceledDuringTrial > 0 ? ((metrics.canceledDuringTrial / metrics.trialsStillActive) * 100).toFixed(1) : '0.0'}%</div>
-          <div className="text-xs text-gray-400 mt-1">{metrics.canceledDuringTrial} canceled during trial</div>
+          <div className="text-3xl font-bold text-yellow-600 mt-1">
+            {metrics.trialsEnded > 0 ? (((metrics.trialsEnded - metrics.paidEver) / metrics.trialsEnded) * 100).toFixed(1) : '0'}%
+          </div>
+          <div className="text-xs text-gray-400 mt-1">{metrics.canceledDuringTrial} canceled without paying</div>
         </div>
         <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 border-l-red-400">
           <div className="text-sm font-medium text-gray-500">Customer Churn</div>
@@ -295,10 +297,7 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
               <span className="text-sm font-medium text-gray-900">{metrics.startedTrial} ({metrics.trialConversionRate}%)</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3">
-              <div 
-                className="bg-blue-500 h-3 rounded-full" 
-                style={{ width: `${(metrics.startedTrial / metrics.totalRegistrations) * 100}%` }} 
-              />
+              <div className="bg-blue-500 h-3 rounded-full" style={{ width: `${(metrics.startedTrial / metrics.totalRegistrations) * 100}%` }} />
             </div>
           </div>
           <div>
@@ -307,10 +306,7 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
               <span className="text-sm font-medium text-gray-900">{metrics.paidEver} ({metrics.rebillSuccessRate}% of ended trials)</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3">
-              <div 
-                className="bg-green-500 h-3 rounded-full" 
-                style={{ width: `${(metrics.paidEver / metrics.totalRegistrations) * 100}%` }} 
-              />
+              <div className="bg-green-500 h-3 rounded-full" style={{ width: `${(metrics.paidEver / metrics.totalRegistrations) * 100}%` }} />
             </div>
           </div>
           <div>
@@ -319,10 +315,7 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
               <span className="text-sm font-medium text-gray-900">{metrics.activeSubscriptions} ({metrics.paidEver > 0 ? ((metrics.activeSubscriptions / metrics.paidEver) * 100).toFixed(1) : 0}% retention)</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3">
-              <div 
-                className="bg-green-600 h-3 rounded-full" 
-                style={{ width: `${(metrics.activeSubscriptions / metrics.totalRegistrations) * 100}%` }} 
-              />
+              <div className="bg-green-600 h-3 rounded-full" style={{ width: `${(metrics.activeSubscriptions / metrics.totalRegistrations) * 100}%` }} />
             </div>
           </div>
         </div>
@@ -332,25 +325,18 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">📊 Landing Page Performance</h2>
         
-        {/* Stacked bar */}
         <div className="flex rounded-lg overflow-hidden h-8 mb-4">
           {landingPageData.map((lp, i) => {
             const width = (lp.registrations / metrics.totalRegistrations) * 100;
             const color = sourceColors[lp.source] || 'bg-gray-400';
             return (
-              <div 
-                key={i}
-                className={`${color} flex items-center justify-center text-white text-xs font-medium`}
-                style={{ width: `${width}%` }}
-                title={`${sourceLabels[lp.source] || lp.source}: ${lp.registrations}`}
-              >
+              <div key={i} className={`${color} flex items-center justify-center text-white text-xs font-medium`} style={{ width: `${width}%` }} title={`${sourceLabels[lp.source] || lp.source}: ${lp.registrations}`}>
                 {width > 8 && `${width.toFixed(0)}%`}
               </div>
             );
           })}
         </div>
 
-        {/* Legend */}
         <div className="flex flex-wrap gap-4 mb-6 text-sm">
           {landingPageData.map((lp, i) => (
             <div key={i} className="flex items-center gap-2">
@@ -360,7 +346,6 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
           ))}
         </div>
 
-        {/* Table */}
         <table className="w-full text-sm">
           <thead className="border-b border-gray-200">
             <tr>
@@ -368,7 +353,7 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
               <th className="text-right py-3 font-semibold text-gray-600">Registrations</th>
               <th className="text-right py-3 font-semibold text-gray-600">Trials Started</th>
               <th className="text-right py-3 font-semibold text-gray-600">Trial Rate</th>
-              <th className="text-right py-3 font-semibold text-gray-600">Paid Customers</th>
+              <th className="text-right py-3 font-semibold text-gray-600">Paid $39.97</th>
               <th className="text-right py-3 font-semibold text-gray-600">Paid Rate</th>
             </tr>
           </thead>
@@ -384,21 +369,13 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
                   <span className="inline-flex px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">{lp.trials}</span>
                 </td>
                 <td className="py-3 text-right">
-                  <span className={`inline-flex px-2 py-0.5 rounded font-medium ${
-                    parseFloat(lp.trialRate) >= 7 ? 'bg-green-100 text-green-700' :
-                    parseFloat(lp.trialRate) >= 5 ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>{lp.trialRate}%</span>
+                  <span className={`inline-flex px-2 py-0.5 rounded font-medium ${parseFloat(lp.trialRate) >= 7 ? 'bg-green-100 text-green-700' : parseFloat(lp.trialRate) >= 5 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{lp.trialRate}%</span>
                 </td>
                 <td className="py-3 text-right">
                   <span className="inline-flex px-2 py-0.5 rounded bg-green-100 text-green-700 font-medium">{lp.paid}</span>
                 </td>
                 <td className="py-3 text-right">
-                  <span className={`inline-flex px-2 py-0.5 rounded font-medium ${
-                    parseFloat(lp.paidRate) >= 3 ? 'bg-green-100 text-green-700' :
-                    parseFloat(lp.paidRate) >= 1 ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>{lp.paidRate}%</span>
+                  <span className={`inline-flex px-2 py-0.5 rounded font-medium ${parseFloat(lp.paidRate) >= 3 ? 'bg-green-100 text-green-700' : parseFloat(lp.paidRate) >= 1 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{lp.paidRate}%</span>
                 </td>
               </tr>
             ))}
@@ -409,7 +386,7 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
               <td className="py-3 text-right text-gray-900">{metrics.totalRegistrations}</td>
               <td className="py-3 text-right text-blue-700">{metrics.startedTrial}</td>
               <td className="py-3 text-right text-gray-500">-</td>
-              <td className="py-3 text-right text-green-700">{metrics.activeSubscriptions}</td>
+              <td className="py-3 text-right text-green-700">{metrics.paidEver}</td>
               <td className="py-3 text-right text-gray-500">-</td>
             </tr>
           </tfoot>
@@ -419,7 +396,7 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
       {/* Daily Cohort Analysis */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-2">Daily Cohort Analysis</h2>
-        <p className="text-sm text-gray-500 mb-4">Shows what happened to users who registered on each day</p>
+        <p className="text-sm text-gray-500 mb-4">Shows what happened to users who registered on each day (verified from Stripe invoices)</p>
         
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -429,6 +406,7 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
                 <th className="text-center py-3 font-semibold text-gray-600">Trial Status</th>
                 <th className="text-right py-3 font-semibold text-gray-600">Registered</th>
                 <th className="text-right py-3 font-semibold text-gray-600">Started Trial</th>
+                <th className="text-right py-3 font-semibold text-gray-600">Paid $39.97</th>
                 <th className="text-right py-3 font-semibold text-gray-600">Active</th>
                 <th className="text-right py-3 font-semibold text-gray-600">Churned</th>
                 <th className="text-right py-3 font-semibold text-gray-600">Rebill %</th>
@@ -440,7 +418,7 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
                 const trialEnded = new Date(cohort.trialEndDate) <= new Date();
                 const daysLeft = Math.ceil((new Date(cohort.trialEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                 const rebillRate = cohort.startedTrial > 0 && trialEnded 
-                  ? ((cohort.active + cohort.churned) / cohort.startedTrial * 100).toFixed(0)
+                  ? ((cohort.paidEver / cohort.startedTrial) * 100).toFixed(0)
                   : null;
                 
                 return (
@@ -450,28 +428,17 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
                       {trialEnded ? (
                         <span className="text-xs text-gray-500">Trial ended</span>
                       ) : (
-                        <span className="inline-flex px-2 py-0.5 rounded bg-yellow-100 text-yellow-700 text-xs font-medium">
-                          {daysLeft} days left
-                        </span>
+                        <span className="inline-flex px-2 py-0.5 rounded bg-yellow-100 text-yellow-700 text-xs font-medium">{daysLeft} days left</span>
                       )}
                     </td>
                     <td className="py-3 text-right font-medium text-gray-900">{cohort.registered}</td>
-                    <td className="py-3 text-right">
-                      <span className="text-blue-600 font-medium">{cohort.startedTrial}</span>
-                    </td>
-                    <td className="py-3 text-right">
-                      <span className="text-green-600 font-medium">{cohort.active}</span>
-                    </td>
-                    <td className="py-3 text-right">
-                      <span className="text-red-600 font-medium">{cohort.churned}</span>
-                    </td>
+                    <td className="py-3 text-right"><span className="text-blue-600 font-medium">{cohort.startedTrial}</span></td>
+                    <td className="py-3 text-right"><span className="text-green-600 font-bold">{cohort.paidEver}</span></td>
+                    <td className="py-3 text-right"><span className="text-green-600 font-medium">{cohort.active}</span></td>
+                    <td className="py-3 text-right"><span className="text-red-600 font-medium">{cohort.churned}</span></td>
                     <td className="py-3 text-right">
                       {rebillRate !== null ? (
-                        <span className={`font-semibold ${
-                          parseFloat(rebillRate) >= 70 ? 'text-green-600' :
-                          parseFloat(rebillRate) >= 40 ? 'text-yellow-600' :
-                          'text-red-600'
-                        }`}>{rebillRate}%</span>
+                        <span className={`font-semibold ${parseFloat(rebillRate) >= 70 ? 'text-green-600' : parseFloat(rebillRate) >= 40 ? 'text-yellow-600' : 'text-red-600'}`}>{rebillRate}%</span>
                       ) : (
                         <span className="text-gray-300">-</span>
                       )}
@@ -496,28 +463,13 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
         <div className="flex flex-wrap items-end gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">From</label>
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
-            />
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">To</label>
-            <input
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
-            />
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm" />
           </div>
-          <button
-            onClick={handleFilter}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
-          >
-            Apply
-          </button>
+          <button onClick={handleFilter} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Apply</button>
           <div className="flex gap-2 ml-auto">
             <button onClick={() => quickFilter(0)} className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700">Today</button>
             <button onClick={() => quickFilter(7)} className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700">Last 7 days</button>
@@ -534,26 +486,14 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
             <h2 className="text-lg font-semibold text-gray-900">All Users ({filteredUsers.length})</h2>
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search email, source..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm w-64"
-                />
+                <input type="text" placeholder="Search email, source..." value={searchQuery} onChange={(e) => handleSearchChange(e.target.value)} className="border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm w-64" />
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
               <div className="flex rounded-lg border border-gray-200 overflow-hidden">
                 {(['all', 'trial', 'active', 'inactive', 'canceled'] as StatusFilter[]).map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => handleFilterChange(filter)}
-                    className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-                      statusFilter === filter ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
+                  <button key={filter} onClick={() => handleFilterChange(filter)} className={`px-3 py-1.5 text-sm font-medium transition-colors ${statusFilter === filter ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
                     {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)}
                     <span className="ml-1 text-xs opacity-75">({statusCounts[filter]})</span>
                   </button>
@@ -581,11 +521,7 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
                   <td className="py-3 px-4 font-medium text-gray-900">{user.email}</td>
                   <td className="py-3 px-4"><StatusBadge user={user} /></td>
                   <td className="py-3 px-4">
-                    {user.source ? (
-                      <span className="inline-flex px-2 py-0.5 rounded bg-purple-100 text-purple-700 text-xs font-medium">{user.source}</span>
-                    ) : (
-                      <span className="text-gray-300">—</span>
-                    )}
+                    {user.source ? (<span className="inline-flex px-2 py-0.5 rounded bg-purple-100 text-purple-700 text-xs font-medium">{user.source}</span>) : (<span className="text-gray-300">—</span>)}
                   </td>
                   <td className="py-3 px-4 text-gray-500 text-xs">{formatDate(user.createdAt)}</td>
                 </tr>
@@ -596,9 +532,7 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
 
         {totalPages > 1 && (
           <div className="p-4 border-t border-gray-100 flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredUsers.length)} of {filteredUsers.length}
-            </div>
+            <div className="text-sm text-gray-500">Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredUsers.length)} of {filteredUsers.length}</div>
             <div className="flex items-center gap-2">
               <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 disabled:opacity-50">First</button>
               <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 disabled:opacity-50">← Prev</button>
