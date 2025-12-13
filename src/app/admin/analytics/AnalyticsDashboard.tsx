@@ -254,9 +254,9 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
         <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 border-l-yellow-400">
           <div className="text-sm font-medium text-gray-500">Trial Cancellation</div>
           <div className="text-3xl font-bold text-yellow-600 mt-1">
-            {metrics.trialsEnded > 0 ? (((metrics.trialsEnded - metrics.paidEver) / metrics.trialsEnded) * 100).toFixed(1) : '0'}%
+            {metrics.startedTrial > 0 ? ((metrics.canceledDuringTrial / metrics.startedTrial) * 100).toFixed(1) : '0'}%
           </div>
-          <div className="text-xs text-gray-400 mt-1">{metrics.canceledDuringTrial} canceled without paying</div>
+          <div className="text-xs text-gray-400 mt-1">{metrics.canceledDuringTrial} canceled during trial</div>
         </div>
         <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 border-l-red-400">
           <div className="text-sm font-medium text-gray-500">Customer Churn</div>
