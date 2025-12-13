@@ -25,6 +25,7 @@ interface FBAdSet {
   costPerTrial: number | null;
   trialConversionRate: string | null;
   ctr: string;
+  isUnmapped?: boolean;
 }
 
 interface FBData {
@@ -66,6 +67,15 @@ const categoryColors: Record<string, { bg: string; text: string; bar: string; la
 
 type DatePreset = 'today' | 'this_week' | 'this_month' | 'last_30d' | 'this_year' | 'custom';
 
+// Helper to get short campaign name
+const getShortCampaignName = (name: string): string => {
+  if (name.includes('ABO')) return 'ABO';
+  if (name.includes('CBO')) return 'CBO';
+  if (name.includes('Trial')) return 'Trial';
+  if (name === 'No Active Campaign') return '—';
+  return name.slice(0, 15) + (name.length > 15 ? '...' : '');
+};
+
 export default function ExpensesTracker() {
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -73,7 +83,7 @@ export default function ExpensesTracker() {
   const [fbData, setFbData] = useState<FBData | null>(null);
   const [fbLoading, setFbLoading] = useState(true);
   const [fbError, setFbError] = useState<string | null>(null);
-  const [datePreset, setDatePreset] = useState<DatePreset>('this_month');
+  const [datePreset, setDatePreset] = useState<DatePreset>('today');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [expandedSection, setExpandedSection] = useState<'adsets' | 'campaigns' | null>('adsets');
@@ -274,18 +284,20 @@ export default function ExpensesTracker() {
                   onClick={() => setExpandedSection(expandedSection === 'adsets' ? null : 'adsets')}
                   className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
                 >
-                  <span className="font-semibold text-gray-900">Performance by Landing Page</span>
+                  <span className="font-semibold text-gray-900">Performance by Ad Set</span>
                   <svg className={`w-5 h-5 text-gray-500 transition-transform ${expandedSection === 'adsets' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
                 
-                {expandedSection === 'adsets' && fbData.adsets.length > 0 && (
+                {expandedSection === 'adsets' && fbData.adsets && fbData.adsets.length > 0 && (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
-                          <th className="text-left py-3 px-4 font-semibold text-gray-600">Ad Set / Landing Page</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-600">Ad Set</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-600">Campaign</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-600">Landing Page</th>
                           <th className="text-right py-3 px-4 font-semibold text-gray-600">Spend</th>
                           <th className="text-right py-3 px-4 font-semibold text-gray-600">Regs</th>
                           <th className="text-right py-3 px-4 font-semibold text-gray-600">CPR</th>
@@ -296,10 +308,22 @@ export default function ExpensesTracker() {
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {fbData.adsets.map((adset, i) => (
-                          <tr key={i} className={`hover:bg-gray-50 transition-colors ${(adset as any).isUnmapped ? "bg-amber-50" : ""}`}>
+                          <tr key={i} className={`hover:bg-gray-50 transition-colors ${adset.isUnmapped ? 'bg-amber-50' : ''}`}>
                             <td className="py-3 px-4">
                               <div className="font-medium text-gray-900">{adset.name}</div>
-                              {adset.landingPage && (
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
+                                adset.campaign.includes('ABO') ? 'bg-blue-100 text-blue-700' :
+                                adset.campaign.includes('CBO') ? 'bg-purple-100 text-purple-700' :
+                                adset.campaign.includes('Trial') ? 'bg-green-100 text-green-700' :
+                                'bg-gray-100 text-gray-600'
+                              }`}>
+                                {getShortCampaignName(adset.campaign)}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              {adset.landingPage ? (
                                 <a 
                                   href={`https://castingcompanion.com${adset.landingPage}`}
                                   target="_blank"
@@ -308,6 +332,8 @@ export default function ExpensesTracker() {
                                 >
                                   {adset.landingPage}
                                 </a>
+                              ) : (
+                                <span className="text-gray-300">—</span>
                               )}
                             </td>
                             <td className="py-3 px-4 text-right font-semibold text-pink-600">
@@ -358,6 +384,8 @@ export default function ExpensesTracker() {
                       <tfoot className="bg-gray-50 border-t border-gray-200">
                         <tr className="font-semibold">
                           <td className="py-3 px-4 text-gray-900">Total</td>
+                          <td className="py-3 px-4"></td>
+                          <td className="py-3 px-4"></td>
                           <td className="py-3 px-4 text-right text-pink-600">${fbData.total.spend.toFixed(2)}</td>
                           <td className="py-3 px-4 text-right text-blue-600">{fbData.total.registrations}</td>
                           <td className="py-3 px-4 text-right">
