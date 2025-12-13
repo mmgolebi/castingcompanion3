@@ -233,24 +233,19 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
           <div className="text-3xl font-bold text-orange-600 mt-1">{metrics.activeSubscriptions}</div>
           <div className="text-xs text-gray-400 mt-1">${(metrics.activeSubscriptions * 39.97).toFixed(2)} MRR</div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 border-l-green-500">
-          <div className="text-sm font-medium text-gray-500">Total Paying (Ever)</div>
-          <div className="text-3xl font-bold text-green-600 mt-1">{metrics.paidEver}</div>
-          <div className="text-xs text-gray-400 mt-1">{metrics.activeSubscriptions} active + {metrics.churned} churned</div>
+        <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 border-l-amber-500">
+          <div className="text-sm font-medium text-gray-500">Trials Still Active</div>
+          <div className="text-3xl font-bold text-amber-600 mt-1">{metrics.trialsStillActive}</div>
+          <div className="text-xs text-gray-400 mt-1">{metrics.trialsEnded} trials ended</div>
         </div>
       </div>
 
       {/* Secondary Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 border-l-blue-400">
           <div className="text-sm font-medium text-gray-500">Registration → Trial</div>
           <div className="text-3xl font-bold text-blue-600 mt-1">{metrics.trialConversionRate}%</div>
           <div className="text-xs text-gray-400 mt-1">{metrics.startedTrial} of {metrics.totalRegistrations} registered</div>
-        </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 border-l-green-400">
-          <div className="text-sm font-medium text-gray-500">Rebill Success Rate</div>
-          <div className="text-3xl font-bold text-green-600 mt-1">{metrics.rebillSuccessRate}%</div>
-          <div className="text-xs text-gray-400 mt-1">{metrics.paidEver} of {metrics.trialsEnded} trials that ended</div>
         </div>
         <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 border-l-yellow-400">
           <div className="text-sm font-medium text-gray-500">Trial Cancellation</div>
@@ -258,11 +253,6 @@ export default function AnalyticsDashboard({ fromDate, toDate, metrics, users, c
             {metrics.startedTrial > 0 ? ((metrics.canceledDuringTrial / metrics.startedTrial) * 100).toFixed(1) : '0'}%
           </div>
           <div className="text-xs text-gray-400 mt-1">{metrics.canceledDuringTrial} canceled during trial</div>
-        </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 border-l-red-400">
-          <div className="text-sm font-medium text-gray-500">Customer Churn</div>
-          <div className="text-3xl font-bold text-red-600 mt-1">{metrics.churnRate}%</div>
-          <div className="text-xs text-gray-400 mt-1">{metrics.churned} of {metrics.paidEver} paying customers left</div>
         </div>
       </div>
 
