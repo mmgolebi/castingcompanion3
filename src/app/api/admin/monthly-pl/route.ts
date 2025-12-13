@@ -4,8 +4,12 @@ import { prisma } from '@/lib/db';
 const FB_ACCESS_TOKEN = process.env.FB_ACCESS_TOKEN;
 const FB_AD_ACCOUNT_ID = process.env.FB_AD_ACCOUNT_ID;
 
-// Fixed monthly costs (same as ExpensesTracker)
-const FIXED_MONTHLY_COSTS = 292 + (61/12); // $292 + Hunter.io yearly
+// Fixed monthly costs
+const FIXED_MONTHLY_COSTS = 292 + (61/12);
+
+// Platform launch date - only show data from this month onwards
+const LAUNCH_YEAR = 2025;
+const LAUNCH_MONTH = 10; // November (0-indexed)
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -28,7 +32,7 @@ export async function GET(request: NextRequest) {
         
         if (fbData.data) {
           fbData.data.forEach((item: { date_start: string; spend: string }) => {
-            const monthKey = item.date_start.slice(0, 7); // YYYY-MM
+            const monthKey = item.date_start.slice(0, 7);
             fbMonthlySpend[monthKey] = parseFloat(item.spend || '0');
           });
         }
@@ -37,8 +41,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Determine start month based on launch date
+    const startMonth = year === LAUNCH_YEAR ? LAUNCH_MONTH : 0;
+
     // Process each month
-    for (let month = 0; month < 12; month++) {
+    for (let month = startMonth; month < 12; month++) {
       // Skip future months
       if (year > currentYear || (year === currentYear && month > currentMonth)) {
         continue;
@@ -59,14 +66,14 @@ export async function GET(request: NextRequest) {
         },
         select: {
           stripeCustomerId: true,
+          subscriptionStatus: true,
         },
       });
 
       const registrations = users.length;
       const trials = users.filter(u => u.stripeCustomerId).length;
 
-      // Get subscription revenue (users who have rebilled - simplified estimate)
-      // In reality, you'd want to track actual Stripe payments
+      // Get subscription revenue estimate
       const subscriptionRevenue = await getSubscriptionRevenueForMonth(monthStart, monthEnd);
 
       // Calculate costs
@@ -75,7 +82,7 @@ export async function GET(request: NextRequest) {
       const totalCosts = adSpend + fixedCosts;
 
       // Calculate revenue
-      const trialRevenue = trials * 1.00; // $1 per trial
+      const trialRevenue = trials * 1.00;
       const totalRevenue = trialRevenue + subscriptionRevenue;
 
       // Calculate profit
@@ -93,7 +100,7 @@ export async function GET(request: NextRequest) {
         profit,
         registrations,
         trials,
-        activeSubscribers: 0, // Would need Stripe data
+        activeSubscribers: 0,
       });
     }
 
@@ -123,27 +130,21 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Helper function to estimate subscription revenue
-// In production, you'd want to integrate with Stripe API
 async function getSubscriptionRevenueForMonth(start: Date, end: Date): Promise<number> {
-  // Get users who started trial before this month and might have converted
-  // This is a simplified estimate - ideally you'd track actual Stripe payments
-  
   const trialStartCutoff = new Date(start);
-  trialStartCutoff.setDate(trialStartCutoff.getDate() - 14); // 14-day trial period
+  trialStartCutoff.setDate(trialStartCutoff.getDate() - 14);
   
   const potentialSubscribers = await prisma.user.count({
     where: {
       stripeCustomerId: { not: null },
+      subscriptionStatus: 'active',
       createdAt: {
-        gte: new Date(start.getFullYear(), start.getMonth() - 2, 1), // Started 1-2 months ago
+        gte: new Date(start.getFullYear(), start.getMonth() - 2, 1),
         lt: trialStartCutoff,
       },
-      // Ideally check subscription status here
     },
   });
   
-  // Estimate 50% rebill rate and $39.97/month
   const estimatedSubscribers = Math.floor(potentialSubscribers * 0.5);
   return estimatedSubscribers * 39.97;
 }
