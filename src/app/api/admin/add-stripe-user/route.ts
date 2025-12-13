@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { randomBytes } from 'crypto';
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -43,10 +44,13 @@ export async function POST(req: Request) {
       });
     }
 
-    // Create new user
+    // Create new user with random password (they can reset it later)
+    const randomPassword = randomBytes(16).toString('hex');
+    
     const newUser = await prisma.user.create({
       data: {
         email,
+        password: randomPassword,
         stripeCustomerId,
         subscriptionStatus: status || 'active',
         role: 'ACTOR',
@@ -57,6 +61,7 @@ export async function POST(req: Request) {
       success: true,
       action: 'created',
       user: { email: newUser.email, stripeCustomerId: newUser.stripeCustomerId, status: newUser.subscriptionStatus },
+      note: 'User created with random password - they should use password reset to access account',
     });
   } catch (error) {
     return NextResponse.json({ 
