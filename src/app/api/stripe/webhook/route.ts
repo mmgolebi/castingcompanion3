@@ -123,7 +123,7 @@ export async function POST(req: Request) {
         });
         break;
 
-      case 'invoice.paid':
+      case 'invoice.payment_succeeded':
         const invoice = event.data.object as Stripe.Invoice;
         const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
         const amountPaid = (invoice.amount_paid || 0) / 100;
