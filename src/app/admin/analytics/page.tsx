@@ -48,6 +48,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
       subscriptionStatus: true,
       stripeCustomerId: true,
       source: true,
+      paidFullPriceAt: true,
     },
     orderBy: {
       createdAt: 'desc',
@@ -77,10 +78,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
 
   const startedTrial = users.filter(u => u.stripeCustomerId).length;
   
-  const paidEver = users.filter(u => 
-    u.stripeCustomerId && 
-    (u.subscriptionStatus === 'active' || u.subscriptionStatus === 'canceled' || u.subscriptionStatus === 'cancelled')
-  ).length;
+  const paidEver = users.filter(u => u.paidFullPriceAt !== null).length;
 
   const fourteenDaysAgo = new Date();
   fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
@@ -107,9 +105,8 @@ export default async function AnalyticsPage({ searchParams }: Props) {
   ).length;
 
   const churned = users.filter(u =>
-    u.stripeCustomerId &&
-    (u.subscriptionStatus === 'canceled' || u.subscriptionStatus === 'cancelled') &&
-    new Date(u.createdAt) < fourteenDaysAgo
+    u.paidFullPriceAt !== null &&
+    u.subscriptionStatus !== 'active'
   ).length;
   
   const churnRate = paidEver > 0 
