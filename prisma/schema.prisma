@@ -18,6 +18,7 @@ model User {
   updatedAt          DateTime           @updatedAt
   subscriptionStatus String?            @default("inactive")
   stripeCustomerId   String?
+  paidFullPriceAt    DateTime?
   resetToken         String?            @unique
   resetTokenExpiry   DateTime?
   headshotAnalyses   HeadshotAnalysis[]

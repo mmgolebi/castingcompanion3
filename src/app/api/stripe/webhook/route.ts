@@ -8,6 +8,8 @@ import { trackPaymentFunnel } from '@/lib/metrics';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' });
 
+const CASTING_COMPANION_PRODUCT_ID = 'prod_TDrkODWf80MCWP';
+
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
@@ -119,6 +121,53 @@ export async function POST(req: Request) {
             subscriptionStatus: subscription.status,
           },
         });
+        break;
+
+      case 'invoice.paid':
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
+        const amountPaid = (invoice.amount_paid || 0) / 100;
+        
+        console.log('[WEBHOOK] Invoice paid:', invoice.id, 'customer:', customerId, 'amount:', amountPaid);
+        
+        // Only process if this is a $39.97+ payment (full price, not $1 trial)
+        if (customerId && amountPaid >= 35) {
+          // Verify this is for Casting Companion product
+          let isCastingCompanion = false;
+          
+          for (const lineItem of invoice.lines.data) {
+            if (lineItem.price?.product) {
+              const productId = typeof lineItem.price.product === 'string' 
+                ? lineItem.price.product 
+                : lineItem.price.product.id;
+              
+              if (productId === CASTING_COMPANION_PRODUCT_ID) {
+                isCastingCompanion = true;
+                break;
+              }
+            }
+          }
+          
+          if (isCastingCompanion) {
+            console.log('[WEBHOOK] Full price payment for Casting Companion, marking paidFullPriceAt');
+            
+            await prisma.user.updateMany({
+              where: { 
+                stripeCustomerId: customerId,
+                paidFullPriceAt: null, // Only set if not already set
+              },
+              data: {
+                paidFullPriceAt: new Date(),
+              },
+            });
+            
+            console.log('[WEBHOOK] paidFullPriceAt set for customer:', customerId);
+          } else {
+            console.log('[WEBHOOK] Invoice is not for Casting Companion product, skipping');
+          }
+        } else {
+          console.log('[WEBHOOK] Invoice amount < $35, likely trial payment, skipping paidFullPriceAt');
+        }
         break;
 
       default:
