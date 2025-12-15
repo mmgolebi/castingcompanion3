@@ -7,6 +7,7 @@ const navItems = [
   { href: '/admin/analytics', label: 'Dashboard', icon: '📊' },
   { href: '/admin/analytics/monthly', label: 'Monthly P&L', icon: '📅' },
   { href: '/admin/analytics/forecast', label: 'Forecast', icon: '📈' },
+  { href: '/admin/analytics/projections', label: 'Projections', icon: '🧮' },
   { href: '/admin/analytics/expenses', label: 'Expenses', icon: '💰' },
 ];
 
